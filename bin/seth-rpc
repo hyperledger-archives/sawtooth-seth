@@ -7,5 +7,5 @@ if [ -e $bin ]
 then
     $bin $*
 else
-    echo "Please build Seth-RPC first with 'build_all -l rust' or 'build_seth_rust'"
+    echo "Please build seth-rpc first with 'build_all' or 'build_seth'"
 fi
