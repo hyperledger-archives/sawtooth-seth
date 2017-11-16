@@ -5,13 +5,6 @@ top_dir=$(cd $(dirname $(dirname $0)) && pwd)
 cd $top_dir
 
 dirs="
-$top_dir/sdk/go/src/sawtooth_sdk/messaging
-$top_dir/sdk/go/src/sawtooth_sdk/processor
-$top_dir/sdk/go/src/sawtooth_sdk/client
-$top_dir/sdk/examples/intkey_go/src/sawtooth_intkey
-$top_dir/sdk/examples/intkey_go/src/sawtooth_intkey/handler
-$top_dir/sdk/examples/xo_go/src/sawtooth_xo
-$top_dir/sdk/examples/xo_go/src/sawtooth_xo/handler
 $top_dir/families/seth/src/sawtooth_seth/processor
 $top_dir/families/seth/src/sawtooth_seth/processor/handler
 $top_dir/families/seth/src/sawtooth_seth/client
