@@ -21,3 +21,8 @@
 /families/seth/rpc/src/messages/*.rs
 !/families/seth/rpc/src/messages/mod.rs
 /families/seth/rpc/tests/protobuf/
+
+/families/c/
+/families/seth/src/protos/core/
+/families/seth/src/sawtooth_sdk/
+/families/rust/

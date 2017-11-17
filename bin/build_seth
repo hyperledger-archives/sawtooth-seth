@@ -18,21 +18,51 @@
 set -e
 
 top_dir=$(cd $(dirname $(dirname $0)) && pwd)
+seth_dir=$top_dir/families/seth
 
-echo -e "\033[0;32m--- Running protogen seth ---\n\033[0m"
+info() {
+    echo -e "\033[0;32m--- $1 ---\n\033[0m"
+}
+
+rm -rf $seth_dir/src/sawtooth_sdk
+rm -f $top_dir/families/c/loader.c
+rm -rf $seth_dir/src/protos/core/
+mkdir -p $seth_dir/bin
+mkdir -p $seth_dir/src/sawtooth_sdk
+mkdir -p $seth_dir/src/protos/core
+mkdir -p $top_dir/families/c
+mkdir -p $top_dir/families/rust/
+export GOPATH=/go:$seth_dir
+
+info "Cloning SDKs"
+cd /tmp
+if [ ! -e /tmp/sawtooth-core ];
+then
+    git clone https://github.com/hyperledger/sawtooth-core
+fi
+cd sawtooth-core
+git fetch origin
+git checkout origin/master
+cd $top_dir
+# Go
+rsync -aH /tmp/sawtooth-core/sdk/go/src/sawtooth_sdk $seth_dir/src/
+rsync -aH /tmp/sawtooth-core/sdk/c/loader.c $top_dir/families/c/loader.c
+rsync -aH /tmp/sawtooth-core/protos/* $seth_dir/src/protos/core/
+# Rust
+rsync -aH /tmp/sawtooth-core/sdk/rust/ $top_dir/families/rust/
+
+
+info "Running protogen seth"
 $top_dir/bin/protogen seth
 
-mkdir -p $top_dir/families/seth/bin
-export GOPATH=/go:$top_dir/sdk/go:$top_dir/families/seth
-
-echo -e "\033[0;32m--- Building seth-tp ---\n\033[0m"
+info "Building seth-tp"
 cd $top_dir/families/seth/src/sawtooth_seth/processor
 go build -o $top_dir/families/seth/bin/seth-tp
 
-echo -e "\033[0;32m--- Building seth ---\n\033[0m"
+info "Building seth"
 cd $top_dir/families/seth/src/sawtooth_seth/cli
 go build -o $top_dir/families/seth/bin/seth
 
-echo -e "\033[0;32m--- Building seth-rpc ---\n\033[0m"
+info "Building seth-rpc"
 cd $top_dir/families/seth/rpc
 cargo build && cp ./target/debug/rpc $top_dir/families/seth/bin/seth-rpc

@@ -57,8 +57,8 @@ RUN echo "deb http://repo.sawtooth.me/ubuntu/ci xenial universe" >> /etc/apt/sou
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-ENV PATH=$PATH:/project/sawtooth-core/bin:/root/.cargo/bin:/go/bin
-ENV GOPATH=/go:/project/sawtooth-core/sdk/go:/project/sawtooth-core/families/seth
+ENV PATH=$PATH:/project/sawtooth-seth/families/seth/bin:/root/.cargo/bin:/go/bin
+ENV GOPATH=/go:/project/sawtooth-seth/families/seth
 
 # Install rust libraries
 RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
@@ -87,14 +87,16 @@ RUN npm install \
     ethereumjs-abi \
     web3
 
-RUN mkdir -p /project/sawtooth-core/ \
+RUN mkdir -p /project/sawtooth-seth/ \
  && mkdir -p /var/log/sawtooth \
  && mkdir -p /var/lib/sawtooth \
  && mkdir -p /etc/sawtooth \
  && mkdir -p /etc/sawtooth/keys
 
-WORKDIR /project/sawtooth-core
+WORKDIR /project/sawtooth-seth
 
 EXPOSE 3030/tcp
+
+ENV PATH=$PATH:/project/sawtooth-seth/bin
 
 CMD build_seth

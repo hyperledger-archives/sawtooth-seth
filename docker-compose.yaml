@@ -13,22 +13,15 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-# In first window, run:
-#   $ cd sawtooth-core
-#   $ ./bin/build_all -l go -l python
-#   $ docker-compose -f docker/compose/sawtooth-seth.yaml up
-#
-# In second window, run:
-#   $ docker exec -it seth-client bash
-
 version: "3"
 
 services:
 
   seth-tp:
-    image: sawtooth-dev-seth:latest
+    image: sawtooth-seth:latest
+    build: ./
     volumes:
-      - ../../:/project/sawtooth-core
+      - ./:/project/sawtooth-seth
     expose:
       - 4004
     depends_on:
@@ -37,9 +30,7 @@ services:
     stop_signal: SIGKILL
 
   block-info-tp:
-    image: sawtooth-block-info-tp:latest
-    volumes:
-      - ../../:/project/sawtooth-core
+    image: hyperledger/sawtooth-block-info-tp:latest
     expose:
       - 4004
     depends_on:
@@ -48,9 +39,7 @@ services:
     stop_signal: SIGKILL
 
   settings-tp:
-    image: sawtooth-settings-tp:latest
-    volumes:
-      - ../../:/project/sawtooth-core
+    image: hyperledger/sawtooth-settings-tp:latest
     expose:
       - 4004
     depends_on:
@@ -58,9 +47,7 @@ services:
     entrypoint: settings-tp -vv --connect tcp://validator:4004
 
   validator:
-    image: sawtooth-validator:latest
-    volumes:
-      - ../../:/project/sawtooth-core
+    image: hyperledger/sawtooth-validator:latest
     expose:
       - 4004
       - 8800
@@ -82,14 +69,10 @@ services:
             --bind component:tcp://eth0:4004 \
             --bind network:tcp://eth0:8800 \
     \""
-    environment:
-      PYTHONPATH: "/project/sawtooth-core/families/block_info"
     stop_signal: SIGKILL
 
   rest-api:
-    image: sawtooth-rest-api:latest
-    volumes:
-      - ../../:/project/sawtooth-core
+    image: hyperledger/sawtooth-rest-api:latest
     expose:
       - 4004
       - 8080
@@ -102,15 +85,15 @@ services:
 
   seth:
     container_name: seth
-    image: sawtooth-dev-seth:latest
+    image: sawtooth-seth:latest
     volumes:
-      - ../../:/project/sawtooth-core
+      - ./:/project/sawtooth-seth
     expose:
       - 3030
       - 8080
     ports:
       - 3030:3030
-    working_dir: "/project/sawtooth-core"
+    working_dir: "/project/sawtooth-seth"
     command: "bash -c \"
         seth init http://rest-api:8080 && \
         tail -f /dev/null\""

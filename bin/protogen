@@ -35,8 +35,11 @@ TOP_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 
 def main(args=None):
-    proto_dir = JOIN(TOP_DIR, "families/block_info/protos")
-    protoc(proto_dir, "families/seth/src", "sawtooth_seth/protobuf", "go")
+    proto_dir = JOIN(TOP_DIR, "families/seth/src/protos/core")
+    protoc(proto_dir, "families/seth/src", "sawtooth_sdk/protobuf", "go")
+    protoc(proto_dir, "families/rust", "sawtooth_sdk/protobuf", "go")
+    protoc(proto_dir, "families/rust", "src/messages", "rust")
+
     proto_dir = JOIN(TOP_DIR, "families/seth/src/protos")
     protoc(proto_dir, "families/seth/src", "sawtooth_seth/protobuf", "go")
     proto_dir = JOIN(TOP_DIR, "families/seth/src/protos")

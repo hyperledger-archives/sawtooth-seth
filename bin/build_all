@@ -40,7 +40,7 @@ docker_run() {
     info "Running $image"
     if [ -z $BUILD_TAG ]
     then
-        docker run -t --rm -v $top_dir:/project/sawtooth-core \
+        docker run -t --rm -v $top_dir:/project/sawtooth-seth \
             $cargo_registry_flag \
             --env https_proxy=$https_proxy \
             --env http_proxy=$http_proxy \
@@ -48,7 +48,7 @@ docker_run() {
             --env HTTP_PROXY=$HTTP_PROXY \
             $tag
     else
-        docker run --rm -v $top_dir:/project/sawtooth-core \
+        docker run --rm -v $top_dir:/project/sawtooth-seth \
             $cargo_registry_flag \
             --env https_proxy=$https_proxy \
             --env http_proxy=$http_proxy \
@@ -85,8 +85,8 @@ main() {
     # Start in project directory
     cd $top_dir
 
-    docker_build docker/sawtooth-dev-seth docker/ sawtooth-dev-seth
-    docker_run sawtooth-dev-seth
+    docker_build Dockerfile . sawtooth-seth
+    docker_run sawtooth-seth
 }
 
 main
