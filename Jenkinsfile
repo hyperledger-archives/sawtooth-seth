@@ -64,25 +64,16 @@ node ('master') {
         // Use a docker container to build and protogen, so that the Jenkins
         // environment doesn't need all the dependencies.
         stage("Build Test Dependencies") {
-            sh './bin/build_all installed'
+            sh './bin/build_all'
         }
 
         stage("Run Lint") {
-            sh 'docker run --rm -v $(pwd):/project/sawtooth-core sawtooth-dev-python:$ISOLATION_ID run_lint'
             sh 'docker run --rm -v $(pwd):/project/sawtooth-core sawtooth-dev-go:$ISOLATION_ID run_go_fmt'
-        }
-
-        stage("Run Bandit") {
-            sh 'docker run --rm -v $(pwd):/project/sawtooth-core sawtooth-dev-python:$ISOLATION_ID run_bandit'
         }
 
         // Run the tests
         stage("Run Tests") {
-            sh './bin/run_tests -i deployment'
-        }
-
-        stage("Compile coverage report") {
-            sh 'docker run --rm -v $(pwd):/project/sawtooth-core sawtooth-dev-python:$ISOLATION_ID /bin/bash -c "cd coverage && coverage combine && coverage html -d html"'
+            sh './bin/run_tests'
         }
 
         stage("Create git archive") {
@@ -101,9 +92,6 @@ node ('master') {
 
         stage("Archive Build artifacts") {
             archiveArtifacts artifacts: '*.tgz, *.zip'
-            archiveArtifacts artifacts: 'build/debs/*.deb'
-            archiveArtifacts artifacts: 'build/bandit.html'
-            archiveArtifacts artifacts: 'coverage/html/*'
             archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf'
         }
     }

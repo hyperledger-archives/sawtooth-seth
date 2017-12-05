@@ -1,32 +1,22 @@
-
-![Hyperledger Sawtooth](images/sawtooth_logo_light_blue-small.png)  
-
-Hyperledger Sawtooth
+Hyperledger Sawtooth - Seth
 -------------
 
-Hyperledger Sawtooth is an enterprise solution for building, deploying, and
-running distributed ledgers (also called blockchains). 
-It provides an extremely modular and flexible platform for implementing 
-transaction-based updates to shared state between
-untrusted parties coordinated by consensus algorithms.
+This project is an Ethereum-compatible transaction family for the Hyperledger
+Sawtooth platform.
+
+The primary goal of the Sawtooth-Ethereum integration project, affectionately
+dubbed "Seth", is to add support for running Ethereum Virtual Machine smart
+contracts to the Hyperledger Sawtooth platform. In order to make this possible,
+the Hyperledger Sawtooth project worked with the
+[Hyperledger Burrow](https://github.com/hyperledger/burrow) project to integrate
+their EVM implementation, the Burrow EVM, into with the Hyperledger Sawtooth
+platform.
 
 Documentation
 -------------
 
 Documentation for how to run and extend Sawtooth is available here:
-https://sawtooth.hyperledger.org/docs/
-
-Running examples of Sawtooth blockchains can be found here: 
-https://sawtooth.hyperledger.org/examples/
-
-
-Project Status
------------------
-
-This project is an _active_ Hyperledger project. It was proposed to the 
-community and documented [here](https://docs.google.com/document/d/1j7YcGLJH6LkzvWdOYFIt2kpkVlLEmILErXL6t-Ky2zU/edit).
-Information on what _Active_ entails can be found in the 
-[Hyperledger Project Lifecycle document](https://wiki.hyperledger.org/community/project-lifecycle).
+https://sawtooth.hyperledger.org/docs/seth/
 
 License
 -------
@@ -36,5 +26,3 @@ Hyperledger Sawtooth software is licensed under the [Apache License Version 2.0]
 Hyperledger Sawtooth documentation in the [docs](docs) subdirectory is licensed under
 a Creative Commons Attribution 4.0 International License.  You may obtain a copy of the
 license at: http://creativecommons.org/licenses/by/4.0/.
-
-![Open Source Award Badge](images/rookies16-small.png)
