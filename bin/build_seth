@@ -42,7 +42,7 @@ then
 fi
 cd sawtooth-core
 git fetch origin
-git checkout origin/master
+git checkout 9a5c205c2de1f9d27756629227b5241628a7f998
 cd $top_dir
 # Go
 rsync -aH /tmp/sawtooth-core/sdk/go/src/sawtooth_sdk $seth_dir/src/
