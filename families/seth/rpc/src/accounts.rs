@@ -23,7 +23,7 @@ use std::error::Error as StdError;
 use std::io::Error as IoError;
 use sawtooth_sdk::signing::Error as SigningError;
 use sawtooth_sdk::signing::secp256k1::{Secp256k1PrivateKey};
-use sawtooth_sdk::signing::{PrivateKey, create_algorithm};
+use sawtooth_sdk::signing::{PrivateKey, create_context};
 use transform;
 use rpassword;
 use tiny_keccak;
@@ -112,7 +112,7 @@ impl Account {
             }
         }?;
 
-        let algorithm = create_algorithm("secp256k1").unwrap();
+        let algorithm = create_context("secp256k1").unwrap();
         let pub_key = algorithm.get_public_key(&key)?;
 
         Ok(Account{
@@ -131,7 +131,7 @@ impl Account {
     }
 
     pub fn sign(&self, message: &[u8]) -> Result<String, Error> {
-        let algorithm = create_algorithm("secp256k1").unwrap();
+        let algorithm = create_context("secp256k1").unwrap();
         let key = Secp256k1PrivateKey::from_hex(&self.private_key).map_err(|_|
             Error::SigningError)?;
         algorithm.sign(message, &key).map_err(|_| Error::SigningError)

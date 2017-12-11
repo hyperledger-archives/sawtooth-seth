@@ -22,7 +22,7 @@ import (
 	"burrow/word256"
 	"encoding/hex"
 	"fmt"
-	"sawtooth_sdk/client"
+	ellcurv "github.com/btcsuite/btcd/btcec"
 )
 
 type EvmAddr [EVMADDRLEN]byte
@@ -34,8 +34,8 @@ func PrivToEvmAddr(priv []byte) (*EvmAddr, error) {
 			len(priv), PRIVLEN,
 		)
 	}
-	pub := client.GenPubKey(priv)
-	return PubToEvmAddr(pub)
+	_, pub := ellcurv.PrivKeyFromBytes(ellcurv.S256(), priv)
+	return PubToEvmAddr(pub.SerializeCompressed())
 }
 
 func PubToEvmAddr(pub []byte) (*EvmAddr, error) {

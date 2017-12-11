@@ -371,6 +371,9 @@ impl<S: MessageSender> ValidatorClient<S> {
             ClientReceiptGetResponse_Status::NO_RESOURCE => {
                 return Err(Error::NoResource);
             },
+            ClientReceiptGetResponse_Status::INVALID_ID => {
+                return Err(Error::ValidatorError);
+            },
         };
         let seth_receipt_list: Vec<SethReceipt> = receipts.iter()
             .map(SethReceipt::from_receipt_pb)
@@ -405,6 +408,9 @@ impl<S: MessageSender> ValidatorClient<S> {
                     },
                     ClientTransactionGetResponse_Status::NO_RESOURCE => {
                         Err(Error::NoResource)
+                    },
+                    ClientTransactionGetResponse_Status::INVALID_ID => {
+                        Err(Error::ValidatorError)
                     },
                     ClientTransactionGetResponse_Status::OK => {
                         let txn = Transaction::try_from(response.take_transaction())?;
@@ -470,6 +476,9 @@ impl<S: MessageSender> ValidatorClient<S> {
             },
             ClientBlockGetResponse_Status::NO_RESOURCE => {
                 Err(Error::NoResource)
+            },
+            ClientBlockGetResponse_Status::INVALID_ID => {
+                Err(Error::ValidatorError)
             },
             ClientBlockGetResponse_Status::OK => {
                 if let Some(block) = response.block.into_option() {
@@ -545,6 +554,9 @@ impl<S: MessageSender> ValidatorClient<S> {
             ClientStateGetResponse_Status::INVALID_ADDRESS => {
                 return Err(String::from("Invalid address"));
             },
+            ClientStateGetResponse_Status::INVALID_ROOT => {
+                return Err(String::from("Invalid root"));
+            },
         };
 
         match protobuf::parse_from_bytes(&state_data) {
@@ -591,7 +603,7 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_current_block(&mut self) -> Result<Block, Error> {
         let mut paging = ClientPagingControls::new();
-        paging.set_count(1);
+        paging.set_limit(1);
         let mut request = ClientBlockListRequest::new();
         request.set_paging(paging);
 

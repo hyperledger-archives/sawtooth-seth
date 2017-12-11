@@ -19,9 +19,10 @@ package client
 
 import (
 	"encoding/hex"
+	"crypto/sha512"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	. "sawtooth_sdk/client"
+	"sawtooth_sdk/signing"
 	"sawtooth_sdk/protobuf/batch_pb2"
 	"sawtooth_sdk/protobuf/transaction_pb2"
 	"time"
@@ -47,9 +48,11 @@ type Encoder struct {
 // transactions and batches, and to serialize batches for submitting to the
 // REST API.
 func NewEncoder(private_key []byte, defaults TransactionParams) *Encoder {
+	priv := signing.NewSecp256k1PrivateKey(private_key)
+	pub := signing.NewSecp256k1Context().GetPublicKey(priv)
 	return &Encoder{
 		private_key: private_key,
-		public_key:  hex.EncodeToString(GenPubKey(private_key)),
+		public_key:  pub.AsHex(),
 		defaults:    defaults,
 	}
 }
@@ -71,9 +74,13 @@ func (self *Encoder) NewTransaction(payload []byte, p TransactionParams) *Transa
 		Dependencies: self.defaults.Dependencies,
 
 		// Set unique fields
-		PayloadSha512:   hex.EncodeToString(SHA512(payload)),
 		SignerPublicKey: self.public_key,
 	}
+
+	// Set payload hash fields
+	ph := sha512.New()
+	ph.Write(payload)
+	h.PayloadSha512 = hex.EncodeToString(ph.Sum(nil))
 
 	// Override defaults if set
 	if p.FamilyName != "" {
@@ -113,7 +120,9 @@ func (self *Encoder) NewTransaction(payload []byte, p TransactionParams) *Transa
 	if err != nil {
 		panic(err)
 	}
-	hs := hex.EncodeToString(Sign(hb, self.private_key))
+
+	priv := signing.NewSecp256k1PrivateKey(self.private_key)
+	hs := hex.EncodeToString(signing.NewSecp256k1Context().Sign(hb, priv))
 
 	transaction := &transaction_pb2.Transaction{
 		Header:          hb,
@@ -185,7 +194,8 @@ func (self *Encoder) NewBatch(transactions []*Transaction) *Batch {
 		panic(err)
 	}
 
-	hs := hex.EncodeToString(Sign(hb, self.private_key))
+	priv := signing.NewSecp256k1PrivateKey(self.private_key)
+	hs := hex.EncodeToString(signing.NewSecp256k1Context().Sign(hb, priv))
 
 	batch := &batch_pb2.Batch{
 		Header:          hb,
