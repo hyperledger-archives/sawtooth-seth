@@ -140,18 +140,12 @@ func SaveKey(alias, key, keyType string, overwrite bool) error {
 }
 
 func LoadKey(alias string) ([]byte, error) {
-	keyFilePath := path.Join(getKeyDir(), alias)
-	var keyType = ""
-	if pathExists(keyFilePath + ".wif") {
-		keyType = "wif"
-	} else if pathExists(keyFilePath + ".pem") {
-		keyType = "pem"
-	}
-	if keyType == "" {
+	keyFilePath := path.Join(getKeyDir(), alias) + ".pem"
+	if !pathExists(keyFilePath) {
 		return nil, fmt.Errorf("No key with alias %v", alias)
 	}
 
-	buf, err := ioutil.ReadFile(keyFilePath + "." + keyType)
+	buf, err := ioutil.ReadFile(keyFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't load key with alias %v: %v", alias, err)
 	}
@@ -159,19 +153,15 @@ func LoadKey(alias string) ([]byte, error) {
 	keystr := strings.TrimSpace(string(buf))
 
 	var priv *signing.Secp256k1PrivateKey = nil
-	if keyType == "wif" {
-		priv, err = signing.WifToSecp256k1PrivateKey(keystr)
-	} else if keyType == "pem" {
-		var password = ""
-		if strings.Contains(keystr, "ENCRYPTED") {
-			fmt.Printf("Enter Password to unlock %v: ", alias)
-			password, err = getPassword()
-			if err != nil {
-				return nil, err
-			}
+	var password = ""
+	if strings.Contains(keystr, "ENCRYPTED") {
+		fmt.Printf("Enter Password to unlock %v: ", alias)
+		password, err = getPassword()
+		if err != nil {
+			return nil, err
 		}
-		priv, err = signing.PemToSecp256k1PrivateKey(keystr, password)
 	}
+	priv, err = signing.PemToSecp256k1PrivateKey(keystr, password)
 	if err != nil {
 		return nil, err
 	}

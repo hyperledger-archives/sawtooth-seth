@@ -91,14 +91,10 @@ impl Account {
     pub fn load_from_alias(alias: &str) -> Result<Account, Error> {
         let mut key_path = get_data_dir();
         key_path.push(alias);
-        let wif = key_path.with_extension("wif");
         let pem = key_path.with_extension("pem");
 
         let key = {
-            if wif.as_path().is_file() {
-                let key = Self::read_file(&wif)?;
-                Secp256k1PrivateKey::from_wif(&key.trim())
-            } else if pem.as_path().is_file() {
+            if pem.as_path().is_file() {
                 let key = Self::read_file(&pem)?;
                 if key.contains("ENCRYPTED") {
                     let prompt = format!("Enter Password to unlock {}:", alias);
