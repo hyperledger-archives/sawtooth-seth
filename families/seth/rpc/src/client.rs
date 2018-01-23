@@ -268,6 +268,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             ClientBatchSubmitResponse_Status::OK => Ok(txn_signature),
             ClientBatchSubmitResponse_Status::INTERNAL_ERROR => Err(Error::ValidatorError),
             ClientBatchSubmitResponse_Status::INVALID_BATCH => Err(Error::InvalidTransaction),
+            ClientBatchSubmitResponse_Status::QUEUE_FULL => Err(Error::ValidatorError),
         }
     }
 
