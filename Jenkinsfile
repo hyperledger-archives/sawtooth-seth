@@ -86,8 +86,8 @@ node ('master') {
         }
 
         stage ("Build documentation") {
-            sh 'docker build . -f ci/sawtooth-build-docs -t sawtooth-build-docs:$ISOLATION_ID'
-            sh 'docker run --rm -v $(pwd):/project/sawtooth-core sawtooth-build-docs:$ISOLATION_ID'
+            sh 'docker build . -f sawtooth-build-docs -t sawtooth-build-docs:$ISOLATION_ID'
+            sh 'docker run --rm -v $(pwd):/project/sawtooth-seth sawtooth-build-docs:$ISOLATION_ID'
         }
 
         stage("Archive Build artifacts") {

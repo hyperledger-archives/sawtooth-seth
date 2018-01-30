@@ -1,0 +1,23 @@
+{%- extends "layout.html" %}
+{% set title = 'Overview' %}
+{% block body %}
+
+  <h1>Hyperledger Sawtooth documentation</h1>
+
+  <p><select id="version_switcher"></select></p>
+
+  <p class="biglink"><a class="biglink" href="{{ pathto("introduction") }}">{% trans %}Introduction{% endtrans %}</a><br/>
+    <span class="linkdescr">{% trans %}learn about Hyperledger Sawtooth{% endtrans %}</span></p>
+
+  <p class="biglink"><a class="biglink" href="{{ pathto("seth_developers_guide") }}">{% trans %}Seth Developer's Guide{% endtrans %}</a><br/>
+    <span class="linkdescr">{% trans %}Sawtooth Seth platform code and documentation{% endtrans %}</span></p>
+
+  <p class="biglink"><a class="biglink" href="{{ pathto("community") }}">{% trans %}Community{% endtrans %}</a><br/>
+    <span class="linkdescr">{% trans %}join the conversation{% endtrans %}</span></p>
+
+  <p class="biglink"><a class="biglink" href="{{ pathto("contents") }}">{% trans %}Table of Contents{% endtrans %}</a><br/>
+    <span class="linkdescr">{% trans %}detailed list of documentation sections{% endtrans %}</span></p>
+
+<script src="_static/version_switcher.js">
+
+{% endblock %}

@@ -455,7 +455,7 @@ Events
 Ethereum defines a set of LOGX for X in [0, 4] instructions that allow contracts
 to log off-chain data. Solidity uses these instructions to implement an event
 subscription system. To make Seth compatible with both, the LOGX instructions
-generate :doc:`Sawtooth Events
+generate `Sawtooth Events
 </architecture/events_and_transactions_receipts>`. Like Seth's transaction
 receipts, these events contain only the data that is available during
 transaction execution.
