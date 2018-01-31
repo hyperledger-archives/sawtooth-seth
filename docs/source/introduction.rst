@@ -133,7 +133,7 @@ dev_mode and PoET.
     which simulates the secure instructions. This should make it easier for
     the community to work with the software but also forgoes Byzantine fault
     tolerance.  For more information, see
-    `PoET 1.0 Specification <../architecture/poet>`.
+    `PoET 1.0 Specification <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/poet.html>`.
 
 
 Getting Sawtooth
