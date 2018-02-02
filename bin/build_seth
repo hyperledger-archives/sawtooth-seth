@@ -40,6 +40,9 @@ if [ ! -e /tmp/sawtooth-core ];
 then
     git clone https://github.com/hyperledger/sawtooth-core
 fi
+cd sawtooth-core
+git fetch origin
+git checkout 1-0
 cd $top_dir
 # Go
 rsync -aH /tmp/sawtooth-core/sdk/go/src/sawtooth_sdk $seth_dir/src/
