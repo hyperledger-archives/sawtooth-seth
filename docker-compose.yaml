@@ -19,38 +19,24 @@ services:
 
   seth-tp:
     image: sawtooth-seth:latest
-    build: ./
-    volumes:
-      - ./:/project/sawtooth-seth
-    expose:
-      - 4004
     depends_on:
       - validator
     command: seth-tp -vv --connect tcp://validator:4004
-    stop_signal: SIGKILL
 
   block-info-tp:
-    image: hyperledger/sawtooth-block-info-tp:latest
-    expose:
-      - 4004
+    image: hyperledger/sawtooth-block-info-tp:1.0.1
     depends_on:
       - validator
     command: block-info-tp -vv --connect tcp://validator:4004
-    stop_signal: SIGKILL
 
   settings-tp:
-    image: hyperledger/sawtooth-settings-tp:latest
-    expose:
-      - 4004
+    image: hyperledger/sawtooth-settings-tp:1.0.1
     depends_on:
       - validator
-    entrypoint: settings-tp -vv --connect tcp://validator:4004
+    command: settings-tp -vv --connect tcp://validator:4004
 
   validator:
-    image: hyperledger/sawtooth-validator:latest
-    expose:
-      - 4004
-      - 8800
+    image: hyperledger/sawtooth-validator:1.0.1
     ports:
       - 4004
       - 8800
@@ -68,33 +54,24 @@ services:
         sawtooth-validator --endpoint tcp://validator:8800 -v \
             --bind component:tcp://eth0:4004 \
             --bind network:tcp://eth0:8800 \
-    \""
-    stop_signal: SIGKILL
+      \""
 
   rest-api:
-    image: hyperledger/sawtooth-rest-api:latest
-    expose:
-      - 4004
-      - 8080
+    image: hyperledger/sawtooth-rest-api:1.0.1
     ports:
       - 8080:8080
     depends_on:
      - validator
     command: sawtooth-rest-api -v --connect tcp://validator:4004 --bind rest-api:8080
-    stop_signal: SIGKILL
 
-  seth:
-    container_name: seth
+  seth-rpc:
     image: sawtooth-seth:latest
-    volumes:
-      - ./:/project/sawtooth-seth
-    expose:
-      - 3030
-      - 8080
     ports:
       - 3030:3030
-    working_dir: "/project/sawtooth-seth"
-    command: "bash -c \"
+    depends_on:
+      - seth-tp
+      - rest-api
+    command: "bash -c \"\
         seth init http://rest-api:8080 && \
-        tail -f /dev/null\""
-    stop_signal: SIGKILL
+        seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030 \
+      \""
