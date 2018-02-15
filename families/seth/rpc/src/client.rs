@@ -272,7 +272,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         }
     }
 
-    fn make_batch(&self, from: &str, txn: SethTransaction) -> Result<(Batch, String), Error> {
+    pub fn make_batch(&self, from: &str, txn: SethTransaction) -> Result<(Batch, String), Error> {
         let payload = protobuf::Message::write_to_bytes(&txn.to_pb()).map_err(|error|
             Error::ParseError(String::from(
                 format!("Error serializing payload: {:?}", error))))?;

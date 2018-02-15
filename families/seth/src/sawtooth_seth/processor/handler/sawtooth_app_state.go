@@ -136,7 +136,7 @@ func (s *SawtoothAppState) CreateAccount(creator *Account) *Account {
 }
 
 // GetStorage gets the 256 bit value stored with the given key in the given
-// account. panics if the account and key do not both exist.
+// account, returns zero if the key does not exist.
 func (s *SawtoothAppState) GetStorage(address, key Word256) Word256 {
 	addrBytes := address.Bytes()[Word256Length-20:]
 	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
@@ -157,9 +157,8 @@ func (s *SawtoothAppState) GetStorage(address, key Word256) Word256 {
 		}
 	}
 
-	panic(fmt.Sprint(
-		"Key %v not set for account %v", key.Bytes(), vmAddress,
-	))
+	logger.Debugf("Key %v not set for account %v", key.Bytes(), vmAddress)
+	return Zero256
 }
 
 func (s *SawtoothAppState) SetStorage(address, key, value Word256) {
