@@ -27,7 +27,7 @@ message EvmStateAccount {
     bytes address = 1;
     int64 balance = 2;
     bytes code = 3;
-    int64 nonce = 4;
+    uint64 nonce = 4;
     EvmPermissions permissions = 5;
 
     // In a future iteration, a storage_root field may be added so account data

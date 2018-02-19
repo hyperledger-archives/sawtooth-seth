@@ -65,13 +65,23 @@ pub fn send_transaction<T>(params: Params, mut client: ValidatorClient<T>) -> Re
         Error::invalid_params("`from` not set")))?;
     let data = transform::get_bytes_from_map(&txn, "data").and_then(|f| f.ok_or_else(||
         Error::invalid_params("`data` not set")))?;
+    let txn_count = match client.get_account(from.clone(), BlockKey::Latest) {
+        Ok(Some(a)) => a.nonce,
+        Ok(None) => {
+            return Err(Error::invalid_params("Invalid `from` address"));
+        },
+        Err(e) => {
+            error!("{}", e);
+            return Err(Error::internal_error())
+        },
+    };
 
     // Optional Arguments
     let to = transform::get_bytes_from_map(&txn, "to")?;
     let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90000))?;
     let gas_price = transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
     let value = transform::get_u64_from_map(&txn, "value").map(|g| g.unwrap_or(0))?;
-    let nonce = transform::get_u64_from_map(&txn, "nonce").map(|g| g.unwrap_or(0))?;
+    let nonce = transform::get_u64_from_map(&txn, "nonce").map(|g| g.unwrap_or(txn_count))?;
 
     let txn = if let Some(to) = to {
         // Message Call

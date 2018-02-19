@@ -29,7 +29,7 @@ type Account struct {
 	Address Word256
 	Balance int64
 	Code    []byte
-	Nonce   int64
+	Nonce   uint64
 	Other   interface{} // For holding all other data.
 
 	Permissions ptypes.AccountPermissions
