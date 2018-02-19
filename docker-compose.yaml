@@ -19,24 +19,18 @@ services:
 
   seth-tp:
     image: sawtooth-seth:latest
-    depends_on:
-      - validator
     command: seth-tp -vv --connect tcp://validator:4004
 
   block-info-tp:
-    image: hyperledger/sawtooth-block-info-tp:1.0.1
-    depends_on:
-      - validator
+    image: hyperledger/sawtooth-block-info-tp:1.0
     command: block-info-tp -vv --connect tcp://validator:4004
 
   settings-tp:
-    image: hyperledger/sawtooth-settings-tp:1.0.1
-    depends_on:
-      - validator
+    image: hyperledger/sawtooth-settings-tp:1.0
     command: settings-tp -vv --connect tcp://validator:4004
 
   validator:
-    image: hyperledger/sawtooth-validator:1.0.1
+    image: hyperledger/sawtooth-validator:1.0
     ports:
       - 4004
       - 8800
@@ -57,20 +51,15 @@ services:
       \""
 
   rest-api:
-    image: hyperledger/sawtooth-rest-api:1.0.1
+    image: hyperledger/sawtooth-rest-api:1.0
     ports:
       - 8080:8080
-    depends_on:
-     - validator
     command: sawtooth-rest-api -v --connect tcp://validator:4004 --bind rest-api:8080
 
   seth-rpc:
     image: sawtooth-seth:latest
     ports:
       - 3030:3030
-    depends_on:
-      - seth-tp
-      - rest-api
     command: "bash -c \"\
         seth init http://rest-api:8080 && \
         seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030 \
