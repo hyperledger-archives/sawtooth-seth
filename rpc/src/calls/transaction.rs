@@ -257,6 +257,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
         .and_then(|(v,): (String,)| v.get(2..)
             .map(|v| String::from(v))
             .ok_or_else(|| Error::invalid_params("Invalid transaction hash, must have 0x")))?;
+    debug!("XXX client.get_receipts {}", txn_id);
     let receipt = match client.get_receipts(&[txn_id.clone()]) {
         Err(ClientError::NoResource) => {
             return Ok(Value::Null);
@@ -273,6 +274,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
             return Err(Error::internal_error());
         },
     };
+    debug!("XXX client.get_transaction_and_block {}", txn_id);
     let block = client.get_transaction_and_block(&TransactionKey::Signature(txn_id.clone()))
         .map_err(|error| {
             error!("Error getting block and transaction for txn `{}`: {}", txn_id, error);
@@ -285,6 +287,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
         error!("Error parsing block header: {}", error);
         Error::internal_error()
     })?;
+    debug!("XXX block num {}", block_header.block_num);
     let index = block.get_batches().iter()
         .flat_map(|batch| batch.get_transactions().iter())
         .position(|txn| txn.header_signature == txn_id)
@@ -293,6 +296,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
                 txn_id, block.header_signature);
             Error::internal_error()})?;
 
+    debug!("XXX txn index is {}, block signature {}", index, &block.header_signature);
     Ok(transform::make_txn_receipt_obj(
         &receipt, index as u64, &block.header_signature, block_header.block_num))
 }

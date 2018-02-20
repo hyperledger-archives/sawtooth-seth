@@ -253,8 +253,11 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         let correlation_id = uuid::Uuid::new_v4().to_string();
 
+        debug!("XXX sending {:?} ({:?})", msg_type, msg);
         let mut future = self.sender.send(msg_type, &correlation_id, &msg_bytes)?;
+        debug!("XXX sent {:?}", msg_type);
         let response_msg = future.get()?;
+        debug!("XXX got {:?}", msg_type);
         protobuf::parse_from_bytes(&response_msg.content).map_err(|error|
             Error::ParseError(String::from(format!("Error parsing response: {:?}", error))))
     }
@@ -472,6 +475,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                 response = self.send_request(message_type, &request)?;
             },
         };
+        debug!("XXX returned response {:?}", response.status);
 
         match response.status {
             ClientBlockGetResponse_Status::STATUS_UNSET=> {
