@@ -68,10 +68,14 @@ fn main() {
         (@arg unlock: --unlock... +takes_value
          "The aliases of the accounts to unlock.")
         (@arg verbose: -v... "Increase the logging level.")
+        (@arg threads: --threads +takes_value
+         "The number of server threads.")
     ).get_matches();
 
     let bind = arg_matches.value_of("bind")
         .unwrap_or("127.0.0.1:3030");
+    let threads = value_t!(arg_matches.value_of("threads"), usize)
+        .unwrap_or(SERVER_THREADS);
     let connect = arg_matches.value_of("connect")
         .unwrap_or("tcp://127.0.0.1:4004");
     let accounts: Vec<Account> = arg_matches.values_of_lossy("unlock").unwrap_or_else(||
@@ -109,7 +113,7 @@ fn main() {
 
     let endpoint: std::net::SocketAddr = bind.parse().unwrap();
     let server = ServerBuilder::new(io)
-        .threads(SERVER_THREADS)
+        .threads(threads)
         .start_http(&endpoint)
         .unwrap();
 
