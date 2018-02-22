@@ -15,18 +15,16 @@
 
 # Description:
 #   Builds the environment needed to build the Sawtooth Seth docs
-#   Running the image will put the Sawtooth Seth docs in
-#   sawtooth-seth/docs/build on your local machine.
+#   Running the image will put the Sawtooth Seth docs in the
+#   ./docs/build/ directory on your local machine.
 #
 # Build:
-#   $ cd sawtooth-seth
 #   $ docker build . -f sawtooth-build-docs -t sawtooth-build-docs
 #
 # Run:
-#   $ cd sawtooth-seth
 #   $ docker run -v $(pwd):/project/sawtooth-seth sawtooth-build-docs
 
-FROM sawtooth-seth
+FROM sawtooth-dev-seth
 
 RUN echo "deb http://repo.sawtooth.me/ubuntu/ci xenial universe" >> /etc/apt/sources.list \
  && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8AA7AF1F1091A5FD \
