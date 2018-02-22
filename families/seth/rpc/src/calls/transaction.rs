@@ -20,6 +20,8 @@ use jsonrpc_core::{Params, Value, Error};
 use serde_json::Map;
 use tiny_keccak;
 
+use std::str::FromStr;
+
 use client::{
     ValidatorClient,
     BlockKey,
@@ -170,21 +172,16 @@ pub fn get_transaction_by_block_number_and_index<T>(params: Params, client: Vali
     let (block_num, index): (String, String) = match params.parse() {
         Ok(t) => t,
         Err(_) => {
-            return Err(Error::invalid_params("Takes [blockNum: DATA(64), index: QUANTITY]"));
+            return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG, index: QUANTITY]"));
         },
     };
 
-    if block_num.len() < 3 {
-        return Err(Error::invalid_params("Invalid block number"));
-    }
-    let block_num = match u64::from_str_radix(&block_num[2..], 16) {
-        Ok(num) => num,
-        Err(error) => {
-            return Err(Error::invalid_params(
-                format!("Failed to parse block number: {:?}", error)));
+    let block_key = match BlockKey::from_str(block_num.as_str()) {
+        Ok(k) => k,
+        Err(_) => {
+            return Err(Error::invalid_params("Invalid block number"));
         },
     };
-
     if index.len() < 3 {
         return Err(Error::invalid_params("Invalid transaction index"));
     }
@@ -196,7 +193,7 @@ pub fn get_transaction_by_block_number_and_index<T>(params: Params, client: Vali
         },
     };
 
-    get_transaction(client, &TransactionKey::Index((index, BlockKey::Number(block_num))))
+    get_transaction(client, &TransactionKey::Index((index, block_key)))
 }
 
 fn get_transaction<T>(mut client: ValidatorClient<T>, txn_key: &TransactionKey) -> Result<Value, Error> where T: MessageSender {

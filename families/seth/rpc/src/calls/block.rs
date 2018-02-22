@@ -19,8 +19,9 @@ use jsonrpc_core::{Params, Value, Error};
 use serde_json::Map;
 use protobuf;
 
-use error;
 use requests::{RequestHandler};
+
+use std::str::FromStr;
 
 use client::{
     ValidatorClient,
@@ -30,8 +31,9 @@ use client::{
 use transform;
 
 use sawtooth_sdk::messaging::stream::*;
-
 use sawtooth_sdk::messages::block::BlockHeader;
+
+use transactions::TransactionKey;
 
 pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: MessageSender {
     let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
@@ -63,7 +65,7 @@ pub fn block_number<T>(_params: Params, mut client: ValidatorClient<T>) -> Resul
     Ok(Value::String(format!("{:#x}", block_header.block_num).into()))
 }
 
-fn get_block_obj<T>(block_key: BlockKey, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+fn get_block_obj<T>(block_key: BlockKey, full: bool, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     let block = match client.get_block(block_key) {
         Ok(b) => b,
         Err(error) => match error {
@@ -101,7 +103,18 @@ fn get_block_obj<T>(block_key: BlockKey, mut client: ValidatorClient<T>) -> Resu
     let mut transactions = Vec::new();
     let mut gas: u64 = 0;
     for (txn_id, receipt) in receipts.into_iter() {
-        transactions.push(transform::hex_prefix(&txn_id));
+        if full {
+            let (txn, _) = match client.get_transaction_and_block(&TransactionKey::Signature(txn_id)) {
+                Ok(t) => t,
+                Err(error) => {
+                    error!("Error getting transactions: {:?}", error);
+                    return Err(Error::internal_error());
+                },
+            };
+            transactions.push(transform::make_txn_obj_no_block(txn))
+        } else {
+            transactions.push(transform::hex_prefix(&txn_id));
+        }
         gas += receipt.gas_used;
     }
     bob.insert(String::from("transactions"), Value::Array(transactions));
@@ -158,11 +171,8 @@ pub fn get_block_by_hash<T>(params: Params, client: ValidatorClient<T>) -> Resul
             return Err(Error::invalid_params("Invalid block hash, must have 0x"));
         }
     };
-    if full {
-        return Err(error::not_implemented());
-    }
 
-    get_block_obj(BlockKey::Signature(block_hash), client)
+    get_block_obj(BlockKey::Signature(block_hash), full, client)
 }
 
 pub fn get_block_by_number<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
@@ -170,27 +180,17 @@ pub fn get_block_by_number<T>(params: Params, client: ValidatorClient<T>) -> Res
     let (block_num, full): (String, bool) = match params.parse() {
         Ok(t) => t,
         Err(_) => {
-            return Err(Error::invalid_params("Takes [blockNum: QUANTITY, full: BOOL]"));
+            return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG, full: BOOL]"));
         },
     };
 
-    if block_num.len() < 3 {
-        return Err(Error::invalid_params("Invalid block number"));
-    }
-
-    let block_num = match u64::from_str_radix(&block_num[2..], 16) {
-        Ok(num) => num,
-        Err(error) => {
-            return Err(Error::invalid_params(
-                format!("Failed to parse block number: {:?}", error)));
+    let block_key = match BlockKey::from_str(block_num.as_str()) {
+        Ok(k) => k,
+        Err(_) => {
+            return Err(Error::invalid_params("Invalid block number"));
         },
     };
-
-    if full {
-        return Err(error::not_implemented());
-    }
-
-    get_block_obj(BlockKey::Number(block_num), client)
+    get_block_obj(block_key, full, client)
 }
 
 // Returns the number of transactions in a block
@@ -216,20 +216,14 @@ pub fn get_block_transaction_count_by_number<T>(params: Params, client: Validato
     let (block_num,): (String,) = match params.parse() {
         Ok(t) => t,
         Err(_) => {
-            return Err(Error::invalid_params("Takes [blockNum: QUANTITY]"));
+            return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG]"));
         },
     };
-
-    if block_num.len() < 3 {
-        return Err(Error::invalid_params("Invalid block number"));
-    }
-
-    let block_num = match u64::from_str_radix(&block_num[2..], 16) {
-        Ok(num) => num,
-        Err(error) => {
-            return Err(Error::invalid_params(
-                format!("Failed to parse block number: {:?}", error)));
+    let block_key = match BlockKey::from_str(block_num.as_str()) {
+        Ok(k) => k,
+        Err(_) => {
+            return Err(Error::invalid_params("Invalid block number"));
         },
     };
-    get_block_transaction_count(BlockKey::Number(block_num), client)
+    get_block_transaction_count(block_key, client)
 }
