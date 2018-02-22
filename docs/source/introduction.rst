@@ -44,46 +44,27 @@ in a *transaction family*. While we expect users to build custom transaction
 families that reflect the unique requirements of their ledgers, we provide
 several core transaction families as models\:
 
-    * Validator Registry - Provides a methodology
+    * *Validator Registry* - Provides a methodology
       for registering ledger services.
 
-    * IntegerKey - Used for testing deployed ledgers.
-
-    * Settings - Provides a reference implementation for storing
+    * *Settings* - Provides a reference implementation for storing
       on-chain configuration settings.
 
-    * Identity - Handles on-chain permissioning for transactor
+    * *Identity* - Handles on-chain permissioning for transactor
       and validator keys to streamline managing identities
       for lists of public keys.
 
 Additional transaction families provide models for specific areas\:
 
-    * Smallbank - Handles performance analysis for benchmarking
-      and performance testing when comparing the performance of
-      blockchain systems.
-      This transaction family is based on the H-Store Smallbank benchmark.
-
-    * Seth - Enables the creation and execution of smart contracts.
+    * *Seth* - Enables the creation and execution of smart contracts.
       This transaction family integrates the Hyperledger Burrow
       implementation of the Ethereum Virtual Machine (EVM)
       into the Hyperledger Sawtooth framework using the
       Sawtooth Go SDK.
 
-    * BlockInfo - Provides a methodology for storing information
+    * *BlockInfo* - Provides a methodology for storing information
       about a configureable number of historic blocks.
       This transaction family is used for Seth smart contracts.
-
-We also provide several example transaction families to demonstrate
-Sawtooth functionality\:
-
-    * XO - Allows users to play Tic-Tac-Toe, also known as
-      "noughts and crosses" or "Xs and Os".
-
-    * Track and Trade - Provides a methodology for users to track goods
-      as they move through a supply chain.
-      This transaction family includes the history of ownership and
-      custodianship, as well as histories for a variety of properties
-      such as temperature and location.
 
 Consensus
 =========
@@ -102,8 +83,8 @@ short-term finality is less important.
 
 Algorithms for achieving consensus with arbitrary faults generally require
 some form of voting among a known set of participants. Two general approaches
-have been proposed. The first, often referred to as "Nakamoto consensus",
-elects a leader through some form of “lottery”. The leader then proposes a
+have been proposed. The first, often referred to as 'Nakamoto consensus',
+elects a leader through some form of 'lottery'. The leader then proposes a
 block that can be added to a chain of previously committed blocks. In Bitcoin,
 the first participant to successfully solve a cryptographic puzzle wins
 the leader-election lottery. The elected leader broadcasts the new block
@@ -122,40 +103,35 @@ participation.
 Sawtooth abstracts the core concepts of consensus and isolates consensus
 from transaction semantics. The interface supports plugging in various
 consensus implementations. Sawtooth provides two such implementations:
-dev_mode and PoET.
+dev_mode and PoET\:
 
-  * Dev_mode is a simplified random leader algorithm that is useful
+  * *dev_mode* is a simplified random leader algorithm that is useful
     for developers and test networks that require only crash fault tolerance.
 
-  * PoET, short for “Proof of Elapsed Time" is a Nakamoto-style consensus
+  * *PoET* (short for Proof of Elapsed Time) is a Nakamoto-style consensus
     algorithm. It is designed to be a production-grade protocol capable of
     supporting large network populations. Sawtooth includes an implementation
     which simulates the secure instructions. This should make it easier for
     the community to work with the software but also forgoes Byzantine fault
     tolerance.  For more information, see
-    `PoET 1.0 Specification <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/poet.html>`.
+    `PoET 1.0 Specification <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/poet.html>`_.
 
 
 Getting Sawtooth
-=====================
+================
 
-The Sawtooth platform is distributed in source code form with
-an Apache license. You can get the code `here
-<https://github.com/hyperledger/sawtooth-core>`_ and start building your own
-distributed ledger.
+The Sawtooth platform is distributed in source code form under
+the Apache 2.0 license.
 
 Repositories
 ============
 
-One repository contains all of the the code needed:
+The code needed is in two repositories\:
 
-sawtooth-core
-    Contains fundamental classes used throughout the Sawtooth project, as well as:
+  * `sawtooth-core <https://github.com/hyperledger/sawtooth-core>`_
+    Contains SDK classes for the Sawtooth project.
 
-    * The implementation of the validator process which runs on each node
-    * SDKs for writing transaction processing or validation logic in a variety
-      of languages
-    * Tools including a Vagrant environment for easily launching a network of
-      validators
-    * Dockerfiles to support development or launching a network of validators
-    * Source files for this documentation
+  * `sawtooth-seth <https://github.com/hyperledger/sawtooth-seth>`_
+    Files and documentation for a Sawtooth Seth development environment with
+    an implementation of the Ethereum virtual machine RPC endpoint and the
+    Seth transaction processor.
