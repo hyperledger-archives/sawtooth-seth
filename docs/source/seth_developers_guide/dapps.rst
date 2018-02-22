@@ -1,6 +1,4 @@
 ..
-   Copyright 2017 Intel Corporation
-
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -16,9 +14,6 @@
 ****************
 Developing DApps
 ****************
-
-.. TODO:
-    [ ] Lookup nonce when sending a transaction
 
 Starting Seth RPC
 =================
@@ -60,7 +55,8 @@ forwarded to your host's port, so you can send requests from your host. For
 example, you can get the current block number by running curl from a prompt on
 your host with::
 
-  $ curl -d '{"jsonrpc": "2.0", "method": "eth_blockNumber", "id": 1}' -H "Content-Type: application/json" localhost:3030
+  $ curl -d '{"jsonrpc": "2.0", "method": "eth_blockNumber", "id": 1}' \
+  -H "Content-Type: application/json" localhost:3030
 
 Deploying Contracts
 ===================
@@ -80,7 +76,9 @@ you do not already know the address, you can get it with ``seth account list``.
 Once you have the account address, you can deploy a contract through the
 ``seth-rpc`` server with the ``eth_sendTransaction`` method::
 
-  $ curl -d '{"jsonrpc": "2.0", "method": "eth_sendTransaction", "id": 2, "params": [{"from": "0x{address}", "data": "0x{contract}"}]}' -H "Content-Type: application/json" localhost:3030
+  $ curl -d '{"jsonrpc": "2.0", "method": "eth_sendTransaction", "id": 2, \
+  "params": [{"from": "0x{address}", "data": "0x{contract}"}]}' \
+  -H "Content-Type: application/json" localhost:3030
 
 You should substitute ``{address}`` with the address of the unlocked account and
 ``{contract}`` with the contract deployment code. The return value of this call
@@ -88,7 +86,9 @@ is the id of the contract creation transaction with a ``0x`` prefix. You can use
 this id to get the result of the contract creation transaction with
 ``eth_getTransactionReceipt``::
 
-  $ curl -d '{"jsonrpc": "2.0", "method": "eth_getTransactionReceipt", "id": 3, "params": [0x{transaction-id}}", "data": "0x{contract}"}]}' -H "Content-Type: application/json" localhost:3030
+  $ curl -d '{"jsonrpc": "2.0", "method": "eth_getTransactionReceipt", "id": 3, \
+  "params": [0x{transaction-id}}", "data": "0x{contract}"}]}' \
+  -H "Content-Type: application/json" localhost:3030
 
 where ``{transaction-id}`` should  be substituted with the transaction id
 returned by ``eth_sendTransaction``. The return value is a JSON object. If the
@@ -108,7 +108,9 @@ Calling Contracts
 Once a contract has been deployed, it can be called with the
 ``eth_sendTransaction`` method::
 
-  $ curl -d '{"jsonrpc": "2.0", "method": "eth_sendTransaction", "id": 2, "params": [{"from": "0x{address}", "data": "0x{input}", "to": "0x{contract}"}]}' -H "Content-Type: application/json" localhost:3030
+  $ curl -d '{"jsonrpc": "2.0", "method": "eth_sendTransaction", "id": 2, \
+  "params": [{"from": "0x{address}", "data": "0x{input}", "to": "0x{contract}"}]}' \
+  -H "Content-Type: application/json" localhost:3030
 
 You should substitute ``{address}`` with the address of the unlocked account,
 ``{input}`` with the input data for the contract and ``{contract}`` with the
@@ -152,7 +154,7 @@ Compatibility Notes
 When requesting block objects by hash, the block hash must be 64 bytes instead
 of 32 bytes.
 
-When returning block objects, the following fields always have the zero value,
+When returning block objects, the following fields always have a zero value,
 since they do not have a corollary in Sawtooth:
 
 * "nonce"

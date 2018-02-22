@@ -1,6 +1,4 @@
 ..
-   Copyright 2017 Intel Corporation
-
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -62,7 +60,8 @@ them. For the REST API, do::
 You should receive a JSON object containing a list of blocks. For the Seth-RPC
 server, do::
 
-    $ curl http://0.0.0.0:3030 -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber"}' -H "Content-Type: application/json"
+    $ curl http://0.0.0.0:3030 -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber"}' \
+    -H "Content-Type: application/json"
 
 You should receive a JSON object with the number of the current block, in hex,
 in the "result" key.

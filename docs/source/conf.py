@@ -63,9 +63,9 @@ source_suffix = '.rst'
 master_doc = 'contents'
 
 # General information about the project.
-project = u'Sawtooth'
-copyright = u'2015-2017, Intel Corporation'
-author = u'Intel Corporation'
+project = u'Sawtooth Seth'
+copyright = u'2017-2018'
+author = u'Hyperledger Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -226,7 +226,7 @@ html_show_sphinx = False
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'SawtoothLakeDoc'
+htmlhelp_basename = 'SawtoothSethDoc'
 
 PREAMBLE = ''
 
@@ -250,8 +250,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'sawtooth.tex', u'Sawtooth Documentation',
-   u'Intel Corporation', 'manual')
+  (master_doc, 'sawtooth-seth.tex', u'Sawtooth Seth Documentation',
+   u'Hyperledger Foundation', 'manual')
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -280,7 +280,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'intelmaidenlane', u'Sawtooth Documentation',
+    (master_doc, 'hyperledger', u'Sawtooth Seth Documentation',
      [author], 1)
 ]
 
@@ -294,8 +294,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'SawtoothLake', u'Sawtooth Documentation',
-   author, 'SawtoothLake', 'One line description of project.',
+  (master_doc, 'SawtoothSeth', u'Sawtooth Seth Documentation',
+   author, 'SawtoothSeth', 'Hyperledger Foundation.',
    'Miscellaneous'),
 ]
 

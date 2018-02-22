@@ -1,6 +1,4 @@
 ..
-   Copyright 2017 Intel Corporation
-
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -39,7 +37,7 @@ account
   permissions and disabling it prevents new external accounts from being created
 
 all
-  Shorthand for "all permissions". This is not an actual permission, but can
+  Shorthand for 'all permissions'. This is not an actual permission, but can
   be used when setting permissions with ``seth``.
 
 Each permission can be set to either allow or deny the action for individual

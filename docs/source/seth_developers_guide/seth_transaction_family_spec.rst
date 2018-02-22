@@ -1,6 +1,4 @@
 ..
-   Copyright 2017 Intel Corporation
-
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -31,8 +29,8 @@ Sawtooth are:
    and Sawtooth Global State addresses.
 2. Define and implement an efficient method for maintaining accounts and
    account storage in Sawtooth Global State.
-3. Define and implement an “EVM-Wrapper” at the Transaction Processor level for
-   handling additional “Ethereum-like” and “Burrow-like” features not
+3. Define and implement an 'EVM-Wrapper' at the Transaction Processor level for
+   handling additional 'Ethereum-like' and 'Burrow-like' features not
    implemented by the EVM, including:
 
     a. Handling account creation transactions and storing the resulting code in
@@ -455,11 +453,11 @@ Events
 Ethereum defines a set of LOGX for X in [0, 4] instructions that allow contracts
 to log off-chain data. Solidity uses these instructions to implement an event
 subscription system. To make Seth compatible with both, the LOGX instructions
-generate `Sawtooth Events <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/events_and_transactions_receipts.html>`.
+generate `Sawtooth Events <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/events_and_transactions_receipts.html>`_.
 Like Seth's transaction receipts, these events contain only the data that is
 available during transaction execution.
 
-The ``event_type`` field is set to ``“seth_log_event”``. The ``event_data``
+The ``event_type`` field is set to ``"seth_log_event"``. The ``event_data``
 field contains a copy of the data argument passed to the EVM LOGX instruction.
 an individual transaction contains the following protobuf message. The
 ``attributes`` field contains:

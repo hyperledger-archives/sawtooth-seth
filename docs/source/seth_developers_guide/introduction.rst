@@ -1,6 +1,4 @@
 ..
-   Copyright 2017 Intel Corporation
-
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -17,8 +15,8 @@
 Introduction
 ************
 
-The primary goal of the Sawtooth-Ethereum integration project, affectionately
-dubbed "Seth", is to add support for running Ethereum Virtual Machine smart
+The primary goal of the Sawtooth-Ethereum integration project 'Seth'
+is to add support for running Ethereum Virtual Machine smart
 contracts to the Hyperledger Sawtooth platform. In order to make this possible,
 the Hyperledger Sawtooth project worked with the `Hyperledger Burrow`_ project
 to integrate their EVM implementation, the Burrow EVM, into with the Hyperledger
@@ -40,7 +38,7 @@ Seth is composed of three components:
 
 The ``seth`` client is the user-facing CLI tool for interacting with a Sawtooth
 network that has Seth deployed on it. The ``seth-tp`` transaction processor is
-the component that implements "Ethereum-like" functionality within the Sawtooth
+the component that implements 'Ethereum-like' functionality within the Sawtooth
 platform. Running Seth on a Sawtooth network is equivalent to connecting a
 ``seth-tp`` process to all validator nodes. The ``seth-rpc`` server is an HTTP
 server that acts as an adapter between the `Ethereum JSON RPC API`_ and the
@@ -58,7 +56,7 @@ Sawtooth network, there are some differences to be aware of:
 #. The public Ethereum network depends on economic incentives to limit execution
    resources. On the other hand, the Hyperledger Burrow project depends on
    permissions to control and limit execution resources. Seth currently only
-   supports the permissioned-network model. As a consequence, "gas" is free but
+   supports the permissioned-network model. As a consequence, 'gas' is free but
    finite and permissions can be applied to all accounts.
 #. Transaction execution within Sawtooth is modularized so that transactions
    cannot have knowledge of being executed within the context of a block chain.
