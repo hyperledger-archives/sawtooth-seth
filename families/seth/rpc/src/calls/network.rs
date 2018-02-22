@@ -40,10 +40,15 @@ pub fn version<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Va
     Ok(Value::String(String::from(SAWTOOTH_NET_VERSION)))
 }
 
-// Since this is only for HTTP right now, there won't be any connected peers
-pub fn peer_count<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+// Return the number of actual Sawtooth peers
+pub fn peer_count<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("net_peerCount");
-    Ok(Value::String(format!("{:#x}", 0)))
+    let n = match client.get_peers() {
+        Err(_) => 0,
+        Ok(n) => n,
+    };
+
+    Ok(Value::String(format!("{:#x}", n)))
 }
 
 // Return whether we are listening for connections, which is always true

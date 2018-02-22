@@ -58,6 +58,11 @@ use sawtooth_sdk::messages::client_batch_submit::{
 use sawtooth_sdk::messages::client_list_control::{
     ClientPagingControls,
 };
+use sawtooth_sdk::messages::client_peers::{
+    ClientPeersGetRequest,
+    ClientPeersGetResponse,
+    ClientPeersGetResponse_Status,
+};
 use sawtooth_sdk::messages::transaction::{Transaction as TransactionPb, TransactionHeader};
 use sawtooth_sdk::messages::batch::{Batch, BatchHeader};
 use sawtooth_sdk::messages::block::{BlockHeader};
@@ -670,4 +675,25 @@ impl<S: MessageSender> ValidatorClient<S> {
                 .map(|block_header: BlockHeader|
                     String::from(block_header.state_root_hash)))
     }
+
+
+    pub fn get_peers(&mut self) -> Result<usize, Error> {
+        let request = ClientPeersGetRequest::new();
+        let response: ClientPeersGetResponse =
+            self.send_request(Message_MessageType::CLIENT_PEERS_GET_REQUEST, &request)?;
+
+        let peers = match response.status {
+            ClientPeersGetResponse_Status::STATUS_UNSET => {
+                return Err(Error::ValidatorError);
+            },
+            ClientPeersGetResponse_Status::OK => response.peers,
+            ClientPeersGetResponse_Status::ERROR => {
+                return Err(Error::ValidatorError);
+            },
+        };
+
+        let n = peers.iter().count();
+        Ok(n)
+    }
+
 }
