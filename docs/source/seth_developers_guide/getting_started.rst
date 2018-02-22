@@ -20,26 +20,26 @@ Getting Started
 Getting Seth
 ============
 
-Currently, Seth has not been wrapped up in a convenient package, so the best way
-run Seth is to build it from source. Building Seth requires an environment that
-has the Docker Engine installed and that can run bash scripts.
+Seth is packaged separately from the rest of the Sawtooth project. Currently
+the best way to run Seth is to build it from source. Building Seth requires
+an environment that has the Docker Engine installed and that can run bash
+scripts.
 
-To get Seth, clone the Sawtooth repo and then build the seth portion of the
-project and the core portion of the project written in Python::
+To get Seth, clone the GitHub repository and run the build script::
 
-    $ git clone https://github.com/hyperledger/sawtooth-core
-    $ cd sawtooth-core/
-    $ ./bin/build_all -t seth -t python
+    $ git clone https://github.com/hyperledger/sawtooth-seth
+    $ cd sawtooth-seth
+    $ ./bin/build_all
+
+This will produce the Docker image that we will use to interact with Seth.
 
 Starting Up Seth
 ================
 
-This will produce a number of Docker images that we will use to interact with
-Seth and Sawtooth. The repo also includes a Docker Compose file for starting up
-a development environment based on these Docker images. To start the
-environment, do::
+The repo also includes a Docker Compose file for starting up a development
+environment with Sawtooth and Seth. To start the environment, do::
 
-    $ docker-compose -f docker/compose/sawtooth-seth.yaml up
+    $ docker-compose up
 
 This starts up all the components necessary to begin interacting with Seth. Each
 of the components is started inside of a Docker container. The following ports
@@ -84,43 +84,40 @@ Seth can understand. Seth accepts secp256k1 private keys in one of two formats:
 
 The following shows you how to generate a PEM encoded key that has been
 encrypted with a password. If you would like to use a private key generated with
-the `sawtooth keygen` command, it must be in the sawtooth-core/ directory that
-you ran docker-compose from, because this is the only host directory mounted on
-the seth docker container.
+the ``sawtooth keygen`` command, it must be copied from the ``validator``
+container where it was created.
 
 OpenSSL is already installed in the Docker container running the Seth-RPC
 server, so we can just connect to the container and run the command from there.
 Do the following to start up a shell in that container::
 
-    $ docker exec -it seth bash
+    $ docker exec -it seth-rpc bash
 
-You should now be logged in as root in the container and your working directory
-should be /project/sawtooth-core. As mentioned above, this is the sawtooth-core
-directory on your host, so any files created in this directory will persist
-after the container is destroyed. From this shell, you can generate a new,
-password-encrypted key with the following::
+You should now be logged in as root in the container. From this shell, you can
+generate a new, password-encrypted key with the following::
 
-    $ openssl ecparam -genkey -name secp256k1 | openssl ec -out mykey.pem -aes128
+    # openssl ecparam -genkey -name secp256k1 | openssl ec -out alias.pem -aes128
 
-You can use any encryption cipher by changing the final `-aes128` flag or omit
-the flag and to generate a key without it being encrypted.
+You can use any encryption cipher by changing the final ``-aes128`` flag or omit
+the flag and to generate a key without it being encrypted. Note that the name of
+the key file must be the same as the alias the account is imported as.
 
 Now we are ready to set up the account on the network. To do this, we need to
-use the `seth` command. From the prompt where you generated the key, run::
+use the ``seth`` command. From the prompt where you generated the key, run::
 
-    $ seth account import mykey.pem myalias
+    # seth account import alias.pem alias
 
 This will copy your key to an internal directory and create an alias for the key
 which you will use to reference the key in future commands. Finally, to submit
 a transaction to the network to create your account, do::
 
-    $ seth account create myalias --wait
+    # seth account create --nonce=0 --wait alias
 
 The command should print the address of your newly created account upon success.
 This will be a (40 character) hex string. You can verify that the account has
 been created by running::
 
-    $ seth show account {address}
+    # seth show account {address}
 
 This will print out some information stored in state about your account. Since
 this is not a contract account, there won't be a lot there but the address of
