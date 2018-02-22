@@ -53,6 +53,7 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: Message
     methods.push((String::from("eth_estimateGas"), estimate_gas));
     methods.push((String::from("eth_sign"), sign));
     methods.push((String::from("eth_call"), call));
+    methods.push((String::from("eth_syncing"), syncing));
 
     methods
 }
@@ -345,4 +346,10 @@ pub fn call<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value
     info!("eth_call");
     // Implementing this requires running the EVM, which is not possible within the RPC.
     Err(error::not_implemented())
+}
+
+// Always return false
+pub fn syncing<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+    info!("eth_syncing");
+    Ok(Value::Bool(false))
 }
