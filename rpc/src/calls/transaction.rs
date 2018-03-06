@@ -348,8 +348,37 @@ pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Erro
 
 pub fn call<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_call");
-    // Implementing this requires running the EVM, which is not possible within the RPC.
-    Err(error::not_implemented())
+    let (txn,): (Map<String, Value>,) = params.parse().map_err(|_|
+        Error::invalid_params("Takes [txn: OBJECT]"))?;
+
+    // Required arguments
+    let to = transform::get_string_from_map(&txn, "to").and_then(|f| f.ok_or_else(||
+        Error::invalid_params("`to` not set")))?;
+
+    // Optional Arguments
+    let from = transform::get_bytes_from_map(&txn, "from")?;
+    let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90000))?;
+    let gas_price = transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
+    let value = transform::get_u64_from_map(&txn, "value").map(|g| g.unwrap_or(0))?;
+    let nonce = transform::get_u64_from_map(&txn, "nonce").map(|g| g.unwrap_or(0))?;
+    let data = transform::get_bytes_from_map(&txn, "data")?;
+
+    // Message Call
+    let mut txn = MessageCallTxnPb::new();
+    txn.set_to(to);
+    txn.set_data(data);
+    txn.set_gas_limit(gas);
+    txn.set_gas_price(gas_price);
+    txn.set_value(value);
+    txn.set_nonce(nonce);
+    SethTransaction::MessageCall(txn)
+
+    let txn_signature = client.send_transaction(&from, txn).map_err(|error| {
+        error!("{:?}", error);
+        Error::internal_error()
+    })?;
+
+    Ok(transform::hex_prefix(&txn_signature))
 }
 
 // Always return false
