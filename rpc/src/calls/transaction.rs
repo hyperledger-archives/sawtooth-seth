@@ -346,38 +346,62 @@ pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Erro
     Ok(transform::hex_prefix(&signature))
 }
 
-pub fn call<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+pub fn call<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_call");
-    let (txn,): (Map<String, Value>,) = params.parse().map_err(|_|
-        Error::invalid_params("Takes [txn: OBJECT]"))?;
+    let (call, block_num): (Map<String, Value>, String) = match params.parse() {
+        Ok(t) => t,
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
+            return Err(Error::invalid_params("Takes [call: OBJECT, blockNum: QUANTITY|TAG]"));
+        },
+    };
+    let block_key = match BlockKey::from_str(block_num.as_str()) {
+        Ok(k) => k,
+        Err(_) => {
+            return Err(Error::invalid_params("Invalid block number"));
+        },
+    };
 
     // Required arguments
-    let to = transform::get_string_from_map(&txn, "to").and_then(|f| f.ok_or_else(||
+    let to = transform::get_bytes_from_map(&call, "to").and_then(|f| f.ok_or_else(||
         Error::invalid_params("`to` not set")))?;
+    let from = transform::get_string_from_map(&call, "from").map(|g| g.unwrap_or(transform::bytes_to_hex_str(&to)))?;
+    let txn_count = match client.get_account(from.clone(), block_key) {
+        Ok(Some(a)) => a.nonce,
+        Ok(None) => {
+            return Err(Error::invalid_params("Invalid `from` address"));
+        },
+        Err(e) => {
+            error!("{}", e);
+            return Err(Error::internal_error())
+        },
+    };
 
     // Optional Arguments
-    let from = transform::get_bytes_from_map(&txn, "from")?;
-    let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90000))?;
-    let gas_price = transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
-    let value = transform::get_u64_from_map(&txn, "value").map(|g| g.unwrap_or(0))?;
-    let nonce = transform::get_u64_from_map(&txn, "nonce").map(|g| g.unwrap_or(0))?;
-    let data = transform::get_bytes_from_map(&txn, "data")?;
+    let gas = transform::get_u64_from_map(&call, "gas").map(|g| g.unwrap_or(90000))?;
+    let gas_price = transform::get_u64_from_map(&call, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
+    let value = transform::get_u64_from_map(&call, "value").map(|g| g.unwrap_or(0))?;
+    let nonce = transform::get_u64_from_map(&call, "nonce").map(|g| g.unwrap_or(txn_count))?;
+    let data = transform::get_bytes_from_map(&call, "data").map(|g| g.unwrap_or(vec![0; 0]))?;
 
     // Message Call
-    let mut txn = MessageCallTxnPb::new();
-    txn.set_to(to);
-    txn.set_data(data);
-    txn.set_gas_limit(gas);
-    txn.set_gas_price(gas_price);
-    txn.set_value(value);
-    txn.set_nonce(nonce);
-    SethTransaction::MessageCall(txn)
+    let txn = {
+        let mut txn = MessageCallTxnPb::new();
+        txn.set_to(to.clone());
+        txn.set_data(data);
+        txn.set_gas_limit(gas);
+        txn.set_gas_price(gas_price);
+        txn.set_value(value);
+        txn.set_nonce(nonce);
+        SethTransaction::MessageCall(txn)
+    };
 
     let txn_signature = client.send_transaction(&from, txn).map_err(|error| {
         error!("{:?}", error);
         Error::internal_error()
     })?;
 
+    debug!("ZZZ message call {:?} > {:?}", from, to.clone());
     Ok(transform::hex_prefix(&txn_signature))
 }
 
