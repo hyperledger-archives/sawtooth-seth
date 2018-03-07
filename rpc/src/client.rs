@@ -63,6 +63,11 @@ use sawtooth_sdk::messages::client_peers::{
     ClientPeersGetResponse,
     ClientPeersGetResponse_Status,
 };
+use sawtooth_sdk::messages::processor::{
+    TpProcessRequest,
+    TpProcessResponse,
+    TpProcessResponse_Status,
+};
 use sawtooth_sdk::messages::transaction::{Transaction as TransactionPb, TransactionHeader};
 use sawtooth_sdk::messages::batch::{Batch, BatchHeader};
 use sawtooth_sdk::messages::block::{BlockHeader};
@@ -333,6 +338,44 @@ impl<S: MessageSender> ValidatorClient<S> {
         batch.set_transactions(protobuf::RepeatedField::from_vec(vec![txn]));
 
         Ok((batch, txn_signature))
+    }
+
+    pub fn call_transaction(&mut self, txn: SethTransaction) -> Result<String, Error> {
+        let payload = protobuf::Message::write_to_bytes(&txn.to_pb()).map_err(|error|
+            Error::ParseError(String::from(
+                format!("Error serializing payload: {:?}", error))))?;
+
+        let mut txn_header = TransactionHeader::new();
+        txn_header.set_family_name(String::from("seth"));
+        txn_header.set_family_version(String::from("1.0"));
+        txn_header.set_inputs(protobuf::RepeatedField::from_vec(
+            vec![String::from(SETH_NS), String::from(BLOCK_INFO_NS)]));
+        txn_header.set_outputs(protobuf::RepeatedField::from_vec(
+            vec![String::from(SETH_NS), String::from(BLOCK_INFO_NS)]));
+
+        let mut sha = Sha512::new();
+        sha.input(&payload);
+        let hash = sha.result_str();
+        txn_header.set_payload_sha512(hash);
+
+        let mut request = TpProcessRequest::new();
+        request.set_header(txn_header);
+        request.set_payload(payload);
+
+        let response: TpProcessResponse =
+            self.send_request(Message_MessageType::TP_PROCESS_REQUEST, &request)?;
+
+        // probably want to use this:
+        // response.extended_data
+
+        debug!("TTT {:?}", response);
+
+        match response.status {
+            TpProcessResponse_Status::STATUS_UNSET => Err(Error::ValidatorError),
+            TpProcessResponse_Status::OK => Ok(response.message),
+            TpProcessResponse_Status::INVALID_TRANSACTION => Err(Error::InvalidTransaction),
+            TpProcessResponse_Status::INTERNAL_ERROR => Err(Error::ValidatorError),
+        }
     }
 
     pub fn get_receipts_from_block(&mut self, block: &Block) -> Result<HashMap<String, SethReceipt>, String> {

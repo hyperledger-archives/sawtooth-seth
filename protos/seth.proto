@@ -71,6 +71,10 @@ message SethTransaction {
     CreateContractAccountTxn create_contract_account = 3;
     MessageCallTxn message_call = 4;
     SetPermissionsTxn set_permissions = 5;
+
+    // A flag which indicates whether this transaction should be committed
+    // to the blockchain after execution
+    bool commit = 6;
 }
 
 // The following transactions have fields that correspond to the transaction
