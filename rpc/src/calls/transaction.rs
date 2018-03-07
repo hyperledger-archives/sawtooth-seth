@@ -60,8 +60,10 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: Message
 
 pub fn send_transaction<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_sendTransaction");
-    let (txn,): (Map<String, Value>,) = params.parse().map_err(|_|
-        Error::invalid_params("Takes [txn: OBJECT]"))?;
+    let (txn,): (Map<String, Value>,) = params.parse().map_err(|e| {
+        error!("Invalid params: {:?}", e);
+        Error::invalid_params("Takes [txn: OBJECT]")
+    })?;
 
     // Required arguments
     let from = transform::get_string_from_map(&txn, "from").and_then(|f| f.ok_or_else(||
@@ -125,7 +127,8 @@ pub fn get_transaction_by_hash<T>(params: Params, client: ValidatorClient<T>) ->
     info!("eth_getTransactionByHash");
     let (txn_hash,): (String,) = match params.parse() {
         Ok(t) => t,
-        Err(_) => {
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
             return Err(Error::invalid_params("Takes [txnHash: DATA(64)]"));
         },
     };
@@ -143,7 +146,8 @@ pub fn get_transaction_by_block_hash_and_index<T>(params: Params, client: Valida
     info!("eth_getTransactionByBlockHashAndIndex");
     let (block_hash, index): (String, String) = match params.parse() {
         Ok(t) => t,
-        Err(_) => {
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
             return Err(Error::invalid_params("Takes [blockHash: DATA(64), index: QUANTITY]"));
         },
     };
@@ -172,7 +176,8 @@ pub fn get_transaction_by_block_number_and_index<T>(params: Params, client: Vali
     info!("eth_getTransactionByBlockNumberAndIndex");
     let (block_num, index): (String, String) = match params.parse() {
         Ok(t) => t,
-        Err(_) => {
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
             return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG, index: QUANTITY]"));
         },
     };
@@ -253,7 +258,10 @@ fn get_transaction<T>(mut client: ValidatorClient<T>, txn_key: &TransactionKey) 
 pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_getTransactionReceipt");
     let txn_id: String = params.parse()
-        .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))
+        .map_err(|e| {
+            error!("Invalid params: {:?}", e);
+            Error::invalid_params("Takes [txnHash: DATA(64)]")
+        })
         .and_then(|(v,): (String,)| v.get(2..)
             .map(|v| String::from(v))
             .ok_or_else(|| Error::invalid_params("Invalid transaction hash, must have 0x")))?;
@@ -315,7 +323,10 @@ pub fn estimate_gas<T>(_params: Params, mut _client: ValidatorClient<T>) -> Resu
 pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_sign");
     let (address, payload): (String, String) = params.parse()
-        .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))?;
+        .map_err(|e| {
+            error!("Invalid params: {:?}", e);
+            Error::invalid_params("Takes [txnHash: DATA(64)]")
+        })?;
     let address = address.get(2..)
         .map(|a| String::from(a))
         .ok_or_else(|| Error::invalid_params("Address must have 0x prefix"))?;
