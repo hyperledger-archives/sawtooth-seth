@@ -191,14 +191,16 @@ impl From<AccountError> for Error {
 #[derive(Clone)]
 pub struct ValidatorClient<S: MessageSender> {
     sender: S,
+    processor: S,
     accounts: Vec<Account>,
     pub filters: FilterManager,
 }
 
 impl<S: MessageSender> ValidatorClient<S> {
-    pub fn new(sender: S, accounts: Vec<Account>) -> Self {
+    pub fn new(sender: S, processor: S, accounts: Vec<Account>) -> Self {
         ValidatorClient{
             sender: sender,
+            processor: processor,
             accounts: accounts,
             filters: FilterManager::new(),
         }
@@ -260,6 +262,24 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         debug!("XXX sending {:?} ({:?})", msg_type, msg);
         let mut future = self.sender.send(msg_type, &correlation_id, &msg_bytes)?;
+        debug!("XXX sent {:?}", msg_type);
+        let response_msg = future.get()?;
+        debug!("XXX got {:?}", msg_type);
+        protobuf::parse_from_bytes(&response_msg.content).map_err(|error|
+            Error::ParseError(String::from(format!("Error parsing response: {:?}", error))))
+    }
+
+    pub fn process_request<T, U>(&mut self, msg_type: Message_MessageType, msg: &T) -> Result<U, Error>
+        where T: protobuf::Message, U: protobuf::MessageStatic
+    {
+        let msg_bytes = protobuf::Message::write_to_bytes(msg).map_err(|error|
+            Error::ParseError(String::from(
+                format!("Error serializing request: {:?}", error))))?;
+
+        let correlation_id = uuid::Uuid::new_v4().to_string();
+
+        debug!("XXX sending {:?} ({:?})", msg_type, msg);
+        let mut future = self.processor.send(msg_type, &correlation_id, &msg_bytes)?;
         debug!("XXX sent {:?}", msg_type);
         let response_msg = future.get()?;
         debug!("XXX got {:?}", msg_type);
@@ -340,7 +360,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         Ok((batch, txn_signature))
     }
 
-    pub fn call_transaction(&mut self, txn: SethTransaction) -> Result<String, Error> {
+    pub fn call_transaction(&mut self, txn: SethTransaction) -> Result<Vec<u8>, Error> {
         let payload = protobuf::Message::write_to_bytes(&txn.to_pb()).map_err(|error|
             Error::ParseError(String::from(
                 format!("Error serializing payload: {:?}", error))))?;
@@ -363,16 +383,12 @@ impl<S: MessageSender> ValidatorClient<S> {
         request.set_payload(payload);
 
         let response: TpProcessResponse =
-            self.send_request(Message_MessageType::TP_PROCESS_REQUEST, &request)?;
-
-        // probably want to use this:
-        // response.extended_data
-
+            self.process_request(Message_MessageType::TP_PROCESS_REQUEST, &request)?;
         debug!("TTT {:?}", response);
 
         match response.status {
             TpProcessResponse_Status::STATUS_UNSET => Err(Error::ValidatorError),
-            TpProcessResponse_Status::OK => Ok(response.message),
+            TpProcessResponse_Status::OK => Ok(response.extended_data),
             TpProcessResponse_Status::INVALID_TRANSACTION => Err(Error::InvalidTransaction),
             TpProcessResponse_Status::INTERNAL_ERROR => Err(Error::ValidatorError),
         }

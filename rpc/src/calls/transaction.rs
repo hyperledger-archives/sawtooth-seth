@@ -376,7 +376,7 @@ pub fn call<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, 
         Error::invalid_params("`to` not set")))?;
 
     // Optional Arguments
-    let from = transform::bytes_to_hex_str(&vec![0; 0]);
+    let _from = transform::bytes_to_hex_str(&vec![0; 0]);
     let gas = transform::get_u64_from_map(&call, "gas").map(|g| g.unwrap_or(90000))?;
     let gas_price = transform::get_u64_from_map(&call, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
     let value = transform::get_u64_from_map(&call, "value").map(|g| g.unwrap_or(0))?;
@@ -395,13 +395,13 @@ pub fn call<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, 
         SethTransaction::MessageCall(txn, false)
     };
 
-    let txn_signature = client.call_transaction(txn).map_err(|error| {
+    let result = client.call_transaction(txn).map_err(|error| {
         error!("{:?}", error);
         Error::internal_error()
     })?;
 
-    debug!("ZZZ message call {:?} > {:?}", from, to.clone());
-    Ok(transform::hex_prefix(&txn_signature))
+    debug!("ZZZ message call {:?} = {:?}", to.clone(), result);
+    Ok(transform::hex_prefix(&transform::bytes_to_hex_str(&result)))
 }
 
 // Always return false

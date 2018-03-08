@@ -87,7 +87,7 @@ impl SethTransaction {
         txn
     }
 
-    pub fn commit(&self) -> bool {
+    pub fn _commit(&self) -> bool {
         match self {
             &SethTransaction::CreateExternalAccount(ref _inner) => true,
             &SethTransaction::CreateContractAccount(ref _inner) => true,
