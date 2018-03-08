@@ -62,7 +62,8 @@ them. For the REST API, do::
 You should receive a JSON object containing a list of blocks. For the Seth-RPC
 server, do::
 
-    $ curl http://0.0.0.0:3030 -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber"}' -H "Content-Type: application/json"
+    $ curl http://0.0.0.0:3030 -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber"}' \
+    -H "Content-Type: application/json"
 
 You should receive a JSON object with the number of the current block, in hex,
 in the "result" key.
@@ -96,7 +97,7 @@ Do the following to start up a shell in that container::
 You should now be logged in as root in the container. From this shell, you can
 generate a new, password-encrypted key with the following::
 
-    # openssl ecparam -genkey -name secp256k1 | openssl ec -out alias.pem -aes128
+    $ openssl ecparam -genkey -name secp256k1 | openssl ec -out alias.pem -aes128
 
 You can use any encryption cipher by changing the final ``-aes128`` flag or omit
 the flag and to generate a key without it being encrypted. Note that the name of
@@ -105,19 +106,19 @@ the key file must be the same as the alias the account is imported as.
 Now we are ready to set up the account on the network. To do this, we need to
 use the ``seth`` command. From the prompt where you generated the key, run::
 
-    # seth account import alias.pem alias
+    $ seth account import alias.pem alias
 
 This will copy your key to an internal directory and create an alias for the key
 which you will use to reference the key in future commands. Finally, to submit
 a transaction to the network to create your account, do::
 
-    # seth account create --nonce=0 --wait alias
+    $ seth account create --nonce=0 --wait alias
 
 The command should print the address of your newly created account upon success.
 This will be a (40 character) hex string. You can verify that the account has
 been created by running::
 
-    # seth show account {address}
+    $ seth show account {address}
 
 This will print out some information stored in state about your account. Since
 this is not a contract account, there won't be a lot there but the address of

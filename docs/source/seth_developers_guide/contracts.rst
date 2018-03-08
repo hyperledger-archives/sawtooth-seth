@@ -51,9 +51,9 @@ new file with this contract::
 
 .. _Solidity: https://solidity.readthedocs.io/en/develop/
 
-Save this contract in a file called "contract.sol" in your working directory. If
+Save this contract in a file called ``contract.sol`` in your working directory. If
 you are working with the development environment described in
-:doc`./getting_started` you should save this file in the sawtooth-core/
+:doc`./getting_started` you should save this file in the ``sawtooth-seth/``
 directory on your host so that it is available within the seth container.
 
 Compiling Contracts
@@ -97,8 +97,8 @@ run::
     $ seth show account {address}
 
 You will notice that the above command uses the argument ``address``, not
-``contract``. This is because an account is short for "external account" and a
-contract is short for "contract account."  That is, they are actually both
+``contract``. This is because an account is short for 'external account' and a
+contract is short for 'contract account'.  That is, they are actually both
 accounts, but a contract account is an account with a contract that is owned by
 another account.
 
@@ -143,7 +143,7 @@ To call our contract and run ``set(19,42)``, run::
 
     $ seth contract call --wait {address} {input}
 
-In place of ``{input]`` you should insert the blob of hex formatted according to
+In place of ``{input}`` you should insert the blob of hex formatted according to
 the contract's ABI that we created above. If everything works, the client will
 state that transaction was succesful and print the transaction id. To verify
 that the message call was successful, you can do::

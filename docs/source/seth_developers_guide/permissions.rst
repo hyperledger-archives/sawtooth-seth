@@ -39,7 +39,7 @@ account
   permissions and disabling it prevents new external accounts from being created
 
 all
-  Shorthand for "all permissions". This is not an actual permission, but can
+  Shorthand for 'all permissions'. This is not an actual permission, but can
   be used when setting permissions with ``seth``.
 
 Each permission can be set to either allow or deny the action for individual
