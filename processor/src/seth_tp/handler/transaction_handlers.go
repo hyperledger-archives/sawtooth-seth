@@ -258,7 +258,7 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	var senderAcct *evm.Account
 
 	// No sender passed for eth_call executions that are not committed
-	if !wrapper.GetCommit() {
+	if wrapper.GetCommit() {
 		// The sender account must already exist
 		senderAcct = sapps.GetAccount(sender.ToWord256())
 		if senderAcct == nil {
