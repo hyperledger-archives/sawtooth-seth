@@ -334,7 +334,6 @@ impl<S: MessageSender> ValidatorClient<S> {
         let txn_header_bytes = protobuf::Message::write_to_bytes(&txn_header).map_err(|error|
             Error::ParseError(String::from(
                 format!("Error serializing transaction header: {:?}", error))))?;
-
         let txn_signature = account.sign(&txn_header_bytes)?;
 
         let mut txn = TransactionPb::new();
@@ -378,8 +377,16 @@ impl<S: MessageSender> ValidatorClient<S> {
         let hash = sha.result_str();
         txn_header.set_payload_sha512(hash);
 
+        let account = self.loaded_accounts()[0].clone();
+        txn_header.set_signer_public_key(String::from(account.public_key()));
+        let txn_header_bytes = protobuf::Message::write_to_bytes(&txn_header).map_err(|error|
+            Error::ParseError(String::from(
+                format!("Error serializing transaction header: {:?}", error))))?;
+        let txn_signature = account.sign(&txn_header_bytes)?;
+
         let mut request = TpProcessRequest::new();
         request.set_header(txn_header);
+        request.set_signature(txn_signature.clone());
         request.set_payload(payload);
 
         let response: TpProcessResponse =

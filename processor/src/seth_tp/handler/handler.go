@@ -62,6 +62,7 @@ func (self *BurrowEVMHandler) Namespaces() []string {
 }
 
 func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, context *processor.Context) error {
+	logger.Debugf("RRR %v", request)
 
 	// Unpack and validate transaction
 	wrapper, err := unpackPayload(request.GetPayload())
