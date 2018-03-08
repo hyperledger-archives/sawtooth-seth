@@ -37,7 +37,6 @@ RUN echo "deb http://repo.sawtooth.me/ubuntu/ci xenial universe" >> /etc/apt/sou
     curl \
     gcc \
     git \
-    golang \
     libssl-dev \
     libzmq3-dev \
     openssl \
@@ -45,8 +44,11 @@ RUN echo "deb http://repo.sawtooth.me/ubuntu/ci xenial universe" >> /etc/apt/sou
     python3-grpcio-tools=1.1.3-1 \
     software-properties-common \
  && add-apt-repository ppa:ethereum/ethereum \
+ && add-apt-repository ppa:gophers/archive \
  && apt-get update \
- && apt-get install -y -q solc \
+ && apt-get install -y -q \
+    golang-1.9-go \
+    solc \
  && curl -s -S -o /tmp/setup-node.sh https://deb.nodesource.com/setup_6.x \
  && chmod 755 /tmp/setup-node.sh \
  && /tmp/setup-node.sh \
@@ -55,7 +57,7 @@ RUN echo "deb http://repo.sawtooth.me/ubuntu/ci xenial universe" >> /etc/apt/sou
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-ENV PATH=$PATH:/project/sawtooth-seth/families/seth/bin:/root/.cargo/bin:/go/bin
+ENV PATH=$PATH:/project/sawtooth-seth/families/seth/bin:/root/.cargo/bin:/go/bin:/usr/lib/go-1.9/bin
 ENV GOPATH=/go:/project/sawtooth-seth/families/seth
 
 # Install rust libraries
