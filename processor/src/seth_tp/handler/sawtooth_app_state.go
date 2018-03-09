@@ -220,6 +220,7 @@ func toStateAccount(acct *Account) *EvmStateAccount {
 	if acct == nil {
 		return nil
 	}
+	logger.Debugf("toStateAccount(%v) %v", acct, acct.Address.Bytes()[Word256Length-20:])
 	return &EvmStateAccount{
 		Address:     acct.Address.Bytes()[Word256Length-20:],
 		Balance:     acct.Balance,
@@ -233,6 +234,7 @@ func toVmAccount(sa *EvmStateAccount) *Account {
 	if sa == nil {
 		return nil
 	}
+	logger.Debugf("toVmAccount(%v) %v", sa, LeftPadWord256(sa.Address))
 	return &Account{
 		Address:     LeftPadWord256(sa.Address),
 		Balance:     sa.Balance,

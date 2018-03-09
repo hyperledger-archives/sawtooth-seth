@@ -41,6 +41,7 @@ func NewStateManager(state *processor.Context) *StateManager {
 // NewEntry creates a new entry in state. If an entry already exists at the
 // given address or the entry cannot be created, an error is returned.
 func (mgr *StateManager) NewEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
+	logger.Debugf("NewEntry(%v)", vmAddress)
 	entry, err := mgr.GetEntry(vmAddress)
 	if err != nil {
 		return nil, err
@@ -72,6 +73,7 @@ func (mgr *StateManager) NewEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 // DelEntry removes the given entry from state. An error is returned if the
 // entry does not exist.
 func (mgr *StateManager) DelEntry(vmAddress *EvmAddr) error {
+	logger.Debugf("DelEntry(%v)", vmAddress)
 	entry, err := mgr.GetEntry(vmAddress)
 	if err != nil {
 		return err
@@ -89,6 +91,7 @@ func (mgr *StateManager) DelEntry(vmAddress *EvmAddr) error {
 // GetEntry retrieve the entry from state at the given address. If the entry
 // does not exist, nil is returned.
 func (mgr *StateManager) GetEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
+	logger.Debugf("GetEntry(%v)", vmAddress)
 	address := vmAddress.ToStateAddr()
 
 	// Retrieve the account from global state
@@ -114,6 +117,7 @@ func (mgr *StateManager) GetEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 // MustGetEntry wraps GetEntry and panics if the entry does not exist of there
 // is an error.
 func (mgr *StateManager) MustGetEntry(vmAddress *EvmAddr) *EvmEntry {
+	logger.Debugf("MustGetEntry(%v)", vmAddress)
 	entry, err := mgr.GetEntry(vmAddress)
 	if err != nil {
 		panic(fmt.Sprintf(
@@ -133,6 +137,7 @@ func (mgr *StateManager) MustGetEntry(vmAddress *EvmAddr) *EvmEntry {
 // SetEntry writes the entry to the given address. Returns an error if it fails
 // to set the address.
 func (mgr *StateManager) SetEntry(vmAddress *EvmAddr, entry *EvmEntry) error {
+	logger.Debugf("SetEntry(%v)", vmAddress)
 	address := vmAddress.ToStateAddr()
 
 	entryData, err := proto.Marshal(entry)
@@ -158,6 +163,7 @@ func (mgr *StateManager) SetEntry(vmAddress *EvmAddr, entry *EvmEntry) error {
 
 // MustSetEntry wraps set entry and panics if there is an error.
 func (mgr *StateManager) MustSetEntry(vmAddress *EvmAddr, entry *EvmEntry) {
+	logger.Debugf("MustSetEntry(%v)", vmAddress)
 	err := mgr.SetEntry(vmAddress, entry)
 	if err != nil {
 		panic(fmt.Sprintf(
