@@ -389,7 +389,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         request.set_signature(txn_signature.clone());
         request.set_payload(payload);
         let context_id = uuid::Uuid::new_v4().to_string();
-        request.set_context_id(context_id);
+        request.set_context_id(transform::strip_hex_str(&context_id));
 
         let response: TpProcessResponse =
             self.process_request(Message_MessageType::TP_PROCESS_REQUEST, &request)?;
