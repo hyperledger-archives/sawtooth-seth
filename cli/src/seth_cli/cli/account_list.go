@@ -22,7 +22,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"io/ioutil"
 	"path"
-	. "sawtooth_seth/common"
+	. "common"
 )
 
 type AccountList struct{}

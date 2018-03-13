@@ -20,37 +20,39 @@ package main
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"sawtooth_seth/client"
+	"seth_cli/client"
 )
 
-type ShowReceipt struct {
+type ShowEvents struct {
 	Positional struct {
-		TransactionID string `positional-arg-name:"txn-id" description:"Transaction ID of receipt to show"`
+		TransactionID string `positional-arg-name:"txn-id" description:"Transaction ID of event list to show"`
 	} `positional-args:"true" required:"true"`
 }
 
-func (args *ShowReceipt) Name() string {
-	return "receipt"
+func (args *ShowEvents) Name() string {
+	return "events"
 }
 
-func (args *ShowReceipt) Register(parent *flags.Command) error {
-	_, err := parent.AddCommand(args.Name(), "Show receipt associated with a given transaction ID", "", args)
+func (args *ShowEvents) Register(parent *flags.Command) error {
+	_, err := parent.AddCommand(args.Name(), "Show events associated with a given transaction ID", "", args)
 	return err
 }
 
-func (args *ShowReceipt) Run(config *Config) (err error) {
+func (args *ShowEvents) Run(config *Config) (err error) {
 	client := client.New(config.Url)
 
-	clientResult, err := client.GetSethReceipt(args.Positional.TransactionID)
+	clientResult, err := client.GetEvents(args.Positional.TransactionID)
 	if err != nil {
 		return err
 	}
-
-	receipt, err := clientResult.MarshalJSON()
-	if err != nil {
-		return err
+	if len(clientResult.Events) == 0 {
+		fmt.Println("No events to show")
+	} else {
+		events, err := clientResult.MarshalJSON()
+		if err != nil {
+			return fmt.Errorf("Error displaying events: %s", err.Error())
+		}
+		fmt.Println("Events: ", string(events))
 	}
-	fmt.Println("Seth Transaction Receipt: ", string(receipt))
-
 	return nil
 }

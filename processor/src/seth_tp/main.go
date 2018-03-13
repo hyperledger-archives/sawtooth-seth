@@ -23,7 +23,7 @@ import (
 	"os"
 	"sawtooth_sdk/logging"
 	"sawtooth_sdk/processor"
-	seth "sawtooth_seth/processor/handler"
+	seth "seth_tp/handler"
 	"syscall"
 )
 

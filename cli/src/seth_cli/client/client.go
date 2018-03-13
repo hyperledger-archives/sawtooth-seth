@@ -26,8 +26,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"net/http"
 	"sawtooth_sdk/logging"
-	. "sawtooth_seth/common"
-	. "sawtooth_seth/protobuf/seth_pb2"
+	. "common"
+	. "protobuf/seth_pb2"
 )
 
 var logger *logging.Logger = logging.Get()

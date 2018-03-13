@@ -27,9 +27,9 @@ import (
 	"sawtooth_sdk/processor"
 	"sawtooth_sdk/protobuf/processor_pb2"
 	"sawtooth_sdk/protobuf/transaction_pb2"
-	. "sawtooth_seth/common"
-	. "sawtooth_seth/protobuf/block_info_pb2"
-	. "sawtooth_seth/protobuf/seth_pb2"
+	. "common"
+	. "protobuf/block_info_pb2"
+	. "protobuf/seth_pb2"
 )
 
 type HandlerResult struct {

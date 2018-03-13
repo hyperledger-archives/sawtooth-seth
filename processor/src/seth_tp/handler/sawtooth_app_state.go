@@ -23,8 +23,8 @@ import (
 	. "burrow/word256"
 	"fmt"
 	"sawtooth_sdk/processor"
-	. "sawtooth_seth/common"
-	. "sawtooth_seth/protobuf/seth_pb2"
+	. "common"
+	. "protobuf/seth_pb2"
 )
 
 // -- AppState --

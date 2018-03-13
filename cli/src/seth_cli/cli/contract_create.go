@@ -21,29 +21,29 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"sawtooth_seth/client"
+	"seth_cli/client"
+	. "protobuf/seth_pb2"
 	"strconv"
 )
 
-type ContractCall struct {
+type ContractCreate struct {
 	Positional struct {
-		Alias   string `positional-arg-name:"alias" required:"true" description:"Alias of the imported key associated with the contract to be created"`
-		Address string `positional-arg-name:"address" description:"Address of contract to call"`
-		Data    string `positional-arg-name:"data" required:"true" description:"Input data to pass to contract when called; must conform to contract ABI"`
+		Alias string `positional-arg-name:"alias" required:"true" description:"Alias of the imported key associated with the contract to be created"`
+		Init  string `positional-arg-name:"init" required:"true" description:"Initialization code to be executed on deployment"`
 	} `positional-args:"true"`
-	Gas      uint64 `short:"g" long:"gas" description:"Gas limit for contract creation" default:"90000"`
-	Nonce    string `short:"n" long:"nonce" description:"Current nonce of moderator account"`
-	Wait     int    `short:"w" long:"wait" description:"Number of seconds Seth client will wait for transaction to be committed; if flag passed, default is 60 seconds; if no flag passed, do not wait" optional:"true" optional-value:"60"`
-	Chaining bool   `short:"c" long:"chaining-enabled" description:"If true, enables contract chaining" defalt:"False"`
+	Permissions string `short:"p" long:"permissions" description:"Permissions for new account; see 'seth permissions -h' for more info"`
+	Gas         uint64 `short:"g" long:"gas" description:"Gas limit for contract creation" default:"90000"`
+	Nonce       string `short:"n" long:"nonce" description:"Current nonce of the moderator account; if not passed, the current value will be retrieved"`
+	Wait        int    `short:"w" long:"wait" description:"Number of seconds Seth client will wait for transaction to be committed; if flag passed, default is 60 seconds; if no flag passed, do not wait" optional:"true" optional-value:"60"`
 }
 
-func (args *ContractCall) Name() string {
-	return "call"
+func (args *ContractCreate) Name() string {
+	return "create"
 }
 
-func (args *ContractCall) Register(parent *flags.Command) error {
+func (args *ContractCreate) Register(parent *flags.Command) error {
 	_, err := parent.AddCommand(
-		args.Name(), "Execute a deployed contract account",
+		args.Name(), "Deploy a new contract account",
 		"", args,
 	)
 	if err != nil {
@@ -52,7 +52,7 @@ func (args *ContractCall) Register(parent *flags.Command) error {
 	return nil
 }
 
-func (args *ContractCall) Run(config *Config) error {
+func (args *ContractCreate) Run(config *Config) error {
 	client := client.New(config.Url)
 
 	priv, err := LoadKey(args.Positional.Alias)
@@ -60,14 +60,17 @@ func (args *ContractCall) Run(config *Config) error {
 		return err
 	}
 
-	data, err := hex.DecodeString(args.Positional.Data)
+	init, err := hex.DecodeString(args.Positional.Init)
 	if err != nil {
-		return fmt.Errorf("Invalid contract input data: %v", err)
+		return fmt.Errorf("Invalid initialization code: %v", err)
 	}
 
-	addr, err := hex.DecodeString(args.Positional.Address)
-	if err != nil {
-		return fmt.Errorf("Invalid address: %v", err)
+	var perms *EvmPermissions
+	if args.Permissions != "" {
+		perms, err = ParsePermissions(args.Permissions)
+		if err != nil {
+			return fmt.Errorf("Invalid permissions: %v", err)
+		}
 	}
 
 	if args.Wait < 0 {
@@ -87,15 +90,15 @@ func (args *ContractCall) Run(config *Config) error {
 		}
 	}
 
-	clientResult, err := client.MessageCall(priv, addr, data, nonce, args.Gas, args.Wait, args.Chaining)
+	clientResult, err := client.CreateContractAccount(priv, init, perms, nonce, args.Gas, args.Wait)
 	if err != nil {
 		return fmt.Errorf("Problem submitting account creation transaction: %v", err)
 	}
 
 	if args.Wait > 0 {
-		fmt.Printf("Contract called\n")
+		fmt.Printf("Contract created\n")
 	} else {
-		fmt.Printf("Transaction submitted to call contract\n")
+		fmt.Printf("Transaction submitted to create contract\n")
 	}
 	info, err := clientResult.MarshalJSON()
 	if err != nil {

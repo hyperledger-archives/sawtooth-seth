@@ -18,32 +18,30 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"sawtooth_seth/client"
-	. "sawtooth_seth/protobuf/seth_pb2"
+	"seth_cli/client"
+	. "protobuf/seth_pb2"
 	"strconv"
 )
 
-type ContractCreate struct {
-	Positional struct {
-		Alias string `positional-arg-name:"alias" required:"true" description:"Alias of the imported key associated with the contract to be created"`
-		Init  string `positional-arg-name:"init" required:"true" description:"Initialization code to be executed on deployment"`
-	} `positional-args:"true"`
+type AccountCreate struct {
+	Moderator   string `short:"m" long:"moderator" description:"Alias of another account to be used to create the account"`
 	Permissions string `short:"p" long:"permissions" description:"Permissions for new account; see 'seth permissions -h' for more info"`
-	Gas         uint64 `short:"g" long:"gas" description:"Gas limit for contract creation" default:"90000"`
 	Nonce       string `short:"n" long:"nonce" description:"Current nonce of the moderator account; if not passed, the current value will be retrieved"`
-	Wait        int    `short:"w" long:"wait" description:"Number of seconds Seth client will wait for transaction to be committed; if flag passed, default is 60 seconds; if no flag passed, do not wait" optional:"true" optional-value:"60"`
+	Wait        int    `short:"w" long:"wait" description:"Number of seconds Seth client will wait for transaction to be committed, if flag passed, default is 60 seconds; if no flag passed, do not wait" optional:"true" optional-value:"60"`
+	Positional  struct {
+		Alias string `positional-arg-name:"alias" required:"true" description:"Alias of the imported key associated with the account to be created"`
+	} `positional-args:"true"`
 }
 
-func (args *ContractCreate) Name() string {
+func (args *AccountCreate) Name() string {
 	return "create"
 }
 
-func (args *ContractCreate) Register(parent *flags.Command) error {
+func (args *AccountCreate) Register(parent *flags.Command) error {
 	_, err := parent.AddCommand(
-		args.Name(), "Deploy a new contract account",
+		args.Name(), "Create a new externally owned account",
 		"", args,
 	)
 	if err != nil {
@@ -52,7 +50,7 @@ func (args *ContractCreate) Register(parent *flags.Command) error {
 	return nil
 }
 
-func (args *ContractCreate) Run(config *Config) error {
+func (args *AccountCreate) Run(config *Config) error {
 	client := client.New(config.Url)
 
 	priv, err := LoadKey(args.Positional.Alias)
@@ -60,21 +58,23 @@ func (args *ContractCreate) Run(config *Config) error {
 		return err
 	}
 
-	init, err := hex.DecodeString(args.Positional.Init)
-	if err != nil {
-		return fmt.Errorf("Invalid initialization code: %v", err)
+	var (
+		mod   []byte
+		perms *EvmPermissions
+	)
+
+	if args.Moderator != "" {
+		mod, err = LoadKey(args.Moderator)
+		if err != nil {
+			return err
+		}
 	}
 
-	var perms *EvmPermissions
 	if args.Permissions != "" {
 		perms, err = ParsePermissions(args.Permissions)
 		if err != nil {
 			return fmt.Errorf("Invalid permissions: %v", err)
 		}
-	}
-
-	if args.Wait < 0 {
-		return fmt.Errorf("Invalid wait specified: %v. Must be a positive integer", args.Wait)
 	}
 
 	var nonce uint64
@@ -90,15 +90,19 @@ func (args *ContractCreate) Run(config *Config) error {
 		}
 	}
 
-	clientResult, err := client.CreateContractAccount(priv, init, perms, nonce, args.Gas, args.Wait)
+	if args.Wait < 0 {
+		return fmt.Errorf("Invalid wait specified: %v. Must be a positive integer", args.Wait)
+	}
+
+	clientResult, err := client.CreateExternalAccount(priv, mod, perms, nonce, args.Wait)
 	if err != nil {
 		return fmt.Errorf("Problem submitting account creation transaction: %v", err)
 	}
 
 	if args.Wait > 0 {
-		fmt.Printf("Contract created\n")
+		fmt.Printf("Account created\n")
 	} else {
-		fmt.Printf("Transaction submitted to create contract\n")
+		fmt.Printf("Transaction submitted to create account\n")
 	}
 	info, err := clientResult.MarshalJSON()
 	if err != nil {

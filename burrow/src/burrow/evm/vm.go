@@ -30,7 +30,7 @@ import (
 	. "burrow/word256"
 
 	// "github.com/tendermint/go-events"
- 	"sawtooth_sdk/logging"
+ 	"github.com/rberg2/sawtooth-go-sdk/logging"
 )
 
 var (
@@ -794,7 +794,7 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 			data = copyslice(data)
 
 			// NOTE: [ben] revise event structure
-			
+
 			if vm.evc != nil {
 				eventID := hex.EncodeToString(callee.Address.Postfix(20))
 				logger.Infof("eventID: %s\n", eventID)

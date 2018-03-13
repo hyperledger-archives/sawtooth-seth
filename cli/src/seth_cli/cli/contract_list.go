@@ -20,8 +20,8 @@ package main
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"sawtooth_seth/client"
-	. "sawtooth_seth/common"
+	"seth_cli/client"
+	. "common"
 )
 
 type ContractList struct {
