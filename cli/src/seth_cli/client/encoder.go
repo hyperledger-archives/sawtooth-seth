@@ -18,13 +18,13 @@
 package client
 
 import (
-	"encoding/hex"
 	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"sawtooth_sdk/signing"
-	"sawtooth_sdk/protobuf/batch_pb2"
-	"sawtooth_sdk/protobuf/transaction_pb2"
+	"github.com/rberg2/sawtooth-go-sdk/protobuf/batch_pb2"
+	"github.com/rberg2/sawtooth-go-sdk/protobuf/transaction_pb2"
+	"github.com/rberg2/sawtooth-go-sdk/signing"
 	"time"
 )
 

@@ -18,11 +18,11 @@
 package main
 
 import (
+	. "common"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"io/ioutil"
 	"path"
-	. "common"
 )
 
 type AccountList struct{}

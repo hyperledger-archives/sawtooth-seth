@@ -18,10 +18,10 @@
 package handler
 
 import (
+	. "common"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"sawtooth_sdk/processor"
-	. "common"
+	"github.com/rberg2/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 )
 

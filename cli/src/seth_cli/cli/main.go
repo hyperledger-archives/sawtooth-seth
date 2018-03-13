@@ -20,8 +20,8 @@ package main
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
+	"github.com/rberg2/sawtooth-go-sdk/logging"
 	"os"
-	"sawtooth_sdk/logging"
 )
 
 var logger *logging.Logger = logging.Get()

@@ -21,9 +21,9 @@ import (
 	. "burrow/evm"
 	ptypes "burrow/permission/types"
 	. "burrow/word256"
-	"fmt"
-	"sawtooth_sdk/processor"
 	. "common"
+	"fmt"
+	"github.com/rberg2/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 )
 

@@ -19,10 +19,10 @@ package handler
 import (
 	evm "burrow/evm"
 	ptypes "burrow/permission/types"
+	. "common"
 	"encoding/hex"
 	"fmt"
-	"sawtooth_sdk/processor"
-	. "common"
+	"github.com/rberg2/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 	"strings"
 )

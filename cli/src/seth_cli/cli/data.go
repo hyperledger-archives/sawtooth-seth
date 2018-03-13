@@ -20,11 +20,11 @@ package main
 import (
 	"fmt"
 	toml "github.com/pelletier/go-toml"
+	signing "github.com/rberg2/sawtooth-go-sdk/signing"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
 	"path"
-	signing "sawtooth_sdk/signing"
 	"strings"
 	"syscall"
 )

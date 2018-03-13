@@ -20,9 +20,9 @@ package main
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
+	"github.com/rberg2/sawtooth-go-sdk/logging"
+	"github.com/rberg2/sawtooth-go-sdk/processor"
 	"os"
-	"sawtooth_sdk/logging"
-	"sawtooth_sdk/processor"
 	seth "seth_tp/handler"
 	"syscall"
 )

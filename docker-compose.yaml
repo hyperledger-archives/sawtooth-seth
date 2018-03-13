@@ -13,54 +13,104 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-version: "3"
+version: '2.1'
 
 services:
+  seth-cli:
+    build:
+      context: .
+      dockerfile: ./cli/Dockerfile
+    image: sawtooth-seth-cli
+    container_name: seth-cli
+    depends_on:
+      - rest-api
+    working_dir: /project/sawtooth-seth
+    entrypoint: |
+      bash -c "
+        seth init http://rest-api:8080 &&
+        if [ ! -f /root/.sawtooth/keys/root.priv ]; then
+        sawtooth keygen
+        fi;
+        tail -f /dev/null
+      "
 
   seth-tp:
-    image: sawtooth-seth:latest
-    command: seth-tp -vv --connect tcp://validator:4004
+    build:
+      context: .
+      dockerfile: ./processor/Dockerfile
+    image: sawtooth-seth-tp
+    container_name: seth-tp
+    depends_on:
+      - validator
+    command: |
+      bash -c "
+        seth-tp -vv \
+          -C tcp://validator:4004
+      "
 
   block-info-tp:
     image: hyperledger/sawtooth-block-info-tp:1.0
+    container_name: block-info-tp
+    depends_on:
+      - validator
     command: block-info-tp -vv --connect tcp://validator:4004
 
   settings-tp:
     image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: settings-tp
+    depends_on:
+      - validator
     command: settings-tp -vv --connect tcp://validator:4004
-
-  validator:
-    image: hyperledger/sawtooth-validator:1.0
-    ports:
-      - 4004
-      - 8800
-    command: "bash -c \"\
-        sawadm keygen && \
-        sawset genesis \
-          -k /etc/sawtooth/keys/validator.priv \
-          -o config-genesis.batch && \
-        sawset proposal create \
-          -k /etc/sawtooth/keys/validator.priv \
-          sawtooth.validator.batch_injectors=block_info \
-          -o config.batch && \
-        sawadm genesis \
-          config-genesis.batch config.batch && \
-        sawtooth-validator --endpoint tcp://validator:8800 -v \
-            --bind component:tcp://eth0:4004 \
-            --bind network:tcp://eth0:8800 \
-      \""
 
   rest-api:
     image: hyperledger/sawtooth-rest-api:1.0
+    container_name: rest-api
     ports:
-      - 8080:8080
-    command: sawtooth-rest-api -v --connect tcp://validator:4004 --bind rest-api:8080
+      - '8080:8080'
+    depends_on:
+      - validator
+    entrypoint: |
+      sawtooth-rest-api -vv
+        --connect tcp://validator:4004
+        --bind rest-api:8080
+
+  validator:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: sawtooth-validator
+    ports:
+      - 4004
+      - 8800
+    command: |
+      bash -c "
+        if [ ! -f /etc/keys/validator.priv ]; then
+        sawadm keygen &&
+        sawset genesis \
+          -k /etc/sawtooth/keys/validator.priv \
+          -o config-genesis.batch &&
+        sawset proposal create \
+          -k /etc/sawtooth/keys/validator.priv \
+          sawtooth.validator.batch_injectors=block_info \
+          -o config.batch &&
+        sawadm genesis config-genesis.batch config.batch
+        fi;
+        sawtooth-validator -vv \
+            --endpoint tcp://validator:8800 \
+            --bind component:tcp://eth0:4004 \
+            --bind network:tcp://eth0:8800
+      "
 
   seth-rpc:
-    image: sawtooth-seth:latest
-    ports:
-      - 3030:3030
-    command: "bash -c \"\
-        seth init http://rest-api:8080 && \
-        seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030 \
-      \""
+      image: sawtooth-seth-rpc
+      build:
+        context: .
+        dockerfile: ./rpc/Dockerfile
+      container_name: seth-rpc
+      depends_on:
+        - validator
+      ports:
+        - 3030:3030
+      command: |
+        bash -c "
+          seth init http://rest-api:8080 &&
+          seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030
+        "

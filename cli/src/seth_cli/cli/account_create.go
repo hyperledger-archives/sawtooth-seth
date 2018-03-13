@@ -20,8 +20,8 @@ package main
 import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
-	"seth_cli/client"
 	. "protobuf/seth_pb2"
+	"seth_cli/client"
 	"strconv"
 )
 

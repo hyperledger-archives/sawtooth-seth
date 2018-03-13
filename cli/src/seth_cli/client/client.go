@@ -19,14 +19,14 @@ package client
 
 import (
 	"bytes"
+	. "common"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/rberg2/sawtooth-go-sdk/logging"
 	"net/http"
-	"sawtooth_sdk/logging"
-	. "common"
 	. "protobuf/seth_pb2"
 )
 

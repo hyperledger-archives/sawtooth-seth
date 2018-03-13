@@ -18,10 +18,10 @@
 package main
 
 import (
+	. "common"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"seth_cli/client"
-	. "common"
 )
 
 type ContractList struct {
