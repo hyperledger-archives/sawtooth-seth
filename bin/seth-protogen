@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2017 Intel Corporation
+# Copyright 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,47 +15,17 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-import os
-import tempfile
 from glob import glob
+import os
 import re
-import subprocess
+import tempfile
+from os.path import dirname as DIRNAME
 import sys
 
-
-try:
-    from grpc.tools.protoc import main as _protoc
-except ImportError:
-    print("Error: grpc.tools.protoc not found")
-    exit(1)
-
+from grpc.tools.protoc import main as _protoc
 
 JOIN = os.path.join
 TOP_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-
-def main(args=None):
-    proto_dir = JOIN(TOP_DIR, "families/seth/src/protos/core")
-    protoc(proto_dir, "families/seth/src", "sawtooth_sdk/protobuf", "go")
-    protoc(proto_dir, "families/rust", "sawtooth_sdk/protobuf", "go")
-    protoc(proto_dir, "families/rust", "src/messages", "rust")
-
-    proto_dir = JOIN(TOP_DIR, "families/seth/src/protos")
-    protoc(proto_dir, "families/seth/src", "sawtooth_seth/protobuf", "go")
-    proto_dir = JOIN(TOP_DIR, "families/seth/src/protos")
-    protoc(proto_dir, "families/seth/rpc", "src/messages/", "rust")
-    protoc(proto_dir, "families/seth/rpc", "tests/protobuf")
-
-
-def protoc(src_dir, base_dir, pkg, language="python"):
-    if language == "python":
-        protoc_python(src_dir, base_dir, pkg)
-    elif language == "go":
-        protoc_go(src_dir, base_dir, pkg)
-    elif language == "javascript":
-        protoc_javascript(src_dir, base_dir, pkg)
-    elif language == "rust":
-        protoc_rust(src_dir, base_dir, pkg)
 
 
 def protoc_python(src_dir, base_dir, pkg):
@@ -187,6 +157,24 @@ def fix_import(contents, pkg, sub_dir=False):
         flags=re.MULTILINE
     )
 
+
+def protoc(src_dir, base_dir, pkg, language="python"):
+    if language == "python":
+        protoc_python(src_dir, base_dir, pkg)
+    elif language == "go":
+        protoc_go(src_dir, base_dir, pkg)
+    elif language == "rust":
+        protoc_rust(src_dir, base_dir, pkg)
+
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+    proto_dir = JOIN(TOP_DIR, "protos")
+    protoc(proto_dir, "rpc", "tests/protobuf")
+    if "go" in args:
+        protoc(proto_dir, "common/src", "protobuf", "go")
+    if "rust" in args:
+        protoc(proto_dir, "rpc", "src/messages/", "rust")
 
 if __name__ == "__main__":
     try:
