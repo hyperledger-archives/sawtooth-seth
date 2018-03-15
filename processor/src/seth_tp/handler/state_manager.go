@@ -134,6 +134,28 @@ func (mgr *StateManager) MustGetEntry(vmAddress *EvmAddr) *EvmEntry {
 	return entry
 }
 
+// GetClientEntry retrieve the entry from client state at the given address. If the entry
+// does not exist, nil is returned.
+func (mgr *StateManager) GetClientEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
+	logger.Debugf("GetEntry(%v)", vmAddress)
+	address := vmAddress.ToStateAddr()
+
+	// Retrieve the account from global state
+	entryData, err := mgr.state.GetClientState(address.String())
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize the entry
+	entry := &EvmEntry{}
+	err = proto.Unmarshal(entryData, entry)
+	if err != nil {
+		return nil, err
+	}
+
+	return entry, nil
+}
+
 // SetEntry writes the entry to the given address. Returns an error if it fails
 // to set the address.
 func (mgr *StateManager) SetEntry(vmAddress *EvmAddr, entry *EvmEntry) error {

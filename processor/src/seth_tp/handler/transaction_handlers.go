@@ -256,6 +256,7 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	txn := wrapper.GetMessageCall()
 
 	var senderAcct *evm.Account
+	var receiverAcct *evm.Account
 
 	// No sender passed for eth_call executions that are not committed
 	if wrapper.GetCommit() {
@@ -299,7 +300,11 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 		}
 	}
 
-	receiverAcct := sapps.GetAccount(receiver.ToWord256())
+	if wrapper.GetCommit() {
+		receiverAcct = sapps.GetAccount(receiver.ToWord256())
+	} else {
+		receiverAcct = sapps.GetClientAccount(receiver.ToWord256())
+	}
 
 	// Receiving account must exist to call it
 	if receiverAcct == nil {
