@@ -47,6 +47,7 @@ var (
 	ErrDataStackUnderflow     = errors.New("Data stack underflow")
 	ErrInvalidContract        = errors.New("Invalid contract")
 	ErrNativeContractCodeCopy = errors.New("Tried to copy native contract code")
+	ErrExecutionReverted      = errors.New("Execution reverted")
 )
 
 type ErrPermission struct {
@@ -845,6 +846,9 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 				newAccount.Code = ret // Set the code (ret need not be copied as per Call contract)
 				stack.Push(newAccount.Address)
 			}
+            if err_ == ErrExecutionReverted {
+                return ret, nil
+            }
 
 		case CALL, CALLCODE, DELEGATECALL: // 0xF1, 0xF2, 0xF4
 			if !HasPermission(vm.appState, callee, ptypes.Call) {
@@ -935,6 +939,13 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 			if err != nil {
 				logger.Debugf("error on call: %s\n", err.Error())
 				stack.Push(Zero256)
+                if err == ErrExecutionReverted {
+					dest, ok := subslice(memory, retOffset, retSize)
+					if !ok {
+						return nil, firstErr(err, ErrMemoryOutOfBounds)
+					}
+					copy(dest, ret)
+                }
 			} else {
 				stack.Push(One256)
 				dest, ok := subslice(memory, retOffset, retSize)
@@ -949,7 +960,7 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 
 			logger.Debugf("resume %X (%v)\n", callee.Address, gas)
 
-		case RETURN: // 0xF3
+		case RETURN, REVERT: // 0xF3, 0xFD
 			offset, size := stack.Pop64(), stack.Pop64()
 			ret, ok := subslice(memory, offset, size)
 			if !ok {
@@ -957,7 +968,11 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 			}
 			logger.Debugf(" => [%v, %v] (%d) 0x%X\n", offset, size, len(ret), ret)
 			output = copyslice(ret)
-			return output, nil
+			if op == REVERT {
+				return output, ErrExecutionReverted
+			} else {
+				return output, nil
+			}
 
 		case SUICIDE: // 0xFF
 			addr := stack.Pop()
