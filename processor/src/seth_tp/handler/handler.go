@@ -124,13 +124,14 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 		)}
 	}
 	err = context.AddReceiptData(bytes)
-	if err != nil {
-		return &processor.InternalError{Msg: fmt.Sprintf(
-			"Couldn't set receipt data: %v", err,
-		)}
+    if wrapper.GetCommit() {
+		if err != nil {
+			return &processor.InternalError{Msg: fmt.Sprintf(
+				"Couldn't set receipt data: %v", err,
+			)}
+		}
 	}
-
-	return nil
+	return nil;
 }
 
 // -- utilities --
