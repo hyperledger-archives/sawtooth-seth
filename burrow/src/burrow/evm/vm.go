@@ -158,9 +158,11 @@ func (vm *VM) Call(caller, callee *Account, code, input []byte, value int64, gas
 	// // fire the post call event (including exception if applicable)
 	// defer vm.fireCallEvent(exception, &output, caller, callee, input, value, gas)
 
-	if err = transfer(caller, callee, value); err != nil {
-		*exception = err.Error()
-		return
+	if value > 0 {
+		if err = transfer(caller, callee, value); err != nil {
+			*exception = err.Error()
+			return
+		}
 	}
 
 	if len(code) > 0 {
@@ -169,10 +171,12 @@ func (vm *VM) Call(caller, callee *Account, code, input []byte, value int64, gas
 		vm.callDepth -= 1
 		if err != nil {
 			*exception = err.Error()
-			err := transfer(callee, caller, value)
-			if err != nil {
-				// data has been corrupted in ram
-				sanity.PanicCrisis("Could not return value to caller")
+			if value > 0 {
+				err := transfer(callee, caller, value)
+				if err != nil {
+					// data has been corrupted in ram
+					sanity.PanicCrisis("Could not return value to caller")
+				}
 			}
 		}
 	}
