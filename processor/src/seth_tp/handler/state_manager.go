@@ -30,11 +30,13 @@ import (
 // StateManager simplifies accessing EVM related data stored in state
 type StateManager struct {
 	state *processor.Context
+	entries map[string][]byte
 }
 
 func NewStateManager(state *processor.Context) *StateManager {
 	return &StateManager{
 		state: state,
+		entries: make(map[string][]byte, 0),
 	}
 }
 
@@ -95,18 +97,21 @@ func (mgr *StateManager) GetEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 	address := vmAddress.ToStateAddr()
 
 	// Retrieve the account from global state
-	entries, err := mgr.state.GetState([]string{address.String()})
-	if err != nil {
-		return nil, err
-	}
-	entryData, exists := entries[address.String()]
+	entryData, exists := mgr.entries[address.String()]
 	if !exists {
-		return nil, nil
-	}
+		entries, err := mgr.state.GetState([]string{address.String()})
+		if err != nil {
+			return nil, err
+		}
+	    entryData, exists = entries[address.String()]
+	    if !exists {
+		    return nil, nil
+	    }
+    }
 
 	// Deserialize the entry
 	entry := &EvmEntry{}
-	err = proto.Unmarshal(entryData, entry)
+	err := proto.Unmarshal(entryData, entry)
 	if err != nil {
 		return nil, err
 	}
@@ -145,6 +150,7 @@ func (mgr *StateManager) GetClientEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 	if err != nil {
 		return nil, err
 	}
+	mgr.entries[address.String()] = entryData;
 
 	// Deserialize the entry
 	entry := &EvmEntry{}
@@ -175,12 +181,19 @@ func (mgr *StateManager) SetEntry(vmAddress *EvmAddr, entry *EvmEntry) error {
 		return err
 	}
 
-	for _, a := range addresses {
-		if a == address.String() {
-			return nil
-		}
-	}
-	return fmt.Errorf("Address not set: %v", address)
+    // Look up data in saved state and update if required
+	_, exists := mgr.entries[address.String()]
+	if exists {
+	    mgr.entries[address.String()] = entryData;
+		return nil
+    } else {
+        for _, a := range addresses {
+            if a == address.String() {
+                return nil
+            }
+        }
+        return fmt.Errorf("Address not set: %v", address)
+    }
 }
 
 // MustSetEntry wraps set entry and panics if there is an error.
