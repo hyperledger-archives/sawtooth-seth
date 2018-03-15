@@ -73,12 +73,15 @@ func (s *SawtoothAppState) GetClientAccount(addr Word256) *Account {
 	logger.Debugf("GetClientAccount(%v)", vmAddress)
 
 	entry, err := s.mgr.GetClientEntry(vmAddress)
+
 	if err != nil {
 		panic(err.Error())
 	}
 	if entry == nil {
 		return nil
 	}
+
+	s.mgr.SetEntry(vmAddress, entry)
 
 	return toVmAccount(entry.GetAccount())
 }

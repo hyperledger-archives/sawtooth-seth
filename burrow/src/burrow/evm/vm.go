@@ -224,7 +224,11 @@ func useGasNegative(gasLeft *int64, gasToUse int64, err *error) bool {
 
 // Just like Call() but does not transfer 'value' or modify the callDepth.
 func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas *int64) (output []byte, err error) {
-	logger.Debugf("(%d) (%X) %X (code=%d) gas: %v (d) %X\n", vm.callDepth, caller.Address[:4], callee.Address, len(callee.Code), *gas, input)
+  if caller == nil {
+    logger.Debugf("(%d) (0x0) %X (code=%d) gas: %v (d) %X\n", vm.callDepth, callee.Address, len(callee.Code), *gas, input)
+  } else {
+    logger.Debugf("(%d) (%X) %X (code=%d) gas: %v (d) %X\n", vm.callDepth, caller.Address[:4], callee.Address, len(callee.Code), *gas, input)
+	}
 
 	var (
 		pc     int64 = 0
