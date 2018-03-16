@@ -26,6 +26,7 @@ from sawtooth_sdk.protobuf.client_block_pb2 import ClientBlockGetByNumRequest
 from sawtooth_sdk.protobuf.client_block_pb2 import \
     ClientBlockGetByTransactionIdRequest
 from sawtooth_sdk.protobuf.client_block_pb2 import ClientBlockGetResponse
+from sawtooth_sdk.protobuf.client_peers_pb2 import ClientPeersGetResponse
 from sawtooth_sdk.protobuf.client_state_pb2 import ClientStateGetRequest
 from sawtooth_sdk.protobuf.client_state_pb2 import ClientStateGetResponse
 from sawtooth_sdk.protobuf.client_transaction_pb2 import \
@@ -82,10 +83,10 @@ class SethRpcTest(unittest.TestCase):
         cls.contract_address_b = bytes([0xff] * 20)
         cls.contract_init_s = "0" * 60 * 2
         cls.contract_init_b = bytes([0x0] * 60)
-        cls.contract_init_txn_id = "cfb0f4224ec4effa35092161c7e84021bccf3527ff5c042e9cccf94478cbb1223f548e3f38af881605b3cf412b35432f45db5a1301e0f4758a094ffbd9f9f0c8"
+        cls.contract_init_txn_id = "de0a7299e732f04cdf18f098f44d70574512a5f4ef037105b028223195c781c424a48cadaf1a7de26f41b085d57cf40e15f0ebe24cca2bc36114abd679a95d4a"
         cls.contract_call_s = "0" * 30 * 2
         cls.contract_call_b = bytes([0x0] * 30)
-        cls.contract_call_txn_id = "5faa8f3ed941dc68f94678c5e28ed0a5997d461fd7f92fdcc00a17f7f7144c27743b43565bb913ac5ac33239220063f5c887246e0f3bbb22a7bd7f07d0ba8fe6"
+        cls.contract_call_txn_id = "057be5cc3860362022178b0d05012c7a8f1073c75d7f1f695d8091e8a18112b07fdcd3403dfc3728dabaf04ea0000e3d7a212abf3b60dbff44155bf8ed237e43"
         cls.balance = 123
         cls.nonce = 456
         cls.code_b = bytes([0xab, 0xcd, 0xef])
@@ -109,8 +110,17 @@ class SethRpcTest(unittest.TestCase):
         self.assertEqual("19", self.rpc.call("net_version"))
 
     def test_net_peerCount(self):
-        """Test that 0 is returned as hex."""
-        self.assertEqual("0x0", self.rpc.call("net_peerCount"))
+        """Test that 1 is returned as hex."""
+        self.rpc.acall("net_peerCount")
+        msg = self.validator.receive()
+        self.assertEqual(msg.message_type, Message.CLIENT_PEERS_GET_REQUEST)
+        self.validator.respond(
+            Message.CLIENT_PEERS_GET_RESPONSE,
+            ClientPeersGetResponse(
+                status=ClientPeersGetResponse.OK,
+                peers=["test_peer"]),
+            msg)
+        self.assertEqual("0x1", self.rpc.get_result())
 
     def test_net_listening(self):
         """Test that the True is returned."""
@@ -193,7 +203,7 @@ class SethRpcTest(unittest.TestCase):
 
         result = self.rpc.get_result()
         self.assertEqual(result["error"]["message"],
-                         "Takes [blockNum: QUANTITY]")
+                         "Takes [blockNum: QUANTITY|TAG]")
 
     def test_get_block_transaction_count_by_number_no_block(self):
         """Test that None is returned if no block is found for
@@ -277,7 +287,7 @@ class SethRpcTest(unittest.TestCase):
         self.rpc.acall("eth_getBlockByNumber", )
         result = self.rpc.get_result()
         self.assertEqual(result["error"]["message"],
-                         "Takes [blockNum: QUANTITY, full: BOOL]")
+                         "Takes [blockNum: QUANTITY|TAG, full: BOOL]")
 
     def test_get_block_by_bad_number(self):
         """Test that None is returned if no block is found for
@@ -619,7 +629,7 @@ class SethRpcTest(unittest.TestCase):
         self.rpc.acall("eth_getTransactionByBlockNumberAndIndex",)
         result = self.rpc.get_result()
         self.assertEqual(result["error"]["message"],
-                         "Takes [blockNum: DATA(64), index: QUANTITY]")
+                         "Takes [blockNum: QUANTITY|TAG, index: QUANTITY]")
 
     def test_get_transaction_no_block(self):
         block_id = "a" * 128
@@ -689,6 +699,9 @@ class SethRpcTest(unittest.TestCase):
                 "data": "0x" + self.contract_init_s
         }])
 
+        msg, txn = self._receive_state_request()
+        self._send_state_response(msg)
+
         msg, txn = self._receive_submit_request()
 
         seth_txn = SethTransaction()
@@ -700,7 +713,6 @@ class SethRpcTest(unittest.TestCase):
         self.assertEqual(create.gas_limit, 90000)
         self.assertEqual(create.gas_price, 10000000000000)
         self.assertEqual(create.value, 0)
-        self.assertEqual(create.nonce, 0)
 
         self._send_submit_response(msg)
         self.assertEqual(
@@ -715,6 +727,9 @@ class SethRpcTest(unittest.TestCase):
                 "to": "0x" + self.contract_address,
         }])
 
+        msg, txn = self._receive_state_request()
+        self._send_state_response(msg)
+
         msg, txn = self._receive_submit_request()
 
         seth_txn = SethTransaction()
@@ -726,7 +741,6 @@ class SethRpcTest(unittest.TestCase):
         self.assertEqual(call.gas_limit, 90000)
         self.assertEqual(call.gas_price, 10000000000000)
         self.assertEqual(call.value, 0)
-        self.assertEqual(call.nonce, 0)
 
         self._send_submit_response(msg)
         self.assertEqual(

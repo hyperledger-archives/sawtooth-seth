@@ -15,16 +15,13 @@
 
 version: "2.1"
 
-# To save time, create a host directory for caching cargo downloads and
-# seth-rpc the environment variable CARGO_REGISTRY to "/path/to/dir:". Note the
-# trailing ':' is required.
 services:
   seth-rpc:
-    image: sawtooth-dev-seth:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-      - ${CARGO_REGISTRY}/root/.cargo/registry
-    working_dir: /project/sawtooth-core/families/seth/rpc
+    image: sawtooth-seth-rpc
+    build:
+      context: ..
+      dockerfile: ./rpc/Dockerfile
+    working_dir: /project/sawtooth-seth/rpc
     expose:
       - 3030
       - 4004
@@ -32,7 +29,7 @@ services:
       RUST_BACKTRACE: 1
     command: "bash -c \"
       mkdir -p ~/.sawtooth/ &&
-      cp tests/data/test.wif ~/.sawtooth/test.wif &&
+      cp tests/data/test.pem ~/.sawtooth/test.pem &&
       cargo run --
         --connect tcp://comp-seth-rpc:4004
         --bind 0.0.0.0:3030
@@ -40,15 +37,14 @@ services:
         --unlock test\""
 
   comp-seth-rpc:
-    image: sawtooth-dev-python:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
+    image: rpc-test-python
+    build:
+      context: ..
+      dockerfile: ./rpc/tests/Dockerfile
     expose:
       - 4004
     command: nose2-3
-        -c /project/sawtooth-core/families/seth/rpc/tests/nose2.cfg
+        -c /project/sawtooth-seth/rpc/tests/nose2.cfg
         -v
-        -s /project/sawtooth-core/families/seth/rpc/tests
+        -s /project/sawtooth-seth/rpc/tests
         --fail-fast
-    environment:
-        PYTHONPATH: "/project/sawtooth-core/sdk/python"

@@ -20,7 +20,7 @@ package tests
 import (
   "encoding/hex"
   "testing"
-  . "sawtooth_seth/common"
+  . "common"
 )
 
 const (
