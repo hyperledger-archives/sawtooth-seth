@@ -13,73 +13,79 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-version: "2.1"
+version: '2.1'
 
 services:
+  seth-tp:
+    build:
+      context: ../../..
+      dockerfile: ./processor/Dockerfile
+    image: sawtooth-seth-tp
+    depends_on:
+      - validator
+    command: |
+      bash -c "
+        seth-tp -vv \
+          -C tcp://validator:4004
+      "
+
+  block-info-tp:
+    image: hyperledger/sawtooth-block-info-tp:1.0
+    depends_on:
+      - validator
+    command: block-info-tp -vv --connect tcp://validator:4004
 
   settings-tp:
-    image: sawtooth-settings-tp:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-    expose:
-      - 4004
+    image: hyperledger/sawtooth-settings-tp:1.0
     depends_on:
       - validator
-    command: settings-tp -vv -C tcp://validator:4004
-    stop_signal: SIGKILL
-
-  seth-tp:
-    image: sawtooth-dev-seth:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-    expose:
-      - 4004
-    depends_on:
-      - validator
-    command: seth-tp -vv -C tcp://validator:4004
-    stop_signal: SIGKILL
-
-  validator:
-    image: sawtooth-validator:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-    expose:
-      - 4004
-      - 8800
-    command: "bash -c \"\
-        sawadm keygen && \
-        sawset genesis \
-          -k /etc/sawtooth/keys/validator.priv \
-          -o config-genesis.batch && \
-        sawadm genesis config-genesis.batch && \
-        sawtooth-validator -v \
-            --endpoint tcp://validator:8800 \
-            --bind component:tcp://eth0:4004 \
-            --bind network:tcp://eth0:8800 \
-    \""
-    stop_signal: SIGKILL
+    command: settings-tp -vv --connect tcp://validator:4004
 
   rest-api:
-    image: sawtooth-rest-api:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-    expose:
-      - 4004
-      - 8080
+    image: hyperledger/sawtooth-rest-api:1.0
+    ports:
+      - '8080:8080'
     depends_on:
       - validator
-    command: sawtooth-rest-api -v --connect tcp://validator:4004 --bind rest-api:8080
-    stop_signal: SIGKILL
+    entrypoint: |
+      sawtooth-rest-api -vv
+        --connect tcp://validator:4004
+        --bind rest-api:8080
+
+  validator:
+    image: hyperledger/sawtooth-validator:1.0
+    ports:
+      - 4004
+      - 8800
+    command: |
+      bash -c "
+        if [ ! -f /etc/keys/validator.priv ]; then
+        sawadm keygen &&
+        sawset genesis \
+          -k /etc/sawtooth/keys/validator.priv \
+          -o config-genesis.batch &&
+        sawset proposal create \
+          -k /etc/sawtooth/keys/validator.priv \
+          sawtooth.validator.batch_injectors=block_info \
+          -o config.batch &&
+        sawadm genesis config-genesis.batch config.batch
+        fi;
+        sawtooth-validator -vv \
+            --endpoint tcp://validator:8800 \
+            --bind component:tcp://eth0:4004 \
+            --bind network:tcp://eth0:8800
+      "
 
   seth-perm-test:
-    image: sawtooth-dev-seth:$ISOLATION_ID
-    volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
+    build:
+      context: ../../..
+      dockerfile: ./cli/Dockerfile
+    image: sawtooth-seth-cli
     expose:
       - 8080
     depends_on:
       - validator
       - rest-api
-    working_dir: /project/sawtooth-core/integration/sawtooth_integration/tests
+    working_dir: /project/sawtooth-seth/integration/sawtooth_integration/tests
     command: go test seth_perm_test.go
     stop_signal: SIGKILL
