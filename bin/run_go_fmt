@@ -5,10 +5,11 @@ top_dir=$(cd $(dirname $(dirname $0)) && pwd)
 cd $top_dir
 
 dirs="
-$top_dir/families/seth/src/sawtooth_seth/processor
-$top_dir/families/seth/src/sawtooth_seth/processor/handler
-$top_dir/families/seth/src/sawtooth_seth/client
-$top_dir/families/seth/src/sawtooth_seth/cli
+$top_dir/processor/src/seth_tp
+$top_dir/processor/src/seth_tp/handler
+$top_dir/cli/src/seth_cli/cli
+$top_dir/cli/src/seth_cli/client
+$top_dir/common/src/common
 "
 
 exitcode=0

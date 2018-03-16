@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-# Copyright 2017 Intel Corporation
+# Copyright 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,15 +13,23 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+FROM ubuntu:xenial
 
-# Exit on non-zero exit code from subcommand
-set -e
+COPY . /project/sawtooth-seth
 
-run_docker_test ./tests/unit_seth.yaml
-run_docker_test seth_chaining_test
-run_docker_test seth_intkey_test
-run_docker_test seth_blockhash_test
-run_docker_test seth_blocknum_test
-run_docker_test seth_timestamp_test
-run_docker_test seth_perm_test
-run_docker_test ./rpc/comp_seth_rpc.yaml
+RUN echo "deb apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD" \
+ && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
+ && apt-get update \
+ && apt-get install -y -q --allow-unauthenticated \
+    python3-grpcio-tools=1.1.3-1 \
+    python3-nose2 \
+    python3-protobuf \
+    python3-requests \
+    python3-sawtooth-sdk \
+    python3-zmq \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV PATH=$PATH:/project/sawtooth-seth/bin
+
+RUN seth-protogen

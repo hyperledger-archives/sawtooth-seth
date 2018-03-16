@@ -23,16 +23,15 @@ import (
   "fmt"
   "net/http"
   "github.com/golang/protobuf/proto"
-  c "sawtooth_seth/client"
-  sdk "sawtooth_sdk/client"
-  . "sawtooth_seth/common"
-  . "sawtooth_seth/protobuf/block_info_pb2"
+  c "seth_cli/client"
+  . "common"
+  . "protobuf/block_info_pb2"
   "testing"
 )
 
 const (
   WAIT = 300
-  PRIV = "5J7bEeWs14sKkz7yVHfVc2FXKfBe6Hb5oNZxxTKqKZCgjbDTuUj"
+  PRIV = "274AAF0BFAF68C5F1CB510D2851A71CF720C7218A2C1637D635F6850FF009774"
   INIT_BLOCKHASH = "6060604052341561000f57600080fd5b5b60a98061001e6000396000f300606060405263ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663c57ffb2d8114603c575b600080fd5b3415604657600080fd5b605967ffffffffffffffff60043516606b565b60405190815260200160405180910390f35b67ffffffffffffffff8116405b9190505600a165627a7a72305820955dfaa8e54445b06e360a47d2f20206fe8d4a59268481286d6207d1cdadcd710029"
   BLOCKHASH_1 = "c57ffb2d0000000000000000000000000000000000000000000000000000000000000001"
 )
@@ -40,7 +39,7 @@ const (
 // Test getting the blockhash of the first block
 func TestBlockHash(t *testing.T) {
   client := c.New("http://rest-api:8080")
-  priv, _ := sdk.WifToPriv(PRIV)
+  priv, _ := hex.DecodeString(PRIV)
   init, _ := hex.DecodeString(INIT_BLOCKHASH)
   nonce := uint64(0)
 

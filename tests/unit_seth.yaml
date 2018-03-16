@@ -1,5 +1,3 @@
-#!/bin/bash
-#
 # Copyright 2017 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +13,14 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
+version: "2.1"
 
-# Exit on non-zero exit code from subcommand
-set -e
+services:
 
-run_docker_test ./tests/unit_seth.yaml
-run_docker_test seth_chaining_test
-run_docker_test seth_intkey_test
-run_docker_test seth_blockhash_test
-run_docker_test seth_blocknum_test
-run_docker_test seth_timestamp_test
-run_docker_test seth_perm_test
-run_docker_test ./rpc/comp_seth_rpc.yaml
+  unit-seth:
+    build:
+      context: ..
+      dockerfile: ./cli/Dockerfile
+    image: sawtooth-seth-cli
+    working_dir: /project/sawtooth-seth/tests
+    command: go test
