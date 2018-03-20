@@ -18,7 +18,6 @@ FROM ubuntu:xenial
 COPY . /project/sawtooth-seth
 ENV GOPATH=/project/sawtooth-seth/cli
 ENV PATH=$PATH:/project/sawtooth-seth/cli/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
-WORKDIR $GOPATH/src/seth_cli/cli
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
@@ -56,5 +55,6 @@ RUN npm install \
 
 RUN seth-protogen go
 
+WORKDIR $GOPATH/src/seth_cli/cli
 ENV GOPATH=$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/common
 RUN go build -o /project/sawtooth-seth/cli/bin/seth
