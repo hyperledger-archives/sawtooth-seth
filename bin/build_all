@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+
+# Exit on non-zero exit code from subcommand
+set -e
+
+# Default args
+TARGETS=""
+ALL_TARGETS="rpc cli processor"
+
+usage() {
+    echo "Usage:"
+    echo "  $0 [-t targets]"
+    echo
+    echo "Options:"
+    echo "  -h                 print usage and exit"
+    echo "  -t target          only build the specified target(s)"
+    echo ""
+    echo "Target options are: $ALL_TARGETS"
+}
+
+info() {
+    echo -e "\033[0;36m\n[--- $1 ---]\n\033[0m"
+}
+
+warn() {
+    echo -e "\033[0;31m\n[--- $1 ---]\n\033[0m"
+}
+
+while getopts :t:h opt
+do
+    case $opt in
+        h)
+            usage
+            exit 0
+            ;;
+        t)
+            TARGETS="$TARGETS $OPTARG"
+            ;;
+
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            usage
+            exit 1
+            ;;
+    esac
+done
+shift $(($OPTIND-1))
+
+# If no '-t' flags are passed, run these modules
+if [[ $TARGETS = "" ]]
+then
+    TARGETS=$ALL_TARGETS
+fi
+
+main() {
+
+    info "Building: $TARGETS"
+
+    # Set sawtooth-setg project directory relative to this file
+    top_dir=$(cd $(dirname $(dirname $0)) && pwd)
+
+    # Start in project directory
+    cd $top_dir
+
+    for target in $TARGETS
+    do
+        if [ $target == 'processor' ] ; then
+            docker_build $top_dir/$target/Dockerfile $top_dir sawtooth-seth-tp
+        else
+            docker_build $top_dir/$target/Dockerfile $top_dir sawtooth-seth-$target
+        fi
+    done
+}
+
+docker_build() {
+    image=$1
+    context=$2
+    tag=$3
+
+    if [ ! -z $ISOLATION_ID ]
+    then
+        tag=$tag:$ISOLATION_ID
+    fi
+
+    info "Building $tag from $image"
+
+    # Build the image and pass in any proxy information if set
+    docker build -f $image -t $tag $context \
+        --build-arg https_proxy=$https_proxy \
+        --build-arg http_proxy=$http_proxy \
+        --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+        --build-arg HTTP_PROXY=$HTTP_PROXY
+}
+
+main
