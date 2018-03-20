@@ -32,6 +32,11 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F10
     python3 \
     python3-grpcio-tools=1.1.3-1 \
     python3-sawtooth-cli \
+    software-properties-common \
+ && add-apt-repository ppa:ethereum/ethereum \
+ && apt-get update \
+ && apt-get install -y -q \
+    solc \
  && curl -s -S -o /tmp/setup-node.sh https://deb.nodesource.com/setup_6.x \
  && chmod 755 /tmp/setup-node.sh \
  && /tmp/setup-node.sh \
