@@ -22,6 +22,8 @@ services:
       dockerfile: ./cli/Dockerfile
     image: sawtooth-seth-cli
     container_name: seth-cli
+    volumes:
+      - ./contracts:/project/sawtooth-seth/contracts
     depends_on:
       - rest-api
     working_dir: /project/sawtooth-seth
