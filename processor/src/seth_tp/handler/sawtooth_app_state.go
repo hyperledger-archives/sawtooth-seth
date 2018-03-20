@@ -23,7 +23,7 @@ import (
 	. "burrow/word256"
 	. "common"
 	"fmt"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
+	"github.com/grkvlt/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 )
 

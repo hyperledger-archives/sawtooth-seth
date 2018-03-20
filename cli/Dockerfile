@@ -45,7 +45,7 @@ RUN go get -u \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
     github.com/btcsuite/btcd/btcec \
-    github.com/rberg2/sawtooth-go-sdk/... \
+    github.com/grkvlt/sawtooth-go-sdk/... \
     github.com/jessevdk/go-flags \
     github.com/pelletier/go-toml \
     golang.org/x/crypto/ssh/terminal

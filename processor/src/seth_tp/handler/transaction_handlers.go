@@ -22,7 +22,7 @@ import (
 	. "common"
 	"encoding/hex"
 	"fmt"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
+	"github.com/grkvlt/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 	"strings"
 )
