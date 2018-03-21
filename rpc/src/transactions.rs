@@ -44,7 +44,7 @@ use accounts::public_key_to_address;
 pub enum SethTransaction {
     CreateExternalAccount(CreateExternalAccountTxnPb),
     CreateContractAccount(CreateContractAccountTxnPb),
-    MessageCall(MessageCallTxnPb),
+    MessageCall(MessageCallTxnPb, bool),
     SetPermissions(SetPermissionsTxnPb),
 }
 
@@ -56,7 +56,7 @@ impl SethTransaction {
             SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT =>
                 Some(SethTransaction::CreateContractAccount(txn.take_create_contract_account())),
             SethTransaction_TransactionType::MESSAGE_CALL =>
-                Some(SethTransaction::MessageCall(txn.take_message_call())),
+                Some(SethTransaction::MessageCall(txn.take_message_call(), true)),
             SethTransaction_TransactionType::SET_PERMISSIONS =>
                 Some(SethTransaction::SetPermissions(txn.take_set_permissions())),
             _ => None,
@@ -74,9 +74,10 @@ impl SethTransaction {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT);
                 txn.set_create_contract_account(inner.clone());
             },
-            &SethTransaction::MessageCall(ref inner) => {
+            &SethTransaction::MessageCall(ref inner, ref commit) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::MESSAGE_CALL);
                 txn.set_message_call(inner.clone());
+                txn.set_commit(commit.clone());
             },
             &SethTransaction::SetPermissions(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::SET_PERMISSIONS);
@@ -84,6 +85,15 @@ impl SethTransaction {
             },
         }
         txn
+    }
+
+    pub fn _commit(&self) -> bool {
+        match self {
+            &SethTransaction::CreateExternalAccount(ref _inner) => true,
+            &SethTransaction::CreateContractAccount(ref _inner) => true,
+            &SethTransaction::MessageCall(ref _inner, ref commit) => commit.clone(),
+            &SethTransaction::SetPermissions(ref _inner) => true,
+        }
     }
 }
 
@@ -126,7 +136,7 @@ impl Transaction {
         match self.inner {
             SethTransaction::CreateExternalAccount(ref txn) => txn.nonce,
             SethTransaction::CreateContractAccount(ref txn) => txn.nonce,
-            SethTransaction::MessageCall(ref txn) => txn.nonce,
+            SethTransaction::MessageCall(ref txn, ref _commit) => txn.nonce,
             SethTransaction::SetPermissions(ref txn) => txn.nonce,
         }
     }
@@ -135,7 +145,7 @@ impl Transaction {
         match self.inner {
             SethTransaction::CreateExternalAccount(_) => None,
             SethTransaction::CreateContractAccount(ref txn) => Some(txn.gas_limit),
-            SethTransaction::MessageCall(ref txn) => Some(txn.gas_limit),
+            SethTransaction::MessageCall(ref txn, ref _commit) => Some(txn.gas_limit),
             SethTransaction::SetPermissions(_) => None,
         }
     }
@@ -148,7 +158,7 @@ impl Transaction {
         match self.inner {
             SethTransaction::CreateExternalAccount(ref txn) => Some(transform::bytes_to_hex_str(&txn.to)),
             SethTransaction::CreateContractAccount(_) => None,
-            SethTransaction::MessageCall(ref txn) => Some(transform::bytes_to_hex_str(&txn.to)),
+            SethTransaction::MessageCall(ref txn, ref _commit) => Some(transform::bytes_to_hex_str(&txn.to)),
             SethTransaction::SetPermissions(ref txn) => Some(transform::bytes_to_hex_str(&txn.to)),
         }
     }
@@ -157,7 +167,7 @@ impl Transaction {
         match self.inner {
             SethTransaction::CreateExternalAccount(_) => None,
             SethTransaction::CreateContractAccount(_) => None,
-            SethTransaction::MessageCall(ref txn) => Some(transform::bytes_to_hex_str(&txn.data)),
+            SethTransaction::MessageCall(ref txn, ref _commit) => Some(transform::bytes_to_hex_str(&txn.data)),
             SethTransaction::SetPermissions(_) => None,
         }
     }

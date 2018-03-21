@@ -21,6 +21,10 @@ use serde_json::Map;
 use std::fmt::{LowerHex};
 use transactions::{Transaction, SethReceipt, SethLog};
 
+pub fn strip_hex_str(s: &str) -> String {
+    s.chars().filter(|&c| "0123456789abcdefABCDEF".contains(c)).collect()
+}
+
 // -- Hex --
 
 pub fn hex_str_to_bytes(s: &str) -> Option<Vec<u8>> {
@@ -83,13 +87,13 @@ pub fn from_hex_value_then<T, F>(value: &Value, then: F) -> Result<T, Error>
 
 pub fn u64_from_hex_value(value: &Value) -> Result<u64, Error> {
     from_hex_value_then(value, |s|
-        u64::from_str_radix(s, 16).map_err(|error|
+        u64::from_str_radix(strip_hex_str(s).as_str(), 16).map_err(|error|
             Error::invalid_params(format!("Not a number: {:?}", error))))
 }
 
 pub fn bytes_from_hex_value(value: &Value) -> Result<Vec<u8>, Error> {
     from_hex_value_then(value, |s|
-        hex_str_to_bytes(s).ok_or_else(||
+        hex_str_to_bytes(strip_hex_str(s).as_str()).ok_or_else(||
                 Error::invalid_params(format!("Not valid hex", ))))
 }
 

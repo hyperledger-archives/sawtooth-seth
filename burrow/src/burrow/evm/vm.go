@@ -30,7 +30,7 @@ import (
 	. "burrow/word256"
 
 	// "github.com/tendermint/go-events"
- 	"github.com/rberg2/sawtooth-go-sdk/logging"
+	"github.com/grkvlt/sawtooth-go-sdk/logging"
 )
 
 var (
@@ -47,6 +47,7 @@ var (
 	ErrDataStackUnderflow     = errors.New("Data stack underflow")
 	ErrInvalidContract        = errors.New("Invalid contract")
 	ErrNativeContractCodeCopy = errors.New("Tried to copy native contract code")
+	ErrExecutionReverted      = errors.New("Execution reverted")
 )
 
 type ErrPermission struct {
@@ -158,9 +159,11 @@ func (vm *VM) Call(caller, callee *Account, code, input []byte, value int64, gas
 	// // fire the post call event (including exception if applicable)
 	// defer vm.fireCallEvent(exception, &output, caller, callee, input, value, gas)
 
-	if err = transfer(caller, callee, value); err != nil {
-		*exception = err.Error()
-		return
+	if value > 0 {
+		if err = transfer(caller, callee, value); err != nil {
+			*exception = err.Error()
+			return
+		}
 	}
 
 	if len(code) > 0 {
@@ -169,10 +172,12 @@ func (vm *VM) Call(caller, callee *Account, code, input []byte, value int64, gas
 		vm.callDepth -= 1
 		if err != nil {
 			*exception = err.Error()
-			err := transfer(callee, caller, value)
-			if err != nil {
-				// data has been corrupted in ram
-				sanity.PanicCrisis("Could not return value to caller")
+			if value > 0 {
+				err := transfer(callee, caller, value)
+				if err != nil {
+					// data has been corrupted in ram
+					sanity.PanicCrisis("Could not return value to caller")
+				}
 			}
 		}
 	}
@@ -220,7 +225,11 @@ func useGasNegative(gasLeft *int64, gasToUse int64, err *error) bool {
 
 // Just like Call() but does not transfer 'value' or modify the callDepth.
 func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas *int64) (output []byte, err error) {
-	logger.Debugf("(%d) (%X) %X (code=%d) gas: %v (d) %X\n", vm.callDepth, caller.Address[:4], callee.Address, len(callee.Code), *gas, input)
+  if caller == nil {
+    logger.Debugf("(%d) (0x0) %X (code=%d) gas: %v (d) %X\n", vm.callDepth, callee.Address, len(callee.Code), *gas, input)
+  } else {
+    logger.Debugf("(%d) (%X) %X (code=%d) gas: %v (d) %X\n", vm.callDepth, caller.Address[:4], callee.Address, len(callee.Code), *gas, input)
+	}
 
 	var (
 		pc     int64 = 0
@@ -837,6 +846,9 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 				newAccount.Code = ret // Set the code (ret need not be copied as per Call contract)
 				stack.Push(newAccount.Address)
 			}
+            if err_ == ErrExecutionReverted {
+                return ret, nil
+            }
 
 		case CALL, CALLCODE, DELEGATECALL: // 0xF1, 0xF2, 0xF4
 			if !HasPermission(vm.appState, callee, ptypes.Call) {
@@ -927,6 +939,13 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 			if err != nil {
 				logger.Debugf("error on call: %s\n", err.Error())
 				stack.Push(Zero256)
+                if err == ErrExecutionReverted {
+					dest, ok := subslice(memory, retOffset, retSize)
+					if !ok {
+						return nil, firstErr(err, ErrMemoryOutOfBounds)
+					}
+					copy(dest, ret)
+                }
 			} else {
 				stack.Push(One256)
 				dest, ok := subslice(memory, retOffset, retSize)
@@ -941,7 +960,7 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 
 			logger.Debugf("resume %X (%v)\n", callee.Address, gas)
 
-		case RETURN: // 0xF3
+		case RETURN, REVERT: // 0xF3, 0xFD
 			offset, size := stack.Pop64(), stack.Pop64()
 			ret, ok := subslice(memory, offset, size)
 			if !ok {
@@ -949,7 +968,11 @@ func (vm *VM) call(caller, callee *Account, code, input []byte, value int64, gas
 			}
 			logger.Debugf(" => [%v, %v] (%d) 0x%X\n", offset, size, len(ret), ret)
 			output = copyslice(ret)
-			return output, nil
+			if op == REVERT {
+				return output, ErrExecutionReverted
+			} else {
+				return output, nil
+			}
 
 		case SUICIDE: // 0xFF
 			addr := stack.Pop()

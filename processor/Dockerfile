@@ -38,7 +38,7 @@ RUN go get -u \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
     github.com/btcsuite/btcd/btcec \
-    github.com/rberg2/sawtooth-go-sdk/... \
+    github.com/grkvlt/sawtooth-go-sdk/... \
     gopkg.in/fatih/set.v0 \
     golang.org/x/crypto/ripemd160 \
     github.com/jessevdk/go-flags

@@ -63,16 +63,24 @@ fn main() {
         (about: "Seth RPC Server")
         (@arg connect: --connect +takes_value
          "Component endpoint of the validator to communicate with.")
+        (@arg process: --process +takes_value
+         "Component endpoint of the transaction processor to communicate with.")
         (@arg bind: --bind +takes_value
          "The host and port the RPC server should bind to.")
         (@arg unlock: --unlock... +takes_value
          "The aliases of the accounts to unlock.")
         (@arg verbose: -v... "Increase the logging level.")
+        (@arg threads: --threads +takes_value
+         "The number of server threads.")
     ).get_matches();
 
     let bind = arg_matches.value_of("bind")
         .unwrap_or("127.0.0.1:3030");
-    let connect = arg_matches.value_of("connect")
+    let threads = value_t!(arg_matches.value_of("threads"), usize)
+        .unwrap_or(SERVER_THREADS);
+    let connect_uri = arg_matches.value_of("connect")
+        .unwrap_or("tcp://127.0.0.1:4004");
+    let process_uri = arg_matches.value_of("process")
         .unwrap_or("tcp://127.0.0.1:4004");
     let accounts: Vec<Account> = arg_matches.values_of_lossy("unlock").unwrap_or_else(||
         Vec::new()).iter().map(|alias|
@@ -91,14 +99,18 @@ fn main() {
     };
     simple_logging::log_to_stderr(log_level).expect("Failed to initialize logger");
 
-    info!("Trying to connect to validator at {}", connect);
+    info!("Trying to connect to validator at {}", connect_uri);
+    let connect = ZmqMessageConnection::new(connect_uri);
+    let (sender, _) = connect.create();
 
-    let mut io = IoHandler::new();
-    let connection = ZmqMessageConnection::new(connect);
-    let (sender, _) = connection.create();
-    let client = ValidatorClient::new(sender, accounts);
+    info!("Trying to connect to transaction processor at {}", process_uri);
+    let process = ZmqMessageConnection::new(process_uri);
+    let (processor, _) = process.create();
+
+    let client = ValidatorClient::new(sender, processor, accounts);
     let executor = RequestExecutor::new(client);
 
+    let mut io = IoHandler::new();
     let methods = get_method_list();
     for (name, method) in methods {
         let clone = executor.clone();
@@ -109,12 +121,11 @@ fn main() {
 
     let endpoint: std::net::SocketAddr = bind.parse().unwrap();
     let server = ServerBuilder::new(io)
-        .threads(SERVER_THREADS)
+        .threads(threads)
         .start_http(&endpoint)
         .unwrap();
 
     info!("Starting seth-rpc on http://{}", bind);
-
     server.wait();
 }
 

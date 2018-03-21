@@ -21,7 +21,7 @@ import (
 	. "common"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
+	"github.com/grkvlt/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 )
 
@@ -30,17 +30,20 @@ import (
 // StateManager simplifies accessing EVM related data stored in state
 type StateManager struct {
 	state *processor.Context
+	entries map[string][]byte
 }
 
 func NewStateManager(state *processor.Context) *StateManager {
 	return &StateManager{
 		state: state,
+		entries: make(map[string][]byte, 0),
 	}
 }
 
 // NewEntry creates a new entry in state. If an entry already exists at the
 // given address or the entry cannot be created, an error is returned.
 func (mgr *StateManager) NewEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
+	logger.Debugf("NewEntry(%v)", vmAddress)
 	entry, err := mgr.GetEntry(vmAddress)
 	if err != nil {
 		return nil, err
@@ -53,7 +56,7 @@ func (mgr *StateManager) NewEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 	entry = &EvmEntry{
 		Account: &EvmStateAccount{
 			Address:     vmAddress.Bytes(),
-			Balance:     0,
+			Balance:     1,
 			Code:        make([]byte, 0),
 			Nonce:       0,
 			Permissions: &EvmPermissions{},
@@ -72,6 +75,7 @@ func (mgr *StateManager) NewEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 // DelEntry removes the given entry from state. An error is returned if the
 // entry does not exist.
 func (mgr *StateManager) DelEntry(vmAddress *EvmAddr) error {
+	logger.Debugf("DelEntry(%v)", vmAddress)
 	entry, err := mgr.GetEntry(vmAddress)
 	if err != nil {
 		return err
@@ -89,21 +93,25 @@ func (mgr *StateManager) DelEntry(vmAddress *EvmAddr) error {
 // GetEntry retrieve the entry from state at the given address. If the entry
 // does not exist, nil is returned.
 func (mgr *StateManager) GetEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
+	logger.Debugf("GetEntry(%v)", vmAddress)
 	address := vmAddress.ToStateAddr()
 
 	// Retrieve the account from global state
-	entries, err := mgr.state.GetState([]string{address.String()})
-	if err != nil {
-		return nil, err
-	}
-	entryData, exists := entries[address.String()]
+	entryData, exists := mgr.entries[address.String()]
 	if !exists {
-		return nil, nil
-	}
+		entries, err := mgr.state.GetState([]string{address.String()})
+		if err != nil {
+			return nil, err
+		}
+	    entryData, exists = entries[address.String()]
+	    if !exists {
+		    return nil, nil
+	    }
+    }
 
 	// Deserialize the entry
 	entry := &EvmEntry{}
-	err = proto.Unmarshal(entryData, entry)
+	err := proto.Unmarshal(entryData, entry)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +122,7 @@ func (mgr *StateManager) GetEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
 // MustGetEntry wraps GetEntry and panics if the entry does not exist of there
 // is an error.
 func (mgr *StateManager) MustGetEntry(vmAddress *EvmAddr) *EvmEntry {
+	logger.Debugf("MustGetEntry(%v)", vmAddress)
 	entry, err := mgr.GetEntry(vmAddress)
 	if err != nil {
 		panic(fmt.Sprintf(
@@ -130,9 +139,33 @@ func (mgr *StateManager) MustGetEntry(vmAddress *EvmAddr) *EvmEntry {
 	return entry
 }
 
+// GetClientEntry retrieve the entry from client state at the given address. If the entry
+// does not exist, nil is returned.
+func (mgr *StateManager) GetClientEntry(vmAddress *EvmAddr) (*EvmEntry, error) {
+	logger.Debugf("GetEntry(%v)", vmAddress)
+	address := vmAddress.ToStateAddr()
+
+	// Retrieve the account from global state
+	entryData, err := mgr.state.GetClientState(address.String())
+	if err != nil {
+		return nil, err
+	}
+	mgr.entries[address.String()] = entryData;
+
+	// Deserialize the entry
+	entry := &EvmEntry{}
+	err = proto.Unmarshal(entryData, entry)
+	if err != nil {
+		return nil, err
+	}
+
+	return entry, nil
+}
+
 // SetEntry writes the entry to the given address. Returns an error if it fails
 // to set the address.
 func (mgr *StateManager) SetEntry(vmAddress *EvmAddr, entry *EvmEntry) error {
+	logger.Debugf("SetEntry(%v)", vmAddress)
 	address := vmAddress.ToStateAddr()
 
 	entryData, err := proto.Marshal(entry)
@@ -148,16 +181,24 @@ func (mgr *StateManager) SetEntry(vmAddress *EvmAddr, entry *EvmEntry) error {
 		return err
 	}
 
-	for _, a := range addresses {
-		if a == address.String() {
-			return nil
-		}
-	}
-	return fmt.Errorf("Address not set: %v", address)
+    // Look up data in saved state and update if required
+	_, exists := mgr.entries[address.String()]
+	if exists {
+	    mgr.entries[address.String()] = entryData;
+		return nil
+    } else {
+        for _, a := range addresses {
+            if a == address.String() {
+                return nil
+            }
+        }
+        return fmt.Errorf("Address not set: %v", address)
+    }
 }
 
 // MustSetEntry wraps set entry and panics if there is an error.
 func (mgr *StateManager) MustSetEntry(vmAddress *EvmAddr, entry *EvmEntry) {
+	logger.Debugf("MustSetEntry(%v)", vmAddress)
 	err := mgr.SetEntry(vmAddress, entry)
 	if err != nil {
 		panic(fmt.Sprintf(

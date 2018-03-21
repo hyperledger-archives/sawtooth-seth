@@ -63,10 +63,15 @@ use sawtooth_sdk::messages::client_peers::{
     ClientPeersGetResponse,
     ClientPeersGetResponse_Status,
 };
+use sawtooth_sdk::messages::processor::{
+    TpProcessRequest,
+    TpProcessResponse,
+    TpProcessResponse_Status,
+};
 use sawtooth_sdk::messages::transaction::{Transaction as TransactionPb, TransactionHeader};
 use sawtooth_sdk::messages::batch::{Batch, BatchHeader};
 use sawtooth_sdk::messages::block::{BlockHeader};
-use messages::seth::{EvmEntry, EvmStateAccount, EvmStorage};
+use messages::seth::{EvmEntry, EvmStateAccount, EvmStorage, SethTransactionReceipt};
 use accounts::{Account, Error as AccountError};
 use filters::{FilterManager};
 use transactions::{SethTransaction, SethReceipt, Transaction, TransactionKey};
@@ -186,14 +191,16 @@ impl From<AccountError> for Error {
 #[derive(Clone)]
 pub struct ValidatorClient<S: MessageSender> {
     sender: S,
+    processor: S,
     accounts: Vec<Account>,
     pub filters: FilterManager,
 }
 
 impl<S: MessageSender> ValidatorClient<S> {
-    pub fn new(sender: S, accounts: Vec<Account>) -> Self {
+    pub fn new(sender: S, processor: S, accounts: Vec<Account>) -> Self {
         ValidatorClient{
             sender: sender,
+            processor: processor,
             accounts: accounts,
             filters: FilterManager::new(),
         }
@@ -253,8 +260,29 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         let correlation_id = uuid::Uuid::new_v4().to_string();
 
+        debug!("XXX sending {:?} ({:?})", msg_type, msg);
         let mut future = self.sender.send(msg_type, &correlation_id, &msg_bytes)?;
+        debug!("XXX sent {:?}", msg_type);
         let response_msg = future.get()?;
+        debug!("XXX got {:?}", msg_type);
+        protobuf::parse_from_bytes(&response_msg.content).map_err(|error|
+            Error::ParseError(String::from(format!("Error parsing response: {:?}", error))))
+    }
+
+    pub fn process_request<T, U>(&mut self, msg_type: Message_MessageType, msg: &T) -> Result<U, Error>
+        where T: protobuf::Message, U: protobuf::MessageStatic
+    {
+        let msg_bytes = protobuf::Message::write_to_bytes(msg).map_err(|error|
+            Error::ParseError(String::from(
+                format!("Error serializing request: {:?}", error))))?;
+
+        let correlation_id = uuid::Uuid::new_v4().to_string();
+
+        debug!("XXX sending {:?} ({:?})", msg_type, msg);
+        let mut future = self.processor.send(msg_type, &correlation_id, &msg_bytes)?;
+        debug!("XXX sent {:?}", msg_type);
+        let response_msg = future.get()?;
+        debug!("XXX got {:?}", msg_type);
         protobuf::parse_from_bytes(&response_msg.content).map_err(|error|
             Error::ParseError(String::from(format!("Error parsing response: {:?}", error))))
     }
@@ -306,7 +334,6 @@ impl<S: MessageSender> ValidatorClient<S> {
         let txn_header_bytes = protobuf::Message::write_to_bytes(&txn_header).map_err(|error|
             Error::ParseError(String::from(
                 format!("Error serializing transaction header: {:?}", error))))?;
-
         let txn_signature = account.sign(&txn_header_bytes)?;
 
         let mut txn = TransactionPb::new();
@@ -331,6 +358,55 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         Ok((batch, txn_signature))
     }
+
+    pub fn call_transaction(&mut self, txn: SethTransaction) -> Result<Vec<u8>, Error> {
+        let payload = protobuf::Message::write_to_bytes(&txn.to_pb()).map_err(|error|
+            Error::ParseError(String::from(
+                format!("Error serializing payload: {:?}", error))))?;
+
+        let mut txn_header = TransactionHeader::new();
+        txn_header.set_family_name(String::from("seth"));
+        txn_header.set_family_version(String::from("1.0"));
+        txn_header.set_inputs(protobuf::RepeatedField::from_vec(
+            vec![String::from(SETH_NS), String::from(BLOCK_INFO_NS)]));
+        txn_header.set_outputs(protobuf::RepeatedField::from_vec(
+            vec![String::from(SETH_NS), String::from(BLOCK_INFO_NS)]));
+
+        let mut sha = Sha512::new();
+        sha.input(&payload);
+        let hash = sha.result_str();
+        txn_header.set_payload_sha512(hash);
+
+        let account = self.loaded_accounts()[0].clone();
+        txn_header.set_signer_public_key(String::from(account.public_key()));
+        let txn_header_bytes = protobuf::Message::write_to_bytes(&txn_header).map_err(|error|
+            Error::ParseError(String::from(
+                format!("Error serializing transaction header: {:?}", error))))?;
+        let txn_signature = account.sign(&txn_header_bytes)?;
+
+        let mut request = TpProcessRequest::new();
+        request.set_header(txn_header);
+        request.set_signature(txn_signature.clone());
+        request.set_payload(payload);
+        let context_id = uuid::Uuid::new_v4().to_string();
+        request.set_context_id(transform::strip_hex_str(&context_id));
+
+        let response: TpProcessResponse =
+            self.process_request(Message_MessageType::TP_PROCESS_REQUEST, &request)?;
+        debug!("TTT {:?}", response);
+
+        match response.status {
+            TpProcessResponse_Status::STATUS_UNSET => Err(Error::ValidatorError),
+            TpProcessResponse_Status::OK => {
+                let seth_receipt_pb: SethTransactionReceipt = protobuf::parse_from_bytes(&response.extended_data).unwrap_or_default();
+                Ok(seth_receipt_pb.get_return_value().to_vec())
+            },
+            TpProcessResponse_Status::INVALID_TRANSACTION => Err(Error::InvalidTransaction),
+            TpProcessResponse_Status::INTERNAL_ERROR => Err(Error::ValidatorError),
+        }
+    }
+
+
 
     pub fn get_receipts_from_block(&mut self, block: &Block) -> Result<HashMap<String, SethReceipt>, String> {
         let batches = &block.batches;
@@ -472,6 +548,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                 response = self.send_request(message_type, &request)?;
             },
         };
+        debug!("XXX returned response {:?}", response.status);
 
         match response.status {
             ClientBlockGetResponse_Status::STATUS_UNSET=> {

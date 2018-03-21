@@ -184,7 +184,7 @@ const (
 	RETURN
 	DELEGATECALL
 
-	// 0x70 range - other
+	REVERT = 0xfd
 	SUICIDE = 0xff
 )
 
@@ -339,7 +339,7 @@ var opCodeToString = map[OpCode]string{
 	CALLCODE:     "CALLCODE",
 	DELEGATECALL: "DELEGATECALL",
 
-	// 0x70 range - other
+	REVERT: "REVERT",
 	SUICIDE: "SUICIDE",
 }
 

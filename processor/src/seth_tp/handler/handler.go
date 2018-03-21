@@ -24,10 +24,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/rberg2/sawtooth-go-sdk/logging"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
-	"github.com/rberg2/sawtooth-go-sdk/protobuf/processor_pb2"
-	"github.com/rberg2/sawtooth-go-sdk/protobuf/transaction_pb2"
+	"github.com/grkvlt/sawtooth-go-sdk/logging"
+	"github.com/grkvlt/sawtooth-go-sdk/processor"
+	"github.com/grkvlt/sawtooth-go-sdk/protobuf/processor_pb2"
+	"github.com/grkvlt/sawtooth-go-sdk/protobuf/transaction_pb2"
 	. "protobuf/block_info_pb2"
 	. "protobuf/seth_pb2"
 )
@@ -62,6 +62,7 @@ func (self *BurrowEVMHandler) Namespaces() []string {
 }
 
 func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, context *processor.Context) error {
+	logger.Debugf("RRR %v", request)
 
 	// Unpack and validate transaction
 	wrapper, err := unpackPayload(request.GetPayload())
@@ -123,13 +124,14 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 		)}
 	}
 	err = context.AddReceiptData(bytes)
-	if err != nil {
-		return &processor.InternalError{Msg: fmt.Sprintf(
-			"Couldn't set receipt data: %v", err,
-		)}
+    if wrapper.GetCommit() {
+		if err != nil {
+			return &processor.InternalError{Msg: fmt.Sprintf(
+				"Couldn't set receipt data: %v", err,
+			)}
+		}
 	}
-
-	return nil
+	return nil;
 }
 
 // -- utilities --

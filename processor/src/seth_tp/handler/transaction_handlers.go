@@ -22,7 +22,7 @@ import (
 	. "common"
 	"encoding/hex"
 	"fmt"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
+	"github.com/grkvlt/sawtooth-go-sdk/processor"
 	. "protobuf/seth_pb2"
 	"strings"
 )
@@ -255,33 +255,39 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppState) HandlerResult {
 	txn := wrapper.GetMessageCall()
 
-	// The sender account must already exist
-	senderAcct := sapps.GetAccount(sender.ToWord256())
-	if senderAcct == nil {
-		return HandlerResult{
-			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
-				"Sender account must already exist to message call: %v", sender,
-			)},
-		}
-	}
+	var senderAcct *evm.Account
+	var receiverAcct *evm.Account
 
-	// Verify this account has permission to make message calls
-	if !evm.HasPermission(sapps, senderAcct, ptypes.Call) {
-		return HandlerResult{
-			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
-				"Sender account does not have permission to make message calls: %v",
-				sender,
-			)},
+	// No sender passed for eth_call executions that are not committed
+	if wrapper.GetCommit() {
+		// The sender account must already exist
+		senderAcct = sapps.GetAccount(sender.ToWord256())
+		if senderAcct == nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Sender account must already exist to message call: %v", sender,
+				)},
+			}
 		}
-	}
 
-	// Check that the nonce in the transaction matches the nonce in state
-	if txn.GetNonce() != uint64(senderAcct.Nonce) {
-		return HandlerResult{
-			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
-				"Nonces do not match: Transaction (%v), State (%v)",
-				txn.GetNonce(), senderAcct.Nonce,
-			)},
+		// Verify this account has permission to make message calls
+		if !evm.HasPermission(sapps, senderAcct, ptypes.Call) {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Sender account does not have permission to make message calls: %v",
+					sender,
+				)},
+			}
+		}
+
+		// Check that the nonce in the transaction matches the nonce in state
+		if txn.GetNonce() != uint64(senderAcct.Nonce) {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Nonces do not match: Transaction (%v), State (%v)",
+					txn.GetNonce(), senderAcct.Nonce,
+				)},
+			}
 		}
 	}
 
@@ -294,7 +300,11 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 		}
 	}
 
-	receiverAcct := sapps.GetAccount(receiver.ToWord256())
+	if wrapper.GetCommit() {
+		receiverAcct = sapps.GetAccount(receiver.ToWord256())
+	} else {
+		receiverAcct = sapps.GetClientAccount(receiver.ToWord256())
+	}
 
 	// Receiving account must exist to call it
 	if receiverAcct == nil {
@@ -316,10 +326,14 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	logger.Debug("Gas Used: ", gasUsed)
 	logger.Debug("EVM Output: ", strings.ToLower(hex.EncodeToString(out)))
 
-	senderAcct.Nonce += 1
+	if wrapper.GetCommit() {
+	  if senderAcct != nil {
+			senderAcct.Nonce += 1
+		}
 
-	sapps.UpdateAccount(senderAcct)
-	sapps.UpdateAccount(receiverAcct)
+		sapps.UpdateAccount(senderAcct)
+		sapps.UpdateAccount(receiverAcct)
+	}
 
 	return HandlerResult{
 		ReturnValue: out,

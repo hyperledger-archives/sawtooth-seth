@@ -60,8 +60,10 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: Message
 
 pub fn send_transaction<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_sendTransaction");
-    let (txn,): (Map<String, Value>,) = params.parse().map_err(|_|
-        Error::invalid_params("Takes [txn: OBJECT]"))?;
+    let (txn,): (Map<String, Value>,) = params.parse().map_err(|e| {
+        error!("Invalid params: {:?}", e);
+        Error::invalid_params("Takes [txn: OBJECT]")
+    })?;
 
     // Required arguments
     let from = transform::get_string_from_map(&txn, "from").and_then(|f| f.ok_or_else(||
@@ -95,7 +97,7 @@ pub fn send_transaction<T>(params: Params, mut client: ValidatorClient<T>) -> Re
         txn.set_gas_price(gas_price);
         txn.set_value(value);
         txn.set_nonce(nonce);
-        SethTransaction::MessageCall(txn)
+        SethTransaction::MessageCall(txn, true)
     } else {
         // Contract Creation
         let mut txn = CreateContractAccountTxnPb::new();
@@ -125,7 +127,8 @@ pub fn get_transaction_by_hash<T>(params: Params, client: ValidatorClient<T>) ->
     info!("eth_getTransactionByHash");
     let (txn_hash,): (String,) = match params.parse() {
         Ok(t) => t,
-        Err(_) => {
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
             return Err(Error::invalid_params("Takes [txnHash: DATA(64)]"));
         },
     };
@@ -143,7 +146,8 @@ pub fn get_transaction_by_block_hash_and_index<T>(params: Params, client: Valida
     info!("eth_getTransactionByBlockHashAndIndex");
     let (block_hash, index): (String, String) = match params.parse() {
         Ok(t) => t,
-        Err(_) => {
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
             return Err(Error::invalid_params("Takes [blockHash: DATA(64), index: QUANTITY]"));
         },
     };
@@ -172,7 +176,8 @@ pub fn get_transaction_by_block_number_and_index<T>(params: Params, client: Vali
     info!("eth_getTransactionByBlockNumberAndIndex");
     let (block_num, index): (String, String) = match params.parse() {
         Ok(t) => t,
-        Err(_) => {
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
             return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG, index: QUANTITY]"));
         },
     };
@@ -253,10 +258,14 @@ fn get_transaction<T>(mut client: ValidatorClient<T>, txn_key: &TransactionKey) 
 pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_getTransactionReceipt");
     let txn_id: String = params.parse()
-        .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))
+        .map_err(|e| {
+            error!("Invalid params: {:?}", e);
+            Error::invalid_params("Takes [txnHash: DATA(64)]")
+        })
         .and_then(|(v,): (String,)| v.get(2..)
             .map(|v| String::from(v))
             .ok_or_else(|| Error::invalid_params("Invalid transaction hash, must have 0x")))?;
+    debug!("XXX client.get_receipts {}", txn_id);
     let receipt = match client.get_receipts(&[txn_id.clone()]) {
         Err(ClientError::NoResource) => {
             return Ok(Value::Null);
@@ -273,6 +282,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
             return Err(Error::internal_error());
         },
     };
+    debug!("XXX client.get_transaction_and_block {}", txn_id);
     let block = client.get_transaction_and_block(&TransactionKey::Signature(txn_id.clone()))
         .map_err(|error| {
             error!("Error getting block and transaction for txn `{}`: {}", txn_id, error);
@@ -285,6 +295,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
         error!("Error parsing block header: {}", error);
         Error::internal_error()
     })?;
+    debug!("XXX block num {}", block_header.block_num);
     let index = block.get_batches().iter()
         .flat_map(|batch| batch.get_transactions().iter())
         .position(|txn| txn.header_signature == txn_id)
@@ -293,6 +304,7 @@ pub fn get_transaction_receipt<T>(params: Params, mut client: ValidatorClient<T>
                 txn_id, block.header_signature);
             Error::internal_error()})?;
 
+    debug!("XXX txn index is {}, block signature {}", index, &block.header_signature);
     Ok(transform::make_txn_receipt_obj(
         &receipt, index as u64, &block.header_signature, block_header.block_num))
 }
@@ -311,7 +323,10 @@ pub fn estimate_gas<T>(_params: Params, mut _client: ValidatorClient<T>) -> Resu
 pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_sign");
     let (address, payload): (String, String) = params.parse()
-        .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))?;
+        .map_err(|e| {
+            error!("Invalid params: {:?}", e);
+            Error::invalid_params("Takes [txnHash: DATA(64)]")
+        })?;
     let address = address.get(2..)
         .map(|a| String::from(a))
         .ok_or_else(|| Error::invalid_params("Address must have 0x prefix"))?;
@@ -342,10 +357,51 @@ pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Erro
     Ok(transform::hex_prefix(&signature))
 }
 
-pub fn call<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+pub fn call<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
     info!("eth_call");
-    // Implementing this requires running the EVM, which is not possible within the RPC.
-    Err(error::not_implemented())
+
+    let (call, _block_num): (Map<String, Value>, String) = match params.parse() {
+        Ok(t) => t,
+        Err(e) => {
+            error!("Invalid params: {:?}", e);
+            return Err(Error::invalid_params("Takes [call: OBJECT, blockNum: QUANTITY|TAG]"));
+        },
+    };
+    if call.contains_key("from") {
+        return Err(Error::invalid_params("Param `from` not allowed for eth_call"));
+    }
+
+    // Required arguments
+    let to = transform::get_bytes_from_map(&call, "to").and_then(|f| f.ok_or_else(||
+        Error::invalid_params("`to` not set")))?;
+
+    // Optional Arguments
+    let _from = transform::bytes_to_hex_str(&vec![0; 0]);
+    let gas = transform::get_u64_from_map(&call, "gas").map(|g| g.unwrap_or(90000))?;
+    let gas_price = transform::get_u64_from_map(&call, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
+    let value = transform::get_u64_from_map(&call, "value").map(|g| g.unwrap_or(0))?;
+    let nonce = transform::get_u64_from_map(&call, "nonce").map(|g| g.unwrap_or(0))?;
+    let data = transform::get_bytes_from_map(&call, "data").map(|g| g.unwrap_or(vec![0; 0]))?;
+
+    // Message Call
+    let txn = {
+        let mut txn = MessageCallTxnPb::new();
+        txn.set_to(to.clone());
+        txn.set_data(data);
+        txn.set_gas_limit(gas);
+        txn.set_gas_price(gas_price);
+        txn.set_value(value);
+        txn.set_nonce(nonce);
+        SethTransaction::MessageCall(txn, false)
+    };
+
+    let result = client.call_transaction(txn).map_err(|error| {
+        error!("{:?}", error);
+        Error::internal_error()
+    })?;
+
+    debug!("ZZZ message call {:?} = {:?}", to.clone(), result);
+    Ok(transform::hex_prefix(&transform::bytes_to_hex_str(&result)))
 }
 
 // Always return false
