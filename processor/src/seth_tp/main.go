@@ -30,6 +30,7 @@ import (
 type Opts struct {
 	Verbose []bool `short:"v" long:"verbose" description:"Increase verbosity"`
 	Connect string `short:"C" long:"connect" description:"Validator component endpoint to connect to" default:"tcp://localhost:4004"`
+	Listen string `long:"listen" description:"Listener endpoint to bind" default:"tcp://*:4004"`
 }
 
 func main() {
@@ -54,6 +55,7 @@ func main() {
 	}
 
 	endpoint := opts.Connect
+	listen := opts.Listen
 
 	switch len(opts.Verbose) {
 	case 2:
@@ -65,7 +67,7 @@ func main() {
 	}
 
 	handler := seth.NewBurrowEVMHandler()
-	processor := processor.NewTransactionProcessor(endpoint)
+	processor := processor.NewTransactionProcessor(endpoint, listen)
 	processor.AddHandler(handler)
 	processor.ShutdownOnSignal(syscall.SIGINT, syscall.SIGTERM)
 	err = processor.Start()
