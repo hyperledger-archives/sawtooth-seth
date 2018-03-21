@@ -71,7 +71,7 @@ use sawtooth_sdk::messages::processor::{
 use sawtooth_sdk::messages::transaction::{Transaction as TransactionPb, TransactionHeader};
 use sawtooth_sdk::messages::batch::{Batch, BatchHeader};
 use sawtooth_sdk::messages::block::{BlockHeader};
-use messages::seth::{EvmEntry, EvmStateAccount, EvmStorage};
+use messages::seth::{EvmEntry, EvmStateAccount, EvmStorage, SethTransactionReceipt};
 use accounts::{Account, Error as AccountError};
 use filters::{FilterManager};
 use transactions::{SethTransaction, SethReceipt, Transaction, TransactionKey};
@@ -397,11 +397,16 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         match response.status {
             TpProcessResponse_Status::STATUS_UNSET => Err(Error::ValidatorError),
-            TpProcessResponse_Status::OK => Ok(response.extended_data),
+            TpProcessResponse_Status::OK => {
+                let seth_receipt_pb: SethTransactionReceipt = protobuf::parse_from_bytes(&response.extended_data).unwrap_or_default();
+                Ok(seth_receipt_pb.get_return_value().to_vec())
+            },
             TpProcessResponse_Status::INVALID_TRANSACTION => Err(Error::InvalidTransaction),
             TpProcessResponse_Status::INTERNAL_ERROR => Err(Error::ValidatorError),
         }
     }
+
+
 
     pub fn get_receipts_from_block(&mut self, block: &Block) -> Result<HashMap<String, SethReceipt>, String> {
         let batches = &block.batches;
