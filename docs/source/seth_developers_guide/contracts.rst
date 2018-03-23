@@ -24,37 +24,37 @@ Solidity contract, which is based loosely on the IntegerKey Transaction Family.
 byte code for deployment. To follow along with this guide, you should create a
 new file with this contract::
 
-    pragma solidity ^0.4.0;
+  pragma solidity ^0.4.0;
 
-    contract intkey {
-      mapping (uint => uint) intmap;
+  contract intkey {
+    mapping (uint => uint) intmap;
 
-      event Set(uint key, uint value);
+    event Set(uint key, uint value);
 
-      function set(uint key, uint value) {
-        intmap[key] = value;
-        Set(key, value);
-      }
-
-      function inc(uint key){
-        intmap[key] = intmap[key] + 1;
-      }
-
-      function dec(uint key){
-        intmap[key] = intmap[key] - 1;
-      }
-
-      function get(uint key) constant returns (uint retVal) {
-        return intmap[key];
-      }
+    function set(uint key, uint value) public {
+      intmap[key] = value;
+      emit Set(key, value);
     }
+
+    function inc(uint key) public {
+      intmap[key] = intmap[key] + 1;
+    }
+
+    function dec(uint key) public {
+      intmap[key] = intmap[key] - 1;
+    }
+
+    function get(uint key) public constant returns (uint retVal) {
+      return intmap[key];
+    }
+  }
 
 .. _Solidity: https://solidity.readthedocs.io/en/develop/
 
-Save this contract in a file called "contract.sol" in your working directory. If
-you are working with the development environment described in
-:doc`./getting_started` you should save this file in the sawtooth-core/
-directory on your host so that it is available within the seth container.
+Save this contract in a file called "contract.sol". If you are working with the
+development environment described in :doc`./getting_started` you should save this
+file in the sawtooth-seth/contracts directory on your host so that it is available
+within the seth container.
 
 Compiling Contracts
 ===================
@@ -63,10 +63,11 @@ Before we can deploy this contract, we have to compile it. The ``seth`` client
 expects that the contract will be passed as a hex-encoded byte array. We can use
 the Solidity compiler ``solc`` to create it. If you followed the
 :doc:`./getting_started` instructions, this tool is already installed in the
-seth container we created earlier. Connect to the seth container as explained
+seth-cli container we created earlier. Connect to the seth container as explained
 there. If not, we assume you have it installed locally.
 
-To compile the contract, run::
+To compile the contract, navigate to the directory containing the contract and
+run::
 
     $ solc --bin contract.sol
 
@@ -83,7 +84,7 @@ Deploying Contracts
 Now that we have an account and a compiled contract, we can deploy the contract
 with::
 
-    $ seth contract create --wait myalias {contract}
+    $ seth contract create --wait {alias} {contract}
 
 In place of ``{contract}`` you should insert the blob of hex that you saved from
 earlier. This will create a new contract creation transaction and submit it to
@@ -141,7 +142,7 @@ contract we deployed earlier with arguments ``19`` and ``42``::
 
 To call our contract and run ``set(19,42)``, run::
 
-    $ seth contract call --wait {address} {input}
+    $ seth contract call --wait {alias} {address} {input}
 
 In place of ``{input]`` you should insert the blob of hex formatted according to
 the contract's ABI that we created above. If everything works, the client will
