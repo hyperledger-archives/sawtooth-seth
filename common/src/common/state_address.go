@@ -63,8 +63,8 @@ func (sa StateAddr) String() string {
 
 func (sa StateAddr) ToEvmAddr() *EvmAddr {
 	ea, err := NewEvmAddrFromString(sa.String())
-  if err != nil {
-    panic(err.Error())
-  }
-  return ea
+	if err != nil {
+		panic(err.Error())
+	}
+	return ea
 }
