@@ -19,19 +19,19 @@ package common
 
 // Lengths are in bytes
 const (
-	PRIVLEN   = 32
-	PUBLEN    = 33
-	STATEADDRLEN = 35
-	EVMADDRLEN = 20
-	PREFIXLEN = 3
-	PREFIX    = "a68b06"
-	GAS_LIMIT = 1 << 31
-	FAMILY_NAME    = "seth"
-	FAMILY_VERSION = "1.0"
-	ENCODING       = "application/protobuf"
-	BLOCK_INFO_PREFIX = "00b10c"
+	PRIVLEN              = 32
+	PUBLEN               = 33
+	STATEADDRLEN         = 35
+	EVMADDRLEN           = 20
+	PREFIXLEN            = 3
+	PREFIX               = "a68b06"
+	GAS_LIMIT            = 1 << 31
+	FAMILY_NAME          = "seth"
+	FAMILY_VERSION       = "1.0"
+	ENCODING             = "application/protobuf"
+	BLOCK_INFO_PREFIX    = "00b10c"
 	BLOCK_INFO_NAMESPACE = BLOCK_INFO_PREFIX + "00"
-	CONFIG_ADDRESS = BLOCK_INFO_PREFIX + "0100000000000000000000000000000000000000000000000000000000000000"
+	CONFIG_ADDRESS       = BLOCK_INFO_PREFIX + "0100000000000000000000000000000000000000000000000000000000000000"
 )
 
 func GlobalPermissionsAddress() *EvmAddr {
