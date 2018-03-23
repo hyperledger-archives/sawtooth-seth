@@ -64,11 +64,11 @@ node ('master') {
         // Use a docker container to build and protogen, so that the Jenkins
         // environment doesn't need all the dependencies.
         stage("Build Test Dependencies") {
-            sh './bin/build_all'
+            sh 'docker-compose build'
         }
 
         stage("Run Lint") {
-            sh 'docker run --rm -v $(pwd):/project/sawtooth-core sawtooth-dev-go:$ISOLATION_ID run_go_fmt'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID run_go_fmt'
         }
 
         // Run the tests
@@ -91,8 +91,8 @@ node ('master') {
         }
 
         stage("Archive Build artifacts") {
-            archiveArtifacts artifacts: '*.tgz, *.zip'
-            archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf'
+            archiveArtifacts artifacts: '*.tgz, *.zip', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf', allowEmptyArchive: true
         }
     }
 }
