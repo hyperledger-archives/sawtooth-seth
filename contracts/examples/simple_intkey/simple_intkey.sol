@@ -1,24 +1,24 @@
 pragma solidity ^0.4.0;
 
 contract intkey {
-  mapping (uint => uint) storedData;
+  mapping (uint => uint) intmap;
 
-  event Set(address from, bytes data);
+  event Set(uint key, uint value);
 
-  function set(uint key, uint value) {
-    storedData[key] = value;
-    Set(msg.sender, msg.data);
+  function set(uint key, uint value) public {
+    intmap[key] = value;
+    emit Set(key, value);
   }
 
-  function inc(uint key){
-    storedData[key] = storedData[key] + 1;
+  function inc(uint key) public {
+    intmap[key] = intmap[key] + 1;
   }
 
-  function dec(uint key){
-    storedData[key] = storedData[key] - 1;
+  function dec(uint key) public {
+    intmap[key] = intmap[key] - 1;
   }
 
-  function get(uint key) constant returns (uint retVal) {
-    return storedData[key];
+  function get(uint key) public constant returns (uint retVal) {
+    return intmap[key];
   }
 }
