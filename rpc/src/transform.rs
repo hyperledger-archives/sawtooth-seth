@@ -63,11 +63,11 @@ pub fn zerobytes(mut nbytes: usize) -> Value {
         return Value::String(String::from("0x0"));
     }
     let mut s = String::with_capacity(2 + nbytes * 2);
+    s.push_str("0x");
     while nbytes > 0 {
         s.push_str("00");
         nbytes -= 1;
     }
-    s.push_str("0x");
     Value::String(s)
 }
 
