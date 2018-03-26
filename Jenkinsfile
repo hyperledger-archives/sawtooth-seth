@@ -76,15 +76,6 @@ node ('master') {
             sh './bin/run_tests'
         }
 
-        stage("Create git archive") {
-            sh '''
-                REPO=$(git remote show -n origin | grep Fetch | awk -F'[/.]' '{print $6}')
-                VERSION=`git describe --dirty`
-                git archive HEAD --format=zip -9 --output=$REPO-$VERSION.zip
-                git archive HEAD --format=tgz -9 --output=$REPO-$VERSION.tgz
-            '''
-        }
-
         stage ("Build documentation") {
             sh 'docker build . -f sawtooth-build-docs -t sawtooth-build-docs:$ISOLATION_ID'
             sh 'docker run --rm -v $(pwd):/project/sawtooth-seth sawtooth-build-docs:$ISOLATION_ID'
