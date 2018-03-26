@@ -76,11 +76,6 @@ node ('master') {
             sh './bin/run_tests'
         }
 
-        stage ("Build documentation") {
-            sh 'docker build . -f sawtooth-build-docs -t sawtooth-build-docs:$ISOLATION_ID'
-            sh 'docker run --rm -v $(pwd):/project/sawtooth-seth sawtooth-build-docs:$ISOLATION_ID'
-        }
-
         stage("Archive Build artifacts") {
             archiveArtifacts artifacts: '*.tgz, *.zip', allowEmptyArchive: true
             archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf', allowEmptyArchive: true
