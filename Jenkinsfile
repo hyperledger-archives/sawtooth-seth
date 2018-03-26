@@ -76,6 +76,11 @@ node ('master') {
             sh './bin/run_tests'
         }
 
+        stage ("Build documentation") {
+            sh 'docker build . -f docs/Dockerfile -t seth-build-docs:$ISOLATION_ID'
+            sh 'docker run -v $(pwd)/docs:/project/sawtooth-seth/docs seth-build-docs:$ISOLATION_ID'
+        }
+
         stage("Archive Build artifacts") {
             sh 'docker-compose -f docker-compose-installed.yaml build'
             sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
@@ -83,7 +88,7 @@ node ('master') {
             sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-rpc:$ISOLATION_ID cp /debs/sawtooth-seth-rpc_0.2.0_amd64.deb /build'
             archiveArtifacts artifacts: '*.tgz, *.zip', allowEmptyArchive: true
             archiveArtifacts artifacts: 'build/debs/*.deb'
-            archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf'
         }
     }
 }
