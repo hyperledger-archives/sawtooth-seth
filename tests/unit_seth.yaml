@@ -21,6 +21,8 @@ services:
     build:
       context: ..
       dockerfile: ./cli/Dockerfile
-    image: sawtooth-seth-cli
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: sawtooth-seth-cli:${ISOLATION_ID}
     working_dir: /project/sawtooth-seth/tests
     command: go test

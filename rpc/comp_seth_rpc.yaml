@@ -17,10 +17,12 @@ version: "2.1"
 
 services:
   seth-rpc:
-    image: sawtooth-seth-rpc
     build:
       context: ..
       dockerfile: ./rpc/Dockerfile
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: sawtooth-seth-rpc:${ISOLATION_ID}
     working_dir: /project/sawtooth-seth/rpc
     expose:
       - 3030
@@ -37,10 +39,12 @@ services:
         --unlock test\""
 
   comp-seth-rpc:
-    image: rpc-test-python
     build:
       context: ..
       dockerfile: ./rpc/tests/Dockerfile
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: rpc-test-python:${ISOLATION_ID}
     expose:
       - 4004
     command: nose2-3
