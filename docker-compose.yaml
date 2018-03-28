@@ -1,4 +1,4 @@
-# Copyright 2017 Intel Corporation
+# Copyright 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,14 +13,16 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-version: '2.1'
+version: '3'
 
 services:
   seth-cli:
     build:
       context: .
       dockerfile: ./cli/Dockerfile
-    image: sawtooth-seth-cli
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: sawtooth-seth-cli:${ISOLATION_ID}
     container_name: seth-cli
     volumes:
       - ./contracts:/project/sawtooth-seth/contracts
@@ -40,7 +42,9 @@ services:
     build:
       context: .
       dockerfile: ./processor/Dockerfile
-    image: sawtooth-seth-tp
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: sawtooth-seth-tp:${ISOLATION_ID}
     container_name: seth-tp
     depends_on:
       - validator
@@ -102,17 +106,19 @@ services:
       "
 
   seth-rpc:
-      image: sawtooth-seth-rpc
-      build:
-        context: .
-        dockerfile: ./rpc/Dockerfile
-      container_name: seth-rpc
-      depends_on:
-        - validator
-      ports:
-        - 3030:3030
-      command: |
-        bash -c "
-          seth init http://rest-api:8080 &&
-          seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030
-        "
+    build:
+      context: .
+      dockerfile: ./rpc/Dockerfile
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: sawtooth-seth-rpc:${ISOLATION_ID}
+    container_name: seth-rpc
+    depends_on:
+      - validator
+    ports:
+      - 3030:3030
+    command: |
+      bash -c "
+        seth init http://rest-api:8080 &&
+        seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030
+      "
