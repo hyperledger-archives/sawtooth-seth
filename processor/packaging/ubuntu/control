@@ -1,0 +1,11 @@
+Source: sawtooth-seth-tp
+Maintainer: Hyperledger Sawtooth <HyperledgerSawtooth@gmail.com>
+Section: go
+Priority: optional
+Standards-Version: 3.9.6
+Homepage: https://github.com/hyperledger/sawtooth-seth
+Package: sawtooth-seth-tp
+Architecture: all
+Depends: libssl-dev, libzmq3-dev
+Description: Sawtooth Seth Transaction Processor
+Version: 0.2.0
