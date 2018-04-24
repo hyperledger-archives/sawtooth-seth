@@ -15,8 +15,6 @@
 
 FROM ubuntu:xenial
 
-COPY . /project/sawtooth-seth
-
 RUN echo "deb apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD" \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
  && apt-get update \
@@ -29,6 +27,8 @@ RUN echo "deb apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 
     python3-zmq \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+
+COPY . /project/sawtooth-seth
 
 ENV PATH=$PATH:/project/sawtooth-seth/bin
 
