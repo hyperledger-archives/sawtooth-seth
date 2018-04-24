@@ -39,7 +39,7 @@ impl<T: MessageSender + Clone + Sync + Send + 'static> RequestExecutor<T> {
         }
     }
 
-    pub fn run(&self, params: Params, handler: RequestHandler<T>) -> BoxFuture<Value, Error> {
+    pub fn run(&self, params: Params, handler: RequestHandler<T>) -> BoxFuture<Value> {
         let client = self.client.clone();
         Box::new(self.pool.spawn_fn(move || {handler(params, client)}))
     }
