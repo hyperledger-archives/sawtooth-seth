@@ -102,7 +102,7 @@ fn main() {
     let methods = get_method_list();
     for (name, method) in methods {
         let clone = executor.clone();
-        io.add_async_method(&name, move |params: Params| {
+        io.add_method(&name, move |params: Params| {
             clone.run(params, method)
         });
     }
