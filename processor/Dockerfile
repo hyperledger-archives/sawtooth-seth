@@ -15,7 +15,6 @@
 
 FROM ubuntu:xenial
 
-COPY . /project/sawtooth-seth
 ENV GOPATH=/project/sawtooth-seth/processor
 ENV PATH=$PATH:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
 WORKDIR $GOPATH/src/seth_tp
@@ -42,6 +41,8 @@ RUN go get -u \
     gopkg.in/fatih/set.v0 \
     golang.org/x/crypto/ripemd160 \
     github.com/jessevdk/go-flags
+
+COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
 
