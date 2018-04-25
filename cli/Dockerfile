@@ -15,7 +15,6 @@
 
 FROM ubuntu:xenial
 
-COPY . /project/sawtooth-seth
 ENV GOPATH=/project/sawtooth-seth/cli
 ENV PATH=$PATH:/project/sawtooth-seth/cli/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
 
@@ -57,6 +56,8 @@ RUN go get -u \
 RUN npm install \
     ethereumjs-abi \
     web3
+
+COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
 
