@@ -34,13 +34,20 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F10
  && rm -rf /var/lib/apt/lists/*
 
 RUN go get -u \
+    github.com/btcsuite/btcd/btcec \
+    github.com/golang/mock/gomock \
+    github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
-    github.com/btcsuite/btcd/btcec \
-    github.com/rberg2/sawtooth-go-sdk/... \
-    gopkg.in/fatih/set.v0 \
+    github.com/jessevdk/go-flags \
+    github.com/pebbe/zmq4 \
+    github.com/satori/go.uuid \
     golang.org/x/crypto/ripemd160 \
-    github.com/jessevdk/go-flags
+    gopkg.in/fatih/set.v0
+
+RUN go get github.com/hyperledger/sawtooth-sdk-go \
+ && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
+ && go generate
 
 COPY . /project/sawtooth-seth
 

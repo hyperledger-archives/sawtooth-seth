@@ -19,9 +19,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/hyperledger/sawtooth-sdk-go/logging"
+	"github.com/hyperledger/sawtooth-sdk-go/processor"
 	"github.com/jessevdk/go-flags"
-	"github.com/rberg2/sawtooth-go-sdk/logging"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
 	"os"
 	seth "seth_tp/handler"
 	"syscall"

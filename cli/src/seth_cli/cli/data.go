@@ -19,8 +19,8 @@ package main
 
 import (
 	"fmt"
+	signing "github.com/hyperledger/sawtooth-sdk-go/signing"
 	toml "github.com/pelletier/go-toml"
-	signing "github.com/rberg2/sawtooth-go-sdk/signing"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
