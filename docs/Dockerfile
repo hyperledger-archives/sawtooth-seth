@@ -28,93 +28,32 @@
 
 FROM ubuntu:xenial
 
-COPY . /project/sawtooth-seth
+ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.9/bin
 
-ENV GOPATH=/project/sawtooth-seth/common
-ENV PATH=$PATH:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
-
-# Build cli and tp
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
+    curl \
+    dvipng \
+    gcc \
     git \
     golang-1.9-go \
     libssl-dev \
     libzmq3-dev \
+    make \
     openssl \
     python3 \
     python3-grpcio-tools=1.1.3-1 \
     python3-pip \
     python3-sawtooth-cli \
     software-properties-common \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-RUN go get -u \
-    github.com/golang/protobuf/proto \
-    github.com/golang/protobuf/protoc-gen-go \
-    github.com/btcsuite/btcd/btcec \
-    github.com/rberg2/sawtooth-go-sdk/... \
-    github.com/jessevdk/go-flags \
-    github.com/pelletier/go-toml \
-    golang.org/x/crypto/ssh/terminal \
-    golang.org/x/crypto/ripemd160 \
-    gopkg.in/fatih/set.v0
-
-RUN seth-protogen go
-
-ENV PATH=$PATH:/project/sawtooth-seth/cli/bin
-ENV GOPATH=$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli
-WORKDIR /project/sawtooth-seth/cli/src/seth_cli/cli
-RUN go build -o /project/sawtooth-seth/cli/bin/seth
-
-ENV PATH=$PATH:/project/sawtooth-seth/processor/bin
-ENV GOPATH=$GOPATH:/project/sawtooth-seth/processor
-WORKDIR /project/sawtooth-seth/processor/src/seth_tp
-RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
-
-# Build RPC
-WORKDIR /
-
-RUN echo "deb http://repo.sawtooth.me/ubuntu/ci xenial universe" >> /etc/apt/sources.list \
- && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8AA7AF1F1091A5FD \
- && apt-get update
-
-RUN apt-get install -y -q --allow-downgrades \
-    curl \
-    gcc \
-    unzip \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-RUN curl -OLsS https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip \
- && unzip protoc-3.5.1-linux-x86_64.zip -d protoc3 \
- && rm protoc-3.5.1-linux-x86_64.zip
-
-RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
- && chmod +x /usr/bin/rustup-init \
- && rustup-init -y
-
- ENV PATH=$PATH:/root/.cargo/bin:/protoc3/bin:/project/sawtooth-seth/rpc/bin \
-    CARGO_INCREMENTAL=0
-
-RUN cargo install protobuf
-RUN seth-protogen rust
-
-WORKDIR /project/sawtooth-seth/rpc
-RUN mkdir /project/sawtooth-seth/rpc/bin
-RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
-
-# Build docs
-RUN apt-get update && apt-get install -y -q \
-    dvipng \
-    make \
     sudo \
     texlive-fonts-recommended \
     texlive-latex-base \
     texlive-latex-extra \
     texlive-latex-recommended \
+    unzip \
     zip \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* \
@@ -122,11 +61,53 @@ RUN apt-get update && apt-get install -y -q \
     sphinx==1.5.6 \
     sphinxcontrib-httpdomain \
     sphinxcontrib-openapi \
-    sphinx_rtd_theme \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    sphinx_rtd_theme
 
-RUN seth-protogen go
+ENV GOPATH=/go:/project/sawtooth-seth/common:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli:/project/sawtooth-seth/processor
+
+RUN go get -u \
+    github.com/btcsuite/btcd/btcec \
+    github.com/golang/mock/gomock \
+    github.com/golang/mock/mockgen \
+    github.com/golang/protobuf/proto \
+    github.com/golang/protobuf/protoc-gen-go \
+    github.com/jessevdk/go-flags \
+    github.com/pebbe/zmq4 \
+    github.com/pelletier/go-toml \
+    github.com/satori/go.uuid \
+    golang.org/x/crypto/ripemd160 \
+    golang.org/x/crypto/ssh/terminal \
+    gopkg.in/fatih/set.v0
+
+RUN go get github.com/hyperledger/sawtooth-sdk-go \
+ && cd /go/src/github.com/hyperledger/sawtooth-sdk-go \
+ && go generate
+
+RUN curl -OLsS https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip \
+ && unzip protoc-3.5.1-linux-x86_64.zip -d protoc3 \
+ && rm protoc-3.5.1-linux-x86_64.zip
+
+ENV CARGO_INCREMENTAL=0
+
+RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
+ && chmod +x /usr/bin/rustup-init \
+ && rustup-init -y
+
+RUN cargo install protobuf
+
+COPY . /project/sawtooth-seth
+
+RUN seth-protogen go rust
+
+WORKDIR /project/sawtooth-seth/cli/src/seth_cli/cli
+RUN go build -o /project/sawtooth-seth/cli/bin/seth
+
+WORKDIR /project/sawtooth-seth/processor/src/seth_tp
+RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
+
+WORKDIR /project/sawtooth-seth/rpc
+RUN mkdir /project/sawtooth-seth/rpc/bin
+RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
 
 WORKDIR /project/sawtooth-seth/docs
 CMD make html latexpdf

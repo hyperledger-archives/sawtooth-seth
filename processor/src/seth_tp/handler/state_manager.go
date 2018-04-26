@@ -21,7 +21,7 @@ import (
 	. "common"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/rberg2/sawtooth-go-sdk/processor"
+	"github.com/hyperledger/sawtooth-sdk-go/processor"
 	. "protobuf/seth_pb2"
 )
 

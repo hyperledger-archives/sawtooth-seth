@@ -30,7 +30,7 @@ import (
 	. "burrow/word256"
 
 	// "github.com/tendermint/go-events"
- 	"github.com/rberg2/sawtooth-go-sdk/logging"
+	"github.com/hyperledger/sawtooth-sdk-go/logging"
 )
 
 var (

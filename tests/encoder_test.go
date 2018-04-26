@@ -4,7 +4,7 @@ import (
     "encoding/hex"
     "testing"
     . "seth_cli/client"
-    "github.com/rberg2/sawtooth-go-sdk/signing"
+    "github.com/hyperledger/sawtooth-sdk-go/signing"
 )
 
 var (

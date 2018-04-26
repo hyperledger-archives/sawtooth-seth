@@ -19,8 +19,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/hyperledger/sawtooth-sdk-go/logging"
 	"github.com/jessevdk/go-flags"
-	"github.com/rberg2/sawtooth-go-sdk/logging"
 	"os"
 )
 
