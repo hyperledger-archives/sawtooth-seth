@@ -21,7 +21,10 @@ services:
       context: .
       dockerfile: ./cli/Dockerfile
       args:
-        ISOLATION_ID: ${ISOLATION_ID}
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     image: sawtooth-seth-cli:${ISOLATION_ID}
     container_name: seth-cli
     volumes:
@@ -43,7 +46,10 @@ services:
       context: .
       dockerfile: ./processor/Dockerfile
       args:
-        ISOLATION_ID: ${ISOLATION_ID}
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     image: sawtooth-seth-tp:${ISOLATION_ID}
     container_name: seth-tp
     depends_on:
@@ -110,7 +116,10 @@ services:
       context: .
       dockerfile: ./rpc/Dockerfile
       args:
-        ISOLATION_ID: ${ISOLATION_ID}
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     image: sawtooth-seth-rpc:${ISOLATION_ID}
     container_name: seth-rpc
     depends_on:
