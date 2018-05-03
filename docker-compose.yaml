@@ -26,6 +26,7 @@ services:
     container_name: seth-cli
     volumes:
       - ./contracts:/project/sawtooth-seth/contracts
+      - sawtooth:/root/.sawtooth
     depends_on:
       - rest-api
     working_dir: /project/sawtooth-seth
@@ -113,6 +114,8 @@ services:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-rpc:${ISOLATION_ID}
     container_name: seth-rpc
+    volumes:
+      - sawtooth:/root/.sawtooth
     depends_on:
       - validator
     ports:
@@ -121,3 +124,6 @@ services:
       bash -c "
         seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030
       "
+
+volumes:
+  sawtooth:
