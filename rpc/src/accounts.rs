@@ -84,7 +84,7 @@ impl From<SigningError> for Error {
 }
 
 fn get_data_dir() -> PathBuf {
-    [&env!("HOME"), ".sawtooth"].iter().collect()
+    [&env!("HOME"), ".sawtooth", "keys"].iter().collect()
 }
 
 impl Account {
