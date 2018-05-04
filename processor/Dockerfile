@@ -19,6 +19,14 @@ ENV GOPATH=/project/sawtooth-seth/processor
 ENV PATH=$PATH:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
 WORKDIR $GOPATH/src/seth_tp
 
+RUN \
+ if [ ! -z $HTTP_PROXY ] && [ -z $http_proxy ]; then \
+  http_proxy=$HTTP_PROXY; \
+ fi; \
+ if [ ! -z $HTTPS_PROXY ] && [ -z $https_proxy ]; then \
+  https_proxy=$HTTPS_PROXY; \
+ fi
+
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
  && apt-get update \
@@ -32,6 +40,16 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F10
     python3-grpcio-tools=1.1.3-1 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+
+RUN \
+ if [ ! -z $http_proxy ]; then \
+  git config --global http.proxy $http_proxy; \
+ fi; \
+ if [ ! -z $https_proxy ]; then \
+  git config --global https.proxy $https_proxy; \
+ fi
+
+RUN git config --global url."https://".insteadOf git://
 
 RUN go get -u \
     github.com/btcsuite/btcd/btcec \
