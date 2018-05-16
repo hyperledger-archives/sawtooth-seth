@@ -83,7 +83,10 @@ func (c *Client) Get(address []byte) (*EvmEntry, error) {
 	}
 
 	var data string
-	if body.Data != nil {
+	if body.Data == nil {
+		err := fmt.Errorf("please add option --nonce=0")
+		return nil, err
+	} else {
 		data = body.Data.(string)
 	}
 
@@ -93,7 +96,8 @@ func (c *Client) Get(address []byte) (*EvmEntry, error) {
 	}
 
 	if len(buf) == 0 {
-		return nil, nil
+		err := fmt.Errorf("received buffer length is zero")
+		return nil, err
 	}
 	entry := &EvmEntry{}
 	err = proto.Unmarshal(buf, entry)
