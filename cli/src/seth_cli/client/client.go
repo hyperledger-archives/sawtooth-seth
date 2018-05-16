@@ -83,7 +83,10 @@ func (c *Client) Get(address []byte) (*EvmEntry, error) {
 	}
 
 	var data string
-	if body.Data != nil {
+	if body.Data == nil {
+		err := fmt.Errorf("please add option --nonce=0")
+		return nil, err
+	} else {
 		data = body.Data.(string)
 	}
 
