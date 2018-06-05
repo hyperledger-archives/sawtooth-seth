@@ -48,8 +48,6 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
 ENV PATH=$PATH:/project/sawtooth-seth/bin:/root/.cargo/bin:/protoc3/bin:/project/sawtooth-seth/rpc/bin \
     CARGO_INCREMENTAL=0
 
-RUN cargo install protobuf
-
 WORKDIR /project/sawtooth-seth/rpc
 
 COPY bin/ /project/sawtooth-seth/bin
@@ -57,8 +55,7 @@ COPY protos/ /project/sawtooth-seth/protos
 COPY rpc/ /project/sawtooth-seth/rpc
 COPY tests/ /project/sawtooth-seth/tests
 
-RUN seth-protogen rust \
- && mkdir /project/sawtooth-seth/rpc/bin \
+RUN mkdir /project/sawtooth-seth/rpc/bin \
  && cargo build \
  && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
 
