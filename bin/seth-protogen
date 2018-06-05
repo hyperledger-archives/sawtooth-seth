@@ -109,40 +109,6 @@ def protoc_go(src_dir, base_dir, pkg):
             _protoc(args)
 
 
-def protoc_rust(src_dir, base_dir, pkg):
-    # 1. Create output package directory
-    pkg_dir = JOIN(TOP_DIR, base_dir, pkg)
-    os.makedirs(pkg_dir, exist_ok=True)
-
-    # 2. Create a temp directory for building
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_pkg_dir = JOIN(tmp_dir, pkg)
-        os.makedirs(tmp_pkg_dir)
-
-        # 3. Get a list of all .proto files to build
-        cwd = os.getcwd()
-        os.chdir(src_dir)
-        proto_files = glob("*.proto")
-        os.chdir(cwd)
-
-        # 4. Copy protos to temp dir and fix imports
-        for proto in proto_files:
-            src = JOIN(src_dir, proto)
-            dst = JOIN(tmp_pkg_dir, proto)
-            with open(src, encoding='utf-8') as fin:
-                with open(dst, "w", encoding='utf-8') as fout:
-                    src_contents = fin.read()
-                    fixed_contents = fix_import(src_contents, pkg)
-                    fout.write(fixed_contents)
-
-        # 5. Compile protobuf files
-        _protoc([
-            __file__,
-            "-I=%s" % tmp_dir,
-            "--rust_out=%s" % JOIN(TOP_DIR, base_dir, pkg),
-        ] + glob("%s/*.proto" % tmp_pkg_dir))
-
-
 def fix_import(contents, pkg, sub_dir=False):
     pattern = r'^import "(.*)\.proto\"'
     if sub_dir:
@@ -163,8 +129,6 @@ def protoc(src_dir, base_dir, pkg, language="python"):
         protoc_python(src_dir, base_dir, pkg)
     elif language == "go":
         protoc_go(src_dir, base_dir, pkg)
-    elif language == "rust":
-        protoc_rust(src_dir, base_dir, pkg)
 
 def main(args=None):
     if args is None:
@@ -173,8 +137,6 @@ def main(args=None):
     protoc(proto_dir, "rpc", "tests/protobuf")
     if "go" in args:
         protoc(proto_dir, "common/src", "protobuf", "go")
-    if "rust" in args:
-        protoc(proto_dir, "rpc", "src/messages/", "rust")
 
 if __name__ == "__main__":
     try:
