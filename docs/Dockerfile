@@ -93,11 +93,9 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
  && chmod +x /usr/bin/rustup-init \
  && rustup-init -y
 
-RUN cargo install protobuf
-
 COPY . /project/sawtooth-seth
 
-RUN seth-protogen go rust
+RUN seth-protogen go
 
 WORKDIR /project/sawtooth-seth/cli/src/seth_cli/cli
 RUN go build -o /project/sawtooth-seth/cli/bin/seth

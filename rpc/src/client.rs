@@ -204,7 +204,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn request<T, U>(&mut self, msg_type: Message_MessageType, msg: &T) -> Result<U, String>
-        where T: protobuf::Message, U: protobuf::MessageStatic
+        where T: protobuf::Message, U: protobuf::Message
     {
         let msg_bytes = match protobuf::Message::write_to_bytes(msg) {
             Ok(b) => b,
@@ -245,7 +245,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn send_request<T, U>(&mut self, msg_type: Message_MessageType, msg: &T) -> Result<U, Error>
-        where T: protobuf::Message, U: protobuf::MessageStatic
+        where T: protobuf::Message, U: protobuf::Message
     {
         let msg_bytes = protobuf::Message::write_to_bytes(msg).map_err(|error|
             Error::ParseError(String::from(
