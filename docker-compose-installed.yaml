@@ -21,7 +21,11 @@ services:
       context: .
       dockerfile: ./cli/Dockerfile-installed
       args:
-        ISOLATION_ID: ${ISOLATION_ID}
+        args:
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     image: sawtooth-seth-cli:${ISOLATION_ID}
     container_name: seth-cli
     volumes:
@@ -45,7 +49,11 @@ services:
       context: .
       dockerfile: ./processor/Dockerfile-installed
       args:
-        ISOLATION_ID: ${ISOLATION_ID}
+        args:
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     image: sawtooth-seth-tp:${ISOLATION_ID}
     container_name: seth-tp
     volumes:
@@ -115,15 +123,20 @@ services:
       context: .
       dockerfile: ./rpc/Dockerfile-installed
       args:
-        ISOLATION_ID: ${ISOLATION_ID}
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
     image: sawtooth-seth-rpc:${ISOLATION_ID}
     container_name: seth-rpc
     volumes:
       - ./build/debs:/build
     depends_on:
       - validator
+    expose:
+      - 3030    
     ports:
-      - 3030:3030
+      - '3030:3030'
     command: |
       bash -c "
         cp /debs/*.deb /build
