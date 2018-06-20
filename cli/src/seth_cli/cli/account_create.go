@@ -81,7 +81,8 @@ func (args *AccountCreate) Run(config *Config) error {
 	if args.Nonce == "" {
 		nonce, err = client.LookupAccountNonce(priv)
 		if err != nil {
-			return err
+			nonce = 0
+			fmt.Println("Nonce not provided in cli initialize to 0")
 		}
 	} else {
 		nonce, err = strconv.ParseUint(args.Nonce, 10, 64)
