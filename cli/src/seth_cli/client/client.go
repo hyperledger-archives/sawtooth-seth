@@ -84,7 +84,7 @@ func (c *Client) Get(address []byte) (*EvmEntry, error) {
 
 	var data string
 	if body.Data == nil {
-		err := fmt.Errorf("please add option --nonce=0")
+		err := fmt.Errorf("Rest API GET received improper response")
 		return nil, err
 	} else {
 		data = body.Data.(string)
@@ -96,7 +96,7 @@ func (c *Client) Get(address []byte) (*EvmEntry, error) {
 	}
 
 	if len(buf) == 0 {
-		err := fmt.Errorf("received buffer length is zero")
+		err := fmt.Errorf("Rest API did not return valid data")
 		return nil, err
 	}
 	entry := &EvmEntry{}
