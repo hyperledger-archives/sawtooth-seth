@@ -92,7 +92,7 @@ this id to get the result of the contract creation transaction with
 
 where ``{transaction-id}`` should  be substituted with the transaction id
 returned by ``eth_sendTransaction``. The return value is a JSON object. If the
-transaction was processed successfully, the object  will contain an
+transaction was processed successfully, the object will contain an
 ``"address"`` key that references the address of the newly created contract.
 
 .. note::
