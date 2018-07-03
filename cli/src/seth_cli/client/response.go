@@ -102,7 +102,7 @@ type TransactionReceipt struct {
 	Data   []string
 }
 type Event struct {
-	EventType  string
+	EventType  string `json:"event_type"`
 	Attributes []struct {
 		Key   string
 		Value string
