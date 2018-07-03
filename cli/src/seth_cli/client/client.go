@@ -118,6 +118,12 @@ func (c *Client) LookupAccountNonce(priv []byte) (uint64, error) {
 			addr, err,
 		)
 	}
+
+	// `Client.Get` can return `nil, nil` when e.g. it gets a 404 response
+	if entry == nil {
+		return 0, nil
+	}
+
 	return uint64(entry.Account.Nonce), nil
 }
 
