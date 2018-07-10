@@ -128,6 +128,5 @@ services:
       - 3030:3030
     command: |
       bash -c "
-        seth init http://rest-api:8080 &&
         seth-rpc --connect tcp://validator:4004 --bind 0.0.0.0:3030
       "
