@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# The rest api may be slow to start up, and our tests are quick to
+# start up. The tests may then fail when attempting to connect to
+# the rest api. This is a convenience script that waits for the
+# rest api to be up to the point where it can accept http connections,
+# and then runs the command passed in to it. Fails after 10 attempts.
+#
+# Example usage:
+#
+#     test-entrypoint go test foo.go
+
+echo "Waiting for rest-api to start up."
+
+# Adapted from https://stackoverflow.com/a/50055449
+timeout 10 bash -c 'until printf \"\" 2>>/dev/null >>/dev/tcp/rest-api/8080; do sleep 1; done' || {
+  echo 'The rest-api took too long to start up!';
+  exit 1
+}
+
+echo "rest-api is up, running tests."
+
+# Run the given command
+$@
