@@ -83,15 +83,15 @@ impl From<SigningError> for Error {
     }
 }
 
-fn get_data_dir() -> PathBuf {
-    [&env!("HOME"), ".sawtooth"].iter().collect()
+fn get_key_dir() -> PathBuf {
+    [&env!("HOME"), ".sawtooth", "keys"].iter().collect()
 }
 
 impl Account {
     pub fn load_from_alias(alias: &str) -> Result<Account, Error> {
-        let mut key_path = get_data_dir();
-        key_path.push(alias);
-        let pem = key_path.with_extension("pem");
+        let mut key_dir = get_key_dir();
+        key_dir.push(alias);
+        let pem = key_dir.with_extension("pem");
 
         let key = {
             if pem.as_path().is_file() {
