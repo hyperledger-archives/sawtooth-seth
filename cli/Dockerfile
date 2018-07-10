@@ -41,7 +41,7 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1
     python3-grpcio-tools=1.1.3-1 \
     python3-sawtooth-cli \
     software-properties-common \
- && add-apt-repository ppa:ethereum/ethereum \
+ && add-apt-repository -k hkp://p80.pool.sks-keyservers.net:80 ppa:ethereum/ethereum \
  && apt-get update \
  && apt-get install -y -q \
     solc \
