@@ -70,7 +70,21 @@ func (args *ContractList) Run(config *Config) error {
 	)
 	var i uint64
 	for i = 1; i < nonce; i++ {
-		fmt.Printf("%v: %v\n", i, addr.Derive(i))
+		var derived = addr.Derive(i)
+		entry, err := client.Get(derived.Bytes())
+
+		// Abort on error
+		if err != nil {
+			fmt.Printf("Encountered error while listing contracts: %s", err)
+			break
+		}
+
+		// Skip non-existent contracts
+		if entry == nil {
+			continue
+		}
+
+		fmt.Printf("%v: %v\n", i, derived)
 	}
 
 	return nil
