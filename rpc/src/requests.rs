@@ -15,13 +15,12 @@
  * ------------------------------------------------------------------------------
  */
 
-use futures_cpupool::{CpuPool};
-use jsonrpc_core::{Params, Value, Error, BoxFuture};
+use futures_cpupool::CpuPool;
+use jsonrpc_core::{BoxFuture, Error, Params, Value};
 
 use sawtooth_sdk::messaging::stream::*;
 
-use super::client::{ValidatorClient};
-
+use super::client::ValidatorClient;
 
 pub type RequestHandler<T> = fn(Params, ValidatorClient<T>) -> Result<Value, Error>;
 
@@ -41,7 +40,6 @@ impl<T: MessageSender + Clone + Sync + Send + 'static> RequestExecutor<T> {
 
     pub fn run(&self, params: Params, handler: RequestHandler<T>) -> BoxFuture<Value> {
         let client = self.client.clone();
-        Box::new(self.pool.spawn_fn(move || {handler(params, client)}))
+        Box::new(self.pool.spawn_fn(move || handler(params, client)))
     }
-
 }

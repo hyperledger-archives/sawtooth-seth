@@ -15,22 +15,22 @@
  * ------------------------------------------------------------------------------
  */
 
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::sync::{Arc, Mutex};
-use client::{Error};
-use jsonrpc_core::{Value, Error as RpcError};
+use client::Error;
+use jsonrpc_core::{Error as RpcError, Value};
 use serde_json::Map;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
+use transactions::SethLog;
 use transform;
-use transactions::{SethLog};
 
 // -- Topics --
 // A topic filter applies to only one of the four topic entries.
 #[derive(Debug, PartialEq, Clone)]
 pub enum TopicFilter {
-    All, // Match any entry
-    Exactly(String), // Match only this entry
+    All,                // Match any entry
+    Exactly(String),    // Match only this entry
     OneOf(Vec<String>), // Match any of the entries in this list
 }
 
@@ -38,15 +38,16 @@ impl TopicFilter {
     pub fn from_value(value: &Value) -> Result<Self, RpcError> {
         match value {
             &Value::Array(ref array) => {
-                let blobs = array.iter()
+                let blobs = array
+                    .iter()
                     .map(transform::string_from_hex_value)
                     .collect::<Result<Vec<String>, RpcError>>()?;
                 Ok(TopicFilter::OneOf(blobs))
-            },
+            }
             &Value::String(_) => {
                 let blob = transform::string_from_hex_value(value)?;
                 Ok(TopicFilter::Exactly(blob))
-            },
+            }
             &Value::Null => Ok(TopicFilter::All),
             _ => {
                 return Err(RpcError::invalid_params("Invalid topic setting"));
@@ -81,36 +82,39 @@ impl LogFilter {
             Some(s) => {
                 let s = transform::u64_from_hex_value(s)?;
                 Ok(Some(s))
-            },
+            }
             None => Ok(None),
         }?;
         let to_block = match filter.get("toBlock") {
             Some(s) => {
                 let s = transform::u64_from_hex_value(s)?;
                 Ok(Some(s))
-            },
+            }
             None => Ok(None),
         }?;
 
         // Parse the address into a vec of strings
         let addresses = match filter.get("address") {
             Some(&Value::Array(ref multiple)) => {
-                let addresses = multiple.iter()
+                let addresses = multiple
+                    .iter()
                     .map(|addr_val| transform::string_from_hex_value(addr_val))
                     .collect::<Result<Vec<String>, RpcError>>()?;
                 addresses
-            },
+            }
             Some(value) => {
                 let address = transform::string_from_hex_value(value)?;
                 vec![address]
-            },
+            }
             None => vec![],
         };
 
-        let topics = transform::get_array_from_map(&filter, "topics").and_then(|topics|
-            topics.iter()
+        let topics = transform::get_array_from_map(&filter, "topics").and_then(|topics| {
+            topics
+                .iter()
                 .map(|t| TopicFilter::from_value(t))
-                .collect::<Result<Vec<TopicFilter>, RpcError>>())?;
+                .collect::<Result<Vec<TopicFilter>, RpcError>>()
+        })?;
 
         Ok(LogFilter {
             from_block: from_block,
@@ -139,20 +143,17 @@ impl LogFilter {
     }
 
     pub fn contains_topics(&self, topics: &[String]) -> bool {
-        self.topics.iter()
-            .enumerate()
-            .all(|(i, filter)| {
-                if let Some(topic) = topics.get(i) {
-                    filter.contains(topic)
-                } else {
-                    false
-                }
-            })
+        self.topics.iter().enumerate().all(|(i, filter)| {
+            if let Some(topic) = topics.get(i) {
+                filter.contains(topic)
+            } else {
+                false
+            }
+        })
     }
 
     pub fn contains_block(&self, block_num: u64) -> bool {
         let lower = match self.from_block {
-
             Some(n) => block_num >= n,
             None => true,
         };
@@ -166,13 +167,12 @@ impl LogFilter {
 
 pub type FilterId = usize;
 pub fn filter_id_from_hex(s: &str) -> Result<FilterId, Error> {
-    usize::from_str_radix(s, 16).map_err(|error|
-        Error::ParseError(format!("Invalid hex: {}", error)))
+    usize::from_str_radix(s, 16)
+        .map_err(|error| Error::ParseError(format!("Invalid hex: {}", error)))
 }
 pub fn filter_id_to_hex(f: FilterId) -> String {
     format!("{:x}", f)
 }
-
 
 #[derive(Debug, Clone)]
 pub struct FilterEntry {
@@ -188,7 +188,7 @@ pub struct FilterManager {
 
 impl FilterManager {
     pub fn new() -> Self {
-        FilterManager{
+        FilterManager {
             id_ctr: Arc::new(Mutex::new(1)),
             filters: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -210,7 +210,11 @@ impl FilterManager {
     }
 
     pub fn get_filter(&mut self, filter_id: &FilterId) -> Option<FilterEntry> {
-        self.filters.lock().unwrap().get(filter_id).map(|filter| filter.clone())
+        self.filters
+            .lock()
+            .unwrap()
+            .get(filter_id)
+            .map(|filter| filter.clone())
     }
 
     pub fn update_latest_block(&mut self, filter_id: &FilterId, block_num: u64) -> bool {
@@ -222,14 +226,20 @@ impl FilterManager {
         }
     }
 
-    pub fn set_filter(&mut self, filter_id: &FilterId, filter: Filter, block_num: u64)
-        -> Option<FilterEntry>
-    {
-        let filter_entry = FilterEntry{
+    pub fn set_filter(
+        &mut self,
+        filter_id: &FilterId,
+        filter: Filter,
+        block_num: u64,
+    ) -> Option<FilterEntry> {
+        let filter_entry = FilterEntry {
             filter: filter,
             last_block_sent: block_num,
         };
-        self.filters.lock().unwrap().insert(*filter_id, filter_entry)
+        self.filters
+            .lock()
+            .unwrap()
+            .insert(*filter_id, filter_entry)
     }
 }
 
@@ -237,7 +247,7 @@ impl FilterManager {
 pub enum Filter {
     Block,
     Transaction,
-    Log(LogFilter)
+    Log(LogFilter),
 }
 
 #[cfg(test)]
@@ -248,7 +258,9 @@ mod tests {
     #[test]
     fn parse_topics() {
         assert_eq!(TopicFilter::Null, TopicFilter::from_value(&Value::Null));
-        assert_eq!(TopicFilter::Data(String::from("foo")),
-                   TopicFilter::from_value(&Value::String(String::from("foo"))));
+        assert_eq!(
+            TopicFilter::Data(String::from("foo")),
+            TopicFilter::from_value(&Value::String(String::from("foo")))
+        );
     }
 }

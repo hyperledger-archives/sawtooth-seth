@@ -15,18 +15,18 @@
  * ------------------------------------------------------------------------------
  */
 
+use rpassword;
+use sawtooth_sdk::signing::secp256k1::Secp256k1PrivateKey;
+use sawtooth_sdk::signing::Error as SigningError;
+use sawtooth_sdk::signing::{create_context, PrivateKey};
+use std::error::Error as StdError;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::fs::File;
-use std::io::Read;
-use std::path::{PathBuf};
-use std::error::Error as StdError;
 use std::io::Error as IoError;
-use sawtooth_sdk::signing::Error as SigningError;
-use sawtooth_sdk::signing::secp256k1::{Secp256k1PrivateKey};
-use sawtooth_sdk::signing::{PrivateKey, create_context};
-use transform;
-use rpassword;
+use std::io::Read;
+use std::path::PathBuf;
 use tiny_keccak;
+use transform;
 
 #[derive(Clone)]
 pub struct Account {
@@ -54,7 +54,9 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> { None }
+    fn cause(&self) -> Option<&StdError> {
+        None
+    }
 }
 
 impl Display for Error {
@@ -111,7 +113,7 @@ impl Account {
         let algorithm = create_context("secp256k1").unwrap();
         let pub_key = algorithm.get_public_key(&key)?;
 
-        Ok(Account{
+        Ok(Account {
             alias: String::from(alias),
             private_key: key.as_hex(),
             public_key: pub_key.as_hex(),
@@ -128,9 +130,11 @@ impl Account {
 
     pub fn sign(&self, message: &[u8]) -> Result<String, Error> {
         let algorithm = create_context("secp256k1").unwrap();
-        let key = Secp256k1PrivateKey::from_hex(&self.private_key).map_err(|_|
-            Error::SigningError)?;
-        algorithm.sign(message, &key).map_err(|_| Error::SigningError)
+        let key =
+            Secp256k1PrivateKey::from_hex(&self.private_key).map_err(|_| Error::SigningError)?;
+        algorithm
+            .sign(message, &key)
+            .map_err(|_| Error::SigningError)
     }
 
     pub fn alias(&self) -> &str {
