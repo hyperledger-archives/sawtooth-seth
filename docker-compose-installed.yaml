@@ -22,7 +22,7 @@ services:
       dockerfile: ./cli/Dockerfile-installed
       args:
         args:
-        - ISOLATION_ID=${ISOLATION_ID}
+        - ISOLATION_ID ${ISOLATION_ID}
         - http_proxy
         - https_proxy
         - no_proxy
@@ -50,7 +50,7 @@ services:
       dockerfile: ./processor/Dockerfile-installed
       args:
         args:
-        - ISOLATION_ID=${ISOLATION_ID}
+        - ISOLATION_ID ${ISOLATION_ID}
         - http_proxy
         - https_proxy
         - no_proxy
@@ -123,7 +123,7 @@ services:
       context: .
       dockerfile: ./rpc/Dockerfile-installed
       args:
-        - ISOLATION_ID=${ISOLATION_ID}
+        - ISOLATION_ID ${ISOLATION_ID}
         - http_proxy
         - https_proxy
         - no_proxy
@@ -133,8 +133,6 @@ services:
       - ./build/debs:/build
     depends_on:
       - validator
-    expose:
-      - 3030    
     ports:
       - '3030:3030'
     command: |

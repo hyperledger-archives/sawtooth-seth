@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: ./cli/Dockerfile
       args:
-        - ISOLATION_ID=${ISOLATION_ID}
+        - ISOLATION_ID ${ISOLATION_ID}
         - http_proxy
         - https_proxy
         - no_proxy
@@ -46,7 +46,7 @@ services:
       context: .
       dockerfile: ./processor/Dockerfile
       args:
-        - ISOLATION_ID=${ISOLATION_ID}
+        - ISOLATION_ID ${ISOLATION_ID}
         - http_proxy
         - https_proxy
         - no_proxy
@@ -116,7 +116,7 @@ services:
       context: .
       dockerfile: ./rpc/Dockerfile
       args:
-        - ISOLATION_ID=${ISOLATION_ID}
+        - ISOLATION_ID ${ISOLATION_ID}
         - http_proxy
         - https_proxy
         - no_proxy
@@ -124,8 +124,6 @@ services:
     container_name: seth-rpc
     depends_on:
       - validator
-    expose:
-      - 3030 
     ports:
       - '3030:3030'
     command: |
