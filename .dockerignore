@@ -1,0 +1,22 @@
+# Exclude IDE and Editor files
+/.idea/
+*.sublime*
+
+
+# Everything else
+/build/
+
+/docs/build/
+/docs/source/_autogen/
+/docs/source/cli/output/
+
+/integration/**/__pycache__/
+
+/cli/bin/
+/common/protobuf/
+/processor/bin/
+/rpc/Cargo.lock
+/rpc/target/
+/rpc/src/messages/*.rs
+!/rpc/src/messages/mod.rs
+/rpc/tests/protobuf/
