@@ -92,5 +92,5 @@ services:
       - validator
       - rest-api
     working_dir: /project/sawtooth-seth/integration/sawtooth_integration/tests
-    command: go test seth_chaining_test.go
+    command: test-entrypoint go test seth_chaining_test.go
     stop_signal: SIGKILL
