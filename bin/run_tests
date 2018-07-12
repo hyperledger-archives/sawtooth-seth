@@ -22,6 +22,7 @@ set -e
 export PATH=$PATH:$(cd $(dirname $0) ; pwd)
 
 run_docker_test ./tests/unit_seth.yaml
+run_docker_test seth_client_test
 run_docker_test seth_chaining_test
 run_docker_test seth_intkey_test
 run_docker_test seth_blockhash_test
