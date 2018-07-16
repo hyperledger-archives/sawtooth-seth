@@ -19,41 +19,41 @@
 extern crate clap;
 #[macro_use]
 extern crate log;
-extern crate simple_logging;
-extern crate uuid;
+extern crate crypto;
+extern crate futures_cpupool;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
-extern crate serde_json;
-extern crate futures_cpupool;
-extern crate sawtooth_sdk;
 extern crate protobuf;
 extern crate rpassword;
+extern crate sawtooth_sdk;
+extern crate serde_json;
+extern crate simple_logging;
 extern crate tiny_keccak;
-extern crate crypto;
+extern crate uuid;
 
-use std::process;
 use log::LogLevelFilter;
+use std::process;
 
 use sawtooth_sdk::messaging::stream::*;
 use sawtooth_sdk::messaging::zmq_stream::*;
 
-use jsonrpc_core::{IoHandler};
-use jsonrpc_http_server::{ServerBuilder};
-use jsonrpc_core::{Params};
+use jsonrpc_core::IoHandler;
+use jsonrpc_core::Params;
+use jsonrpc_http_server::ServerBuilder;
 
-mod requests;
-mod client;
-mod messages;
-mod calls;
 mod accounts;
+mod calls;
+mod client;
 mod filters;
+mod messages;
+mod requests;
 mod transactions;
 mod transform;
 
-use client::{ValidatorClient};
-use requests::{RequestExecutor, RequestHandler};
-use accounts::{Account};
+use accounts::Account;
 use calls::*;
+use client::ValidatorClient;
+use requests::{RequestExecutor, RequestHandler};
 
 const SERVER_THREADS: usize = 3;
 
@@ -70,13 +70,16 @@ fn main() {
         (@arg verbose: -v... "Increase the logging level.")
     ).get_matches();
 
-    let bind = arg_matches.value_of("bind")
-        .unwrap_or("127.0.0.1:3030");
-    let connect = arg_matches.value_of("connect")
+    let bind = arg_matches.value_of("bind").unwrap_or("127.0.0.1:3030");
+    let connect = arg_matches
+        .value_of("connect")
         .unwrap_or("tcp://127.0.0.1:4004");
-    let accounts: Vec<Account> = arg_matches.values_of_lossy("unlock").unwrap_or_else(||
-        Vec::new()).iter().map(|alias|
-            abort_if_err(Account::load_from_alias(alias))).collect();
+    let accounts: Vec<Account> = arg_matches
+        .values_of_lossy("unlock")
+        .unwrap_or_else(|| Vec::new())
+        .iter()
+        .map(|alias| abort_if_err(Account::load_from_alias(alias)))
+        .collect();
 
     for account in accounts.iter() {
         println!("{} unlocked: {}", account.alias(), account.address());
@@ -102,9 +105,7 @@ fn main() {
     let methods = get_method_list();
     for (name, method) in methods {
         let clone = executor.clone();
-        io.add_method(&name, move |params: Params| {
-            clone.run(params, method)
-        });
+        io.add_method(&name, move |params: Params| clone.run(params, method));
     }
 
     let endpoint: std::net::SocketAddr = bind.parse().unwrap();
@@ -118,7 +119,10 @@ fn main() {
     server.wait();
 }
 
-fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: MessageSender {
+fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
+where
+    T: MessageSender,
+{
     let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
 
     methods.extend(account::get_method_list().into_iter());

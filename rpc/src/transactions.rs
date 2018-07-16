@@ -18,28 +18,19 @@
 use protobuf;
 
 use messages::seth::{
-    SethTransaction_TransactionType,
-    SethTransaction as SethTrasactionPb,
-    SethTransactionReceipt,
-    CreateExternalAccountTxn as CreateExternalAccountTxnPb,
     CreateContractAccountTxn as CreateContractAccountTxnPb,
-    MessageCallTxn as MessageCallTxnPb,
-    SetPermissionsTxn as SetPermissionsTxnPb,
+    CreateExternalAccountTxn as CreateExternalAccountTxnPb, MessageCallTxn as MessageCallTxnPb,
+    SetPermissionsTxn as SetPermissionsTxnPb, SethTransaction as SethTrasactionPb,
+    SethTransactionReceipt, SethTransaction_TransactionType,
 };
 
-use sawtooth_sdk::messages::transaction::{
-    Transaction as TransactionPb,
-    TransactionHeader,
-};
-use sawtooth_sdk::messages::transaction_receipt::{TransactionReceipt};
 use sawtooth_sdk::messages::events::{Event, Event_Attribute};
+use sawtooth_sdk::messages::transaction::{Transaction as TransactionPb, TransactionHeader};
+use sawtooth_sdk::messages::transaction_receipt::TransactionReceipt;
 
-use client::{
-    Error,
-    BlockKey,
-};
-use transform;
 use accounts::public_key_to_address;
+use client::{BlockKey, Error};
+use transform;
 
 pub enum SethTransaction {
     CreateExternalAccount(CreateExternalAccountTxnPb),
@@ -51,14 +42,18 @@ pub enum SethTransaction {
 impl SethTransaction {
     pub fn try_from(mut txn: SethTrasactionPb) -> Option<Self> {
         match txn.transaction_type {
-            SethTransaction_TransactionType::CREATE_EXTERNAL_ACCOUNT =>
-                Some(SethTransaction::CreateExternalAccount(txn.take_create_external_account())),
-            SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT =>
-                Some(SethTransaction::CreateContractAccount(txn.take_create_contract_account())),
-            SethTransaction_TransactionType::MESSAGE_CALL =>
-                Some(SethTransaction::MessageCall(txn.take_message_call())),
-            SethTransaction_TransactionType::SET_PERMISSIONS =>
-                Some(SethTransaction::SetPermissions(txn.take_set_permissions())),
+            SethTransaction_TransactionType::CREATE_EXTERNAL_ACCOUNT => Some(
+                SethTransaction::CreateExternalAccount(txn.take_create_external_account()),
+            ),
+            SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT => Some(
+                SethTransaction::CreateContractAccount(txn.take_create_contract_account()),
+            ),
+            SethTransaction_TransactionType::MESSAGE_CALL => {
+                Some(SethTransaction::MessageCall(txn.take_message_call()))
+            }
+            SethTransaction_TransactionType::SET_PERMISSIONS => {
+                Some(SethTransaction::SetPermissions(txn.take_set_permissions()))
+            }
             _ => None,
         }
     }
@@ -69,19 +64,19 @@ impl SethTransaction {
             &SethTransaction::CreateExternalAccount(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_EXTERNAL_ACCOUNT);
                 txn.set_create_external_account(inner.clone());
-            },
+            }
             &SethTransaction::CreateContractAccount(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT);
                 txn.set_create_contract_account(inner.clone());
-            },
+            }
             &SethTransaction::MessageCall(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::MESSAGE_CALL);
                 txn.set_message_call(inner.clone());
-            },
+            }
             &SethTransaction::SetPermissions(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::SET_PERMISSIONS);
                 txn.set_set_permissions(inner.clone());
-            },
+            }
         }
         txn
     }
@@ -100,20 +95,20 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn try_from(mut txn: TransactionPb) -> Result<Self, Error> {
-        let mut header: TransactionHeader =
-            protobuf::parse_from_bytes(&txn.header)
-                .map_err(|_| Error::ParseError(String::from("Failed to parse header")))?;
-        let inner: Option<SethTransaction> =
-            protobuf::parse_from_bytes(&txn.payload)
-                .map_err(|_| Error::ParseError(String::from("Failed to parse payload")))
-                .map(|seth_txn_pb| SethTransaction::try_from(seth_txn_pb))?;
+        let mut header: TransactionHeader = protobuf::parse_from_bytes(&txn.header)
+            .map_err(|_| Error::ParseError(String::from("Failed to parse header")))?;
+        let inner: Option<SethTransaction> = protobuf::parse_from_bytes(&txn.payload)
+            .map_err(|_| Error::ParseError(String::from("Failed to parse payload")))
+            .map(|seth_txn_pb| SethTransaction::try_from(seth_txn_pb))?;
         match inner {
-            Some(seth_txn) => Ok(Transaction{
+            Some(seth_txn) => Ok(Transaction {
                 signer_public_key: header.take_signer_public_key(),
                 signature: txn.take_header_signature(),
                 inner: seth_txn,
             }),
-            None => Err(Error::ParseError(String::from("Not a valid seth transaction"))),
+            None => Err(Error::ParseError(String::from(
+                "Not a valid seth transaction",
+            ))),
         }
     }
 
@@ -146,7 +141,9 @@ impl Transaction {
 
     pub fn to_addr(&self) -> Option<String> {
         match self.inner {
-            SethTransaction::CreateExternalAccount(ref txn) => Some(transform::bytes_to_hex_str(&txn.to)),
+            SethTransaction::CreateExternalAccount(ref txn) => {
+                Some(transform::bytes_to_hex_str(&txn.to))
+            }
             SethTransaction::CreateContractAccount(_) => None,
             SethTransaction::MessageCall(ref txn) => Some(transform::bytes_to_hex_str(&txn.to)),
             SethTransaction::SetPermissions(ref txn) => Some(transform::bytes_to_hex_str(&txn.to)),
@@ -163,7 +160,7 @@ impl Transaction {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct SethLog {
     pub address: String,
     pub topics: Vec<String>,
@@ -171,17 +168,22 @@ pub struct SethLog {
 }
 
 impl SethLog {
-    pub fn from_event_pb(event: &Event) -> Result<SethLog, Error>{
-        let address: String = event.get_attributes().iter()
+    pub fn from_event_pb(event: &Event) -> Result<SethLog, Error> {
+        let address: String = event
+            .get_attributes()
+            .iter()
             .find(|attr| attr.key == "address")
             .map(|attr| String::from(attr.get_value()))
             .ok_or_else(|| Error::ParseError(String::from("Missing `address` attribute")))?;
 
-        let mut topic_attrs: Vec<&Event_Attribute> = event.get_attributes().iter()
+        let mut topic_attrs: Vec<&Event_Attribute> = event
+            .get_attributes()
+            .iter()
             .filter(|attr| attr.key.get(..5) == Some("topic"))
             .collect::<Vec<&Event_Attribute>>();
         topic_attrs.sort_by(|a, b| a.key.cmp(&b.key));
-        let topics: Vec<String> = topic_attrs.iter()
+        let topics: Vec<String> = topic_attrs
+            .iter()
             .map(|attr| String::from(attr.value.as_str()))
             .collect();
 
@@ -204,21 +206,27 @@ pub struct SethReceipt {
 }
 
 impl SethReceipt {
-    pub fn from_receipt_pb(receipt: &TransactionReceipt) -> Result<SethReceipt, Error>{
-        let seth_receipt_pbs: Vec<SethTransactionReceipt> = receipt.get_data().iter()
-             .map(|d: &Vec<u8>| {
-                let r: Result<SethTransactionReceipt, Error> =
-                    protobuf::parse_from_bytes(d.as_slice())
-                        .map_err(|error|
-                            Error::ParseError(format!(
-                                "Failed to deserialize Seth receipt: {:?}", error)));
+    pub fn from_receipt_pb(receipt: &TransactionReceipt) -> Result<SethReceipt, Error> {
+        let seth_receipt_pbs: Vec<SethTransactionReceipt> = receipt
+            .get_data()
+            .iter()
+            .map(|d: &Vec<u8>| {
+                let r: Result<SethTransactionReceipt, Error> = protobuf::parse_from_bytes(
+                    d.as_slice(),
+                ).map_err(|error| {
+                    Error::ParseError(format!("Failed to deserialize Seth receipt: {:?}", error))
+                });
                 r
-            }).collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
+            })
+            .collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
 
-        let seth_receipt_pb = seth_receipt_pbs.get(0).ok_or_else(||
-            Error::ParseError(String::from("Receipt doesn't contain any seth receipts")))?;
+        let seth_receipt_pb = seth_receipt_pbs.get(0).ok_or_else(|| {
+            Error::ParseError(String::from("Receipt doesn't contain any seth receipts"))
+        })?;
 
-        let logs = receipt.get_events().iter()
+        let logs = receipt
+            .get_events()
+            .iter()
             .filter(|e| e.event_type == "seth_log_event")
             .map(SethLog::from_event_pb)
             .collect::<Result<Vec<SethLog>, Error>>()?;
@@ -226,9 +234,13 @@ impl SethReceipt {
         let contract_address = match seth_receipt_pb.get_contract_address().len() {
             20 => transform::bytes_to_hex_str(&seth_receipt_pb.get_contract_address()),
             32 => transform::bytes_to_hex_str(&seth_receipt_pb.get_contract_address()[12..32]),
-            0  => String::new(),
-            _  => return Err(Error::ParseError(format!("Invalid contract address in Seth receipt: {:?}",
-                      transform::bytes_to_hex_str(&seth_receipt_pb.get_contract_address())))),
+            0 => String::new(),
+            _ => {
+                return Err(Error::ParseError(format!(
+                    "Invalid contract address in Seth receipt: {:?}",
+                    transform::bytes_to_hex_str(&seth_receipt_pb.get_contract_address())
+                )))
+            }
         };
         let gas_used = seth_receipt_pb.get_gas_used();
         let return_value = transform::bytes_to_hex_str(seth_receipt_pb.get_return_value());

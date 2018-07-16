@@ -15,16 +15,19 @@
  * ------------------------------------------------------------------------------
  */
 
-use jsonrpc_core::{Params, Value, Error};
+use jsonrpc_core::{Error, Params, Value};
 
-use client::{ValidatorClient};
-use requests::{RequestHandler};
+use client::ValidatorClient;
+use requests::RequestHandler;
 
 use sawtooth_sdk::messaging::stream::MessageSender;
 
 const SAWTOOTH_NET_VERSION: &str = "19";
 
-pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: MessageSender {
+pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
+where
+    T: MessageSender,
+{
     let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
 
     methods.push((String::from("net_version"), version));
@@ -35,13 +38,19 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)> where T: Message
 }
 
 // Version refers to the particular network this JSON-RPC client is connected to
-pub fn version<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+pub fn version<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
     info!("net_version");
     Ok(Value::String(String::from(SAWTOOTH_NET_VERSION)))
 }
 
 // Return the number of actual Sawtooth peers
-pub fn peer_count<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+pub fn peer_count<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
     info!("net_peerCount");
     let n = match client.get_peers() {
         Err(_) => 0,
@@ -52,7 +61,10 @@ pub fn peer_count<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<
 }
 
 // Return whether we are listening for connections, which is always true
-pub fn listening<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error> where T: MessageSender {
+pub fn listening<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
     info!("net_listening");
     Ok(Value::Bool(true))
 }
