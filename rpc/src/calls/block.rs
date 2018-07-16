@@ -70,9 +70,7 @@ where
         }
     };
 
-    Ok(Value::String(
-        format!("{:#x}", block_header.block_num).into(),
-    ))
+    Ok(Value::String(format!("{:#x}", block_header.block_num)))
 }
 
 fn get_block_obj<T>(

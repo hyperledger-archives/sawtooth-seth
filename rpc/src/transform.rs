@@ -55,11 +55,11 @@ pub fn num_to_hex<T>(n: &T) -> Value
 where
     T: LowerHex,
 {
-    Value::String(String::from(format!("{:#x}", n)))
+    Value::String(format!("{:#x}", n))
 }
 
 pub fn hex_prefix(s: &str) -> Value {
-    Value::String(String::from(format!("0x{}", s)))
+    Value::String(format!("0x{}", s))
 }
 
 pub fn zerobytes(mut nbytes: usize) -> Value {
