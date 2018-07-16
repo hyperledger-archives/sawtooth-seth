@@ -207,11 +207,7 @@ impl FilterManager {
     }
 
     pub fn get_filter(&mut self, filter_id: &FilterId) -> Option<FilterEntry> {
-        self.filters
-            .lock()
-            .unwrap()
-            .get(filter_id)
-            .map(|filter| filter.clone())
+        self.filters.lock().unwrap().get(filter_id).cloned()
     }
 
     pub fn update_latest_block(&mut self, filter_id: &FilterId, block_num: u64) -> bool {
