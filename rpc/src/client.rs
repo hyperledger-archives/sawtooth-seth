@@ -77,21 +77,15 @@ impl FromStr for BlockKey {
     type Err = BlockKeyParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "latest" {
-            Ok(BlockKey::Latest)
-        } else if s == "earliest" {
-            Ok(BlockKey::Earliest)
-        } else if s == "pending" {
-            Err(BlockKeyParseError::Unsupported)
-        } else {
-            if s.len() < 3 {
-                Err(BlockKeyParseError::Invalid)
-            } else {
-                match u64::from_str_radix(&s[2..], 16) {
-                    Ok(num) => Ok(BlockKey::Number(num)),
-                    Err(_) => Err(BlockKeyParseError::Invalid),
-                }
-            }
+        match s {
+            "latest" => Ok(BlockKey::Latest),
+            "earliest" => Ok(BlockKey::Earliest),
+            "pending" => Err(BlockKeyParseError::Unsupported),
+            _ if s.len() < 3 => Err(BlockKeyParseError::Invalid),
+            _ => match u64::from_str_radix(&s[2..], 16) {
+                Ok(num) => Ok(BlockKey::Number(num)),
+                Err(_) => Err(BlockKeyParseError::Invalid),
+            },
         }
     }
 }
