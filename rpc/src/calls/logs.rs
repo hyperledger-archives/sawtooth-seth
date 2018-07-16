@@ -123,7 +123,7 @@ where
         })?;
 
     Ok(Value::Bool(
-        client.filters.remove_filter(&filter_id).is_some(),
+        client.filters.remove_filter(filter_id).is_some(),
     ))
 }
 
@@ -145,7 +145,7 @@ where
         last_block_sent,
     } = client
         .filters
-        .get_filter(&filter_id)
+        .get_filter(filter_id)
         .ok_or_else(|| Error::invalid_params(format!("Unknown filter id: {}", filter_id)))?;
 
     let blocks = client.get_blocks_since(last_block_sent).map_err(|error| {
@@ -191,7 +191,7 @@ where
     // NOTE: Updating is delayed until there are no more error sources that could cause an early
     // return after upadting the filter
     if let Some(&(block_num, _)) = blocks.last() {
-        client.filters.update_latest_block(&filter_id, block_num);
+        client.filters.update_latest_block(filter_id, block_num);
     }
 
     Ok(Value::Array(response))
@@ -215,7 +215,7 @@ where
         last_block_sent: _,
     } = client
         .filters
-        .get_filter(&filter_id)
+        .get_filter(filter_id)
         .ok_or_else(|| Error::invalid_params(format!("Unknown filter id: {}", filter_id)))?;
 
     if let Filter::Log(log_filter) = filter {
