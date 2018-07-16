@@ -81,10 +81,10 @@ where
 {
     value
         .as_str()
-        .ok_or_else(|| Error::invalid_params(format!("Not a string")))
+        .ok_or_else(|| Error::invalid_params(String::from("Not a string")))
         .and_then(|v| {
             v.get(2..)
-                .ok_or_else(|| Error::invalid_params(format!("Must have 0x")))
+                .ok_or_else(|| Error::invalid_params(String::from("Must have 0x")))
         })
         .and_then(then)
 }
@@ -98,7 +98,7 @@ pub fn u64_from_hex_value(value: &Value) -> Result<u64, Error> {
 
 pub fn bytes_from_hex_value(value: &Value) -> Result<Vec<u8>, Error> {
     from_hex_value_then(value, |s| {
-        hex_str_to_bytes(s).ok_or_else(|| Error::invalid_params(format!("Not valid hex",)))
+        hex_str_to_bytes(s).ok_or_else(|| Error::invalid_params(String::from("Not valid hex")))
     })
 }
 
@@ -139,7 +139,7 @@ pub fn get_array_from_map(map: &Map<String, Value>, key: &str) -> Result<Vec<Val
     if let Some(value) = map.get(key) {
         value
             .as_array()
-            .ok_or_else(|| Error::invalid_params(format!("Not an array")))
+            .ok_or_else(|| Error::invalid_params(String::from("Not an array")))
             .map(|a| a.clone())
     } else {
         Ok(Vec::new())
