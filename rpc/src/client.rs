@@ -411,7 +411,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             .map(SethReceipt::from_receipt_pb)
             .collect::<Result<Vec<SethReceipt>, Error>>()?;
         let mut seth_receipt_map = HashMap::with_capacity(seth_receipt_list.len());
-        for receipt in seth_receipt_list.into_iter() {
+        for receipt in seth_receipt_list {
             seth_receipt_map.insert(receipt.transaction_id.clone(), receipt);
         }
 
@@ -633,7 +633,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                         return Err(String::from("Failed to decode position, invalid hex."));
                     }
                 };
-                for entry in storage.into_iter() {
+                for entry in storage {
                     if entry.key == position {
                         return Ok(Some(Vec::from(entry.value)));
                     }

@@ -355,7 +355,7 @@ where
         .collect::<Vec<_>>();
 
     let mut log_objects = Vec::with_capacity(logs.len());
-    for (txn_id, logs) in logs.into_iter() {
+    for (txn_id, logs) in logs {
         let index = transactions
             .iter()
             .position(|txn| txn.header_signature == txn_id)

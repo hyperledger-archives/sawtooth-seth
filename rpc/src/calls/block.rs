@@ -131,7 +131,7 @@ where
     };
     let mut transactions = Vec::new();
     let mut gas: u64 = 0;
-    for (txn_id, receipt) in receipts.into_iter() {
+    for (txn_id, receipt) in receipts {
         if full {
             let (txn, _) =
                 match client.get_transaction_and_block(&TransactionKey::Signature(txn_id)) {
