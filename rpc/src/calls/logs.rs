@@ -341,7 +341,7 @@ where
                 .collect();
             (txn_id, logs)
         })
-        .filter(|&(_, ref logs)| logs.len() > 0)
+        .filter(|&(_, ref logs)| !logs.is_empty())
         .collect();
     warn!("Filtered Logs: {:?}", logs);
 
