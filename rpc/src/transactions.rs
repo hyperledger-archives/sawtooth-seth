@@ -60,20 +60,20 @@ impl SethTransaction {
 
     pub fn to_pb(&self) -> SethTrasactionPb {
         let mut txn = SethTrasactionPb::new();
-        match self {
-            &SethTransaction::CreateExternalAccount(ref inner) => {
+        match *self {
+            SethTransaction::CreateExternalAccount(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_EXTERNAL_ACCOUNT);
                 txn.set_create_external_account(inner.clone());
             }
-            &SethTransaction::CreateContractAccount(ref inner) => {
+            SethTransaction::CreateContractAccount(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT);
                 txn.set_create_contract_account(inner.clone());
             }
-            &SethTransaction::MessageCall(ref inner) => {
+            SethTransaction::MessageCall(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::MESSAGE_CALL);
                 txn.set_message_call(inner.clone());
             }
-            &SethTransaction::SetPermissions(ref inner) => {
+            SethTransaction::SetPermissions(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::SET_PERMISSIONS);
                 txn.set_set_permissions(inner.clone());
             }

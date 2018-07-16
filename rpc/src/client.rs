@@ -397,8 +397,8 @@ impl<S: MessageSender> ValidatorClient<S> {
         &mut self,
         txn_key: &TransactionKey,
     ) -> Result<(Transaction, Option<Block>), Error> {
-        match txn_key {
-            &TransactionKey::Signature(ref txn_id) => {
+        match *txn_key {
+            TransactionKey::Signature(ref txn_id) => {
                 let mut request = ClientTransactionGetRequest::new();
                 request.set_transaction_id((*txn_id).clone());
                 let mut response: ClientTransactionGetResponse = self.send_request(
@@ -421,7 +421,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     }
                 }
             }
-            &TransactionKey::Index((ref index, ref block_key)) => {
+            TransactionKey::Index((ref index, ref block_key)) => {
                 let mut idx = *index;
                 let mut block = self.get_block((*block_key).clone())?;
                 for mut batch in block.take_batches().into_iter() {

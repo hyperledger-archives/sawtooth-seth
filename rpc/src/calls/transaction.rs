@@ -279,14 +279,14 @@ where
                 }
             };
             // We know the transaction index already, because get_transaction_and_block succeeded
-            match txn_key {
-                &TransactionKey::Index((index, _)) => Ok(transform::make_txn_obj(
+            match *txn_key {
+                TransactionKey::Index((index, _)) => Ok(transform::make_txn_obj(
                     txn,
                     index,
                     &block.header_signature,
                     block_header.block_num,
                 )),
-                &TransactionKey::Signature(ref txn_id) => {
+                TransactionKey::Signature(ref txn_id) => {
                     let txn_id = (*txn_id).clone();
                     let mut index = 0;
                     for mut batch in block.take_batches().into_iter() {

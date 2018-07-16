@@ -36,19 +36,19 @@ pub enum TopicFilter {
 
 impl TopicFilter {
     pub fn from_value(value: &Value) -> Result<Self, RpcError> {
-        match value {
-            &Value::Array(ref array) => {
+        match *value {
+            Value::Array(ref array) => {
                 let blobs = array
                     .iter()
                     .map(transform::string_from_hex_value)
                     .collect::<Result<Vec<String>, RpcError>>()?;
                 Ok(TopicFilter::OneOf(blobs))
             }
-            &Value::String(_) => {
+            Value::String(_) => {
                 let blob = transform::string_from_hex_value(value)?;
                 Ok(TopicFilter::Exactly(blob))
             }
-            &Value::Null => Ok(TopicFilter::All),
+            Value::Null => Ok(TopicFilter::All),
             _ => {
                 return Err(RpcError::invalid_params("Invalid topic setting"));
             }
@@ -59,10 +59,10 @@ impl TopicFilter {
     ///   2. The filter is Exactly and the topic and the filter are identitical
     ///   3. The filter is OneOf and the topic is with the filter's list of topics
     pub fn contains(&self, topic: &str) -> bool {
-        match self {
-            &TopicFilter::All => true,
-            &TopicFilter::Exactly(ref blob) => blob == topic,
-            &TopicFilter::OneOf(ref blobs) => blobs.contains(&String::from(topic)),
+        match *self {
+            TopicFilter::All => true,
+            TopicFilter::Exactly(ref blob) => blob == topic,
+            TopicFilter::OneOf(ref blobs) => blobs.contains(&String::from(topic)),
         }
     }
 }
