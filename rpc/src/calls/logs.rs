@@ -210,10 +210,7 @@ where
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
-    let FilterEntry {
-        filter,
-        last_block_sent: _,
-    } = client
+    let FilterEntry { filter, .. } = client
         .filters
         .get_filter(filter_id)
         .ok_or_else(|| Error::invalid_params(format!("Unknown filter id: {}", filter_id)))?;
