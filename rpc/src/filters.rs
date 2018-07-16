@@ -20,6 +20,7 @@ use jsonrpc_core::{Error as RpcError, Value};
 use serde_json::Map;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use transactions::SethLog;
@@ -179,25 +180,20 @@ pub struct FilterEntry {
 
 #[derive(Debug, Clone)]
 pub struct FilterManager {
-    id_ctr: Arc<Mutex<FilterId>>,
+    id_ctr: Arc<AtomicUsize>,
     filters: Arc<Mutex<HashMap<FilterId, FilterEntry>>>,
 }
 
 impl FilterManager {
     pub fn new() -> Self {
         FilterManager {
-            id_ctr: Arc::new(Mutex::new(1)),
+            id_ctr: Arc::new(AtomicUsize::new(1)),
             filters: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     pub fn new_filter(&mut self, filter: Filter, block_num: u64) -> FilterId {
-        let filter_id = {
-            let mut ctr = self.id_ctr.lock().unwrap();
-            let r = *ctr;
-            *ctr += 1;
-            r
-        };
+        let filter_id = self.id_ctr.fetch_add(1, Ordering::SeqCst);
         self.set_filter(&filter_id, filter, block_num);
         filter_id
     }
