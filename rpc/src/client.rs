@@ -494,7 +494,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmEntry>, String> {
-        let address = String::from(SETH_NS) + &account_address + "000000000000000000000000";
+        let address = String::from(SETH_NS) + account_address + "000000000000000000000000";
         let mut request = ClientStateGetRequest::new();
         request.set_address(address);
         match block {
