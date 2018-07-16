@@ -14,6 +14,7 @@
  * limitations under the License.
  * ------------------------------------------------------------------------------
  */
+#![allow(unknown_lints)]
 
 use protobuf;
 
@@ -135,6 +136,7 @@ impl Transaction {
         }
     }
 
+    #[allow(wrong_self_convention)]
     pub fn from_addr(&self) -> String {
         public_key_to_address(&transform::hex_str_to_bytes(&self.signer_public_key).unwrap())
     }
