@@ -95,13 +95,10 @@ impl LogFilter {
 
         // Parse the address into a vec of strings
         let addresses = match filter.get("address") {
-            Some(&Value::Array(ref multiple)) => {
-                let addresses = multiple
-                    .iter()
-                    .map(|addr_val| transform::string_from_hex_value(addr_val))
-                    .collect::<Result<Vec<String>, RpcError>>()?;
-                addresses
-            }
+            Some(&Value::Array(ref multiple)) => multiple
+                .iter()
+                .map(|addr_val| transform::string_from_hex_value(addr_val))
+                .collect::<Result<Vec<String>, RpcError>>()?,
             Some(value) => {
                 let address = transform::string_from_hex_value(value)?;
                 vec![address]
