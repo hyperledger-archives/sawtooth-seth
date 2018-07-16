@@ -96,9 +96,9 @@ where
 
     // Optional Arguments
     let to = transform::get_bytes_from_map(&txn, "to")?;
-    let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90000))?;
+    let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90_000))?;
     let gas_price =
-        transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
+        transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10_000_000_000_000))?;
     let value = transform::get_u64_from_map(&txn, "value").map(|g| g.unwrap_or(0))?;
     let nonce = transform::get_u64_from_map(&txn, "nonce").map(|g| g.unwrap_or(txn_count))?;
 
