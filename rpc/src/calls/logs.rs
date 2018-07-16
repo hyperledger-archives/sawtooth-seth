@@ -164,11 +164,7 @@ where
                             let header: Result<TransactionHeader, _> =
                                 protobuf::parse_from_bytes(&txn.header);
                             if let Ok(header) = header {
-                                if header.family_name == "seth" {
-                                    true
-                                } else {
-                                    false
-                                }
+                                header.family_name == "seth"
                             } else {
                                 false
                             }
