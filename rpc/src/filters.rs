@@ -50,9 +50,7 @@ impl TopicFilter {
                 Ok(TopicFilter::Exactly(blob))
             }
             Value::Null => Ok(TopicFilter::All),
-            _ => {
-                return Err(RpcError::invalid_params("Invalid topic setting"));
-            }
+            _ => Err(RpcError::invalid_params("Invalid topic setting")),
         }
     }
     /// The topic passes this filter if:

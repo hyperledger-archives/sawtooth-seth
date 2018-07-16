@@ -38,7 +38,7 @@ pub fn hex_str_to_bytes(s: &str) -> Option<Vec<u8>> {
         })
         .collect();
 
-    return Some(decoded);
+    Some(decoded)
 }
 
 pub fn bytes_to_hex_str(b: &[u8]) -> String {

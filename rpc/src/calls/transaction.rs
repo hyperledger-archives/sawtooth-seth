@@ -309,7 +309,7 @@ where
                     }
                     // This should never happen, because we fetched the block and transaction
                     // together.
-                    return Err(Error::internal_error());
+                    Err(Error::internal_error())
                 }
             }
         }

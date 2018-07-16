@@ -610,11 +610,9 @@ impl<S: MessageSender> ValidatorClient<S> {
                         return Ok(Some(entry.value));
                     }
                 }
-                return Ok(None);
+                Ok(None)
             }
-            None => {
-                return Ok(None);
-            }
+            None => Ok(None),
         }
     }
 

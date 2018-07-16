@@ -48,11 +48,9 @@ fn validate_block_key(block: &str) -> Result<BlockKey, Error> {
     match block.parse() {
         Ok(k) => Ok(k),
         Err(BlockKeyParseError::Invalid) => {
-            return Err(Error::invalid_params("Failed to parse block number"));
+            Err(Error::invalid_params("Failed to parse block number"))
         }
-        Err(BlockKeyParseError::Unsupported) => {
-            return Err(error::not_implemented());
-        }
+        Err(BlockKeyParseError::Unsupported) => Err(error::not_implemented()),
     }
 }
 
