@@ -116,7 +116,7 @@ where
     F: FnOnce(&Value) -> Result<T, Error>,
 {
     if let Some(value) = map.get(key) {
-        then(value).map(|v| Some(v))
+        then(value).map(Some)
     } else {
         Ok(None)
     }

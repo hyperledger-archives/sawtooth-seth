@@ -99,7 +99,7 @@ impl Transaction {
             .map_err(|_| Error::ParseError(String::from("Failed to parse header")))?;
         let inner: Option<SethTransaction> = protobuf::parse_from_bytes(&txn.payload)
             .map_err(|_| Error::ParseError(String::from("Failed to parse payload")))
-            .map(|seth_txn_pb| SethTransaction::try_from(seth_txn_pb))?;
+            .map(SethTransaction::try_from)?;
         match inner {
             Some(seth_txn) => Ok(Transaction {
                 signer_public_key: header.take_signer_public_key(),

@@ -76,7 +76,7 @@ fn main() {
         .unwrap_or("tcp://127.0.0.1:4004");
     let accounts: Vec<Account> = arg_matches
         .values_of_lossy("unlock")
-        .unwrap_or_else(|| Vec::new())
+        .unwrap_or_else(Vec::new)
         .iter()
         .map(|alias| abort_if_err(Account::load_from_alias(alias)))
         .collect();

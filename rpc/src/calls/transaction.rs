@@ -334,7 +334,7 @@ where
         .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))
         .and_then(|(v,): (String,)| {
             v.get(2..)
-                .map(|v| String::from(v))
+                .map(String::from)
                 .ok_or_else(|| Error::invalid_params("Invalid transaction hash, must have 0x"))
         })?;
     let receipt = match client.get_receipts(&[txn_id.clone()]) {
@@ -423,7 +423,7 @@ where
         .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))?;
     let address = address
         .get(2..)
-        .map(|a| String::from(a))
+        .map(String::from)
         .ok_or_else(|| Error::invalid_params("Address must have 0x prefix"))?;
 
     let payload = payload
