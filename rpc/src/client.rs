@@ -175,8 +175,8 @@ pub struct ValidatorClient<S: MessageSender> {
 impl<S: MessageSender> ValidatorClient<S> {
     pub fn new(sender: S, accounts: Vec<Account>) -> Self {
         ValidatorClient {
-            sender: sender,
-            accounts: accounts,
+            sender,
+            accounts,
             filters: FilterManager::new(),
         }
     }

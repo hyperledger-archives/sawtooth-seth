@@ -113,10 +113,10 @@ impl LogFilter {
         })?;
 
         Ok(LogFilter {
-            from_block: from_block,
-            to_block: to_block,
-            addresses: addresses,
-            topics: topics,
+            from_block,
+            to_block,
+            addresses,
+            topics,
         })
     }
 
@@ -220,7 +220,7 @@ impl FilterManager {
         block_num: u64,
     ) -> Option<FilterEntry> {
         let filter_entry = FilterEntry {
-            filter: filter,
+            filter,
             last_block_sent: block_num,
         };
         self.filters

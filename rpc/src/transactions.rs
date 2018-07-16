@@ -190,9 +190,9 @@ impl SethLog {
         let data: String = transform::bytes_to_hex_str(event.get_data());
 
         Ok(SethLog {
-            address: address,
-            topics: topics,
-            data: data,
+            address,
+            topics,
+            data,
         })
     }
 }
@@ -247,10 +247,10 @@ impl SethReceipt {
 
         Ok(SethReceipt {
             transaction_id: String::from(receipt.get_transaction_id()),
-            contract_address: contract_address,
-            gas_used: gas_used,
-            return_value: return_value,
-            logs: logs,
+            contract_address,
+            gas_used,
+            return_value,
+            logs,
         })
     }
 }
