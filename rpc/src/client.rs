@@ -244,7 +244,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             .map_err(|error| Error::ParseError(format!("Error parsing response: {:?}", error)))
     }
 
-    pub fn send_transaction(&mut self, from: &str, txn: SethTransaction) -> Result<String, Error> {
+    pub fn send_transaction(&mut self, from: &str, txn: &SethTransaction) -> Result<String, Error> {
         let (batch, txn_signature) = self.make_batch(from, txn)?;
 
         let mut request = ClientBatchSubmitRequest::new();
@@ -262,7 +262,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         }
     }
 
-    pub fn make_batch(&self, from: &str, txn: SethTransaction) -> Result<(Batch, String), Error> {
+    pub fn make_batch(&self, from: &str, txn: &SethTransaction) -> Result<(Batch, String), Error> {
         let payload = protobuf::Message::write_to_bytes(&txn.to_pb())
             .map_err(|error| Error::ParseError(format!("Error serializing payload: {:?}", error)))?;
 
@@ -491,7 +491,7 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_entry(
         &mut self,
-        account_address: String,
+        account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmEntry>, String> {
         let address = String::from(SETH_NS) + &account_address + "000000000000000000000000";
@@ -573,7 +573,7 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_account(
         &mut self,
-        account_address: String,
+        account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmStateAccount>, String> {
         self.get_entry(account_address, block)
@@ -582,7 +582,7 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_storage(
         &mut self,
-        account_address: String,
+        account_address: &str,
         block: BlockKey,
     ) -> Result<Option<Vec<EvmStorage>>, String> {
         self.get_entry(account_address, block)
@@ -591,8 +591,8 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_storage_at(
         &mut self,
-        account_address: String,
-        storage_address: String,
+        account_address: &str,
+        storage_address: &str,
         block: BlockKey,
     ) -> Result<Option<Vec<u8>>, String> {
         let storage = self.get_storage(account_address, block)?;

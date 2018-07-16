@@ -14,6 +14,7 @@
  * limitations under the License.
  * ------------------------------------------------------------------------------
  */
+#![allow(unknown_lints)]
 
 pub mod account;
 pub mod block;

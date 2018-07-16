@@ -78,7 +78,7 @@ pub struct LogFilter {
 }
 
 impl LogFilter {
-    pub fn from_map(filter: Map<String, Value>) -> Result<Self, RpcError> {
+    pub fn from_map(filter: &Map<String, Value>) -> Result<Self, RpcError> {
         let from_block = match filter.get("fromBlock") {
             Some(s) => {
                 let s = transform::u64_from_hex_value(s)?;

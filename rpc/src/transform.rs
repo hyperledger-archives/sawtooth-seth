@@ -212,7 +212,7 @@ pub fn make_log_obj(
 }
 
 // -- Transaction --
-pub fn make_txn_obj(txn: Transaction, txn_idx: u64, block_id: &str, block_num: u64) -> Value {
+pub fn make_txn_obj(txn: &Transaction, txn_idx: u64, block_id: &str, block_num: u64) -> Value {
     let obj = make_txn_obj_no_block(txn);
     if let Value::Object(mut map) = obj {
         map.insert(String::from("blockHash"), hex_prefix(block_id));
@@ -224,7 +224,7 @@ pub fn make_txn_obj(txn: Transaction, txn_idx: u64, block_id: &str, block_num: u
     }
 }
 
-pub fn make_txn_obj_no_block(txn: Transaction) -> Value {
+pub fn make_txn_obj_no_block(txn: &Transaction) -> Value {
     let mut map = Map::with_capacity(11);
     map.insert(String::from("hash"), hex_prefix(&txn.hash()));
     map.insert(String::from("nonce"), num_to_hex(&txn.nonce()));
