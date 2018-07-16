@@ -179,7 +179,7 @@ where
             .collect(),
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
-            for &(_, ref block) in blocks.iter() {
+            for &(_, ref block) in &blocks {
                 let logs = get_logs_from_block_and_filter(&mut client, block, &log_filter)?;
                 all_logs.extend(logs.into_iter());
             }
@@ -366,7 +366,7 @@ where
                 );
                 Error::internal_error()
             })?;
-        for log in logs.iter() {
+        for log in &logs {
             let log_obj = transform::make_log_obj(log, &txn_id, index as u64, block_id, block_num);
             log_objects.push(log_obj);
         }

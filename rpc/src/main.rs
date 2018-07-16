@@ -81,7 +81,7 @@ fn main() {
         .map(|alias| abort_if_err(Account::load_from_alias(alias)))
         .collect();
 
-    for account in accounts.iter() {
+    for account in &accounts {
         println!("{} unlocked: {}", account.alias(), account.address());
     }
 
