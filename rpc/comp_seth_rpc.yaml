@@ -30,8 +30,8 @@ services:
     environment:
       RUST_BACKTRACE: 1
     command: "bash -c \"
-      mkdir -p ~/.sawtooth/ &&
-      cp tests/data/test.pem ~/.sawtooth/test.pem &&
+      mkdir -p ~/.sawtooth/keys/ &&
+      cp tests/data/test.pem ~/.sawtooth/keys/test.pem &&
       cargo run --
         --connect tcp://comp-seth-rpc:4004
         --bind 0.0.0.0:3030
