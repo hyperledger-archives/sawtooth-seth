@@ -68,6 +68,8 @@ node ('master') {
 
         stage("Run Lint") {
             sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID run_go_fmt'
+            sh 'cd rpc/ && cargo fmt -- --check'
+            sh 'cd rpc/ && cargo clippy -- -Dwarnings'
         }
 
         // Run the tests
