@@ -53,6 +53,7 @@ where
 }
 
 // Return the block number of the current chain head, in hex, as a string
+#[allow(needless_pass_by_value)]
 pub fn block_number<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -70,9 +71,7 @@ where
         }
     };
 
-    Ok(Value::String(
-        format!("{:#x}", block_header.block_num).into(),
-    ))
+    Ok(Value::String(format!("{:#x}", block_header.block_num)))
 }
 
 fn get_block_obj<T>(
@@ -131,7 +130,7 @@ where
     };
     let mut transactions = Vec::new();
     let mut gas: u64 = 0;
-    for (txn_id, receipt) in receipts.into_iter() {
+    for (txn_id, receipt) in receipts {
         if full {
             let (txn, _) =
                 match client.get_transaction_and_block(&TransactionKey::Signature(txn_id)) {
@@ -141,7 +140,7 @@ where
                         return Err(Error::internal_error());
                     }
                 };
-            transactions.push(transform::make_txn_obj_no_block(txn))
+            transactions.push(transform::make_txn_obj_no_block(&txn))
         } else {
             transactions.push(transform::hex_prefix(&txn_id));
         }

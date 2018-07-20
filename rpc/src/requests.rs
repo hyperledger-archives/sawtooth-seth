@@ -34,7 +34,7 @@ impl<T: MessageSender + Clone + Sync + Send + 'static> RequestExecutor<T> {
     pub fn new(client: ValidatorClient<T>) -> Self {
         RequestExecutor {
             pool: CpuPool::new_num_cpus(),
-            client: client,
+            client,
         }
     }
 

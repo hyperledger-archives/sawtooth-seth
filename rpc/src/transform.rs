@@ -38,7 +38,7 @@ pub fn hex_str_to_bytes(s: &str) -> Option<Vec<u8>> {
         })
         .collect();
 
-    return Some(decoded);
+    Some(decoded)
 }
 
 pub fn bytes_to_hex_str(b: &[u8]) -> String {
@@ -55,11 +55,11 @@ pub fn num_to_hex<T>(n: &T) -> Value
 where
     T: LowerHex,
 {
-    Value::String(String::from(format!("{:#x}", n)))
+    Value::String(format!("{:#x}", n))
 }
 
 pub fn hex_prefix(s: &str) -> Value {
-    Value::String(String::from(format!("0x{}", s)))
+    Value::String(format!("0x{}", s))
 }
 
 pub fn zerobytes(mut nbytes: usize) -> Value {
@@ -81,10 +81,10 @@ where
 {
     value
         .as_str()
-        .ok_or_else(|| Error::invalid_params(format!("Not a string")))
+        .ok_or_else(|| Error::invalid_params(String::from("Not a string")))
         .and_then(|v| {
             v.get(2..)
-                .ok_or_else(|| Error::invalid_params(format!("Must have 0x")))
+                .ok_or_else(|| Error::invalid_params(String::from("Must have 0x")))
         })
         .and_then(then)
 }
@@ -98,7 +98,7 @@ pub fn u64_from_hex_value(value: &Value) -> Result<u64, Error> {
 
 pub fn bytes_from_hex_value(value: &Value) -> Result<Vec<u8>, Error> {
     from_hex_value_then(value, |s| {
-        hex_str_to_bytes(s).ok_or_else(|| Error::invalid_params(format!("Not valid hex",)))
+        hex_str_to_bytes(s).ok_or_else(|| Error::invalid_params(String::from("Not valid hex")))
     })
 }
 
@@ -116,7 +116,7 @@ where
     F: FnOnce(&Value) -> Result<T, Error>,
 {
     if let Some(value) = map.get(key) {
-        then(value).map(|v| Some(v))
+        then(value).map(Some)
     } else {
         Ok(None)
     }
@@ -139,7 +139,7 @@ pub fn get_array_from_map(map: &Map<String, Value>, key: &str) -> Result<Vec<Val
     if let Some(value) = map.get(key) {
         value
             .as_array()
-            .ok_or_else(|| Error::invalid_params(format!("Not an array")))
+            .ok_or_else(|| Error::invalid_params(String::from("Not an array")))
             .map(|a| a.clone())
     } else {
         Ok(Vec::new())
@@ -212,7 +212,7 @@ pub fn make_log_obj(
 }
 
 // -- Transaction --
-pub fn make_txn_obj(txn: Transaction, txn_idx: u64, block_id: &str, block_num: u64) -> Value {
+pub fn make_txn_obj(txn: &Transaction, txn_idx: u64, block_id: &str, block_num: u64) -> Value {
     let obj = make_txn_obj_no_block(txn);
     if let Value::Object(mut map) = obj {
         map.insert(String::from("blockHash"), hex_prefix(block_id));
@@ -224,7 +224,7 @@ pub fn make_txn_obj(txn: Transaction, txn_idx: u64, block_id: &str, block_num: u
     }
 }
 
-pub fn make_txn_obj_no_block(txn: Transaction) -> Value {
+pub fn make_txn_obj_no_block(txn: &Transaction) -> Value {
     let mut map = Map::with_capacity(11);
     map.insert(String::from("hash"), hex_prefix(&txn.hash()));
     map.insert(String::from("nonce"), num_to_hex(&txn.nonce()));

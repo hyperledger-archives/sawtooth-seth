@@ -77,21 +77,15 @@ impl FromStr for BlockKey {
     type Err = BlockKeyParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "latest" {
-            Ok(BlockKey::Latest)
-        } else if s == "earliest" {
-            Ok(BlockKey::Earliest)
-        } else if s == "pending" {
-            Err(BlockKeyParseError::Unsupported)
-        } else {
-            if s.len() < 3 {
-                Err(BlockKeyParseError::Invalid)
-            } else {
-                match u64::from_str_radix(&s[2..], 16) {
-                    Ok(num) => Ok(BlockKey::Number(num)),
-                    Err(_) => Err(BlockKeyParseError::Invalid),
-                }
-            }
+        match s {
+            "latest" => Ok(BlockKey::Latest),
+            "earliest" => Ok(BlockKey::Earliest),
+            "pending" => Err(BlockKeyParseError::Unsupported),
+            _ if s.len() < 3 => Err(BlockKeyParseError::Invalid),
+            _ => match u64::from_str_radix(&s[2..], 16) {
+                Ok(num) => Ok(BlockKey::Number(num)),
+                Err(_) => Err(BlockKeyParseError::Invalid),
+            },
         }
     }
 }
@@ -144,16 +138,13 @@ impl Display for Error {
 
 impl From<SendError> for Error {
     fn from(error: SendError) -> Self {
-        Error::CommunicationError(String::from(format!("Failed to send msg: {:?}", error)))
+        Error::CommunicationError(format!("Failed to send msg: {:?}", error))
     }
 }
 
 impl From<ReceiveError> for Error {
     fn from(error: ReceiveError) -> Self {
-        Error::CommunicationError(String::from(format!(
-            "Failed to receive message: {:?}",
-            error
-        )))
+        Error::CommunicationError(format!("Failed to receive message: {:?}", error))
     }
 }
 
@@ -178,8 +169,8 @@ pub struct ValidatorClient<S: MessageSender> {
 impl<S: MessageSender> ValidatorClient<S> {
     pub fn new(sender: S, accounts: Vec<Account>) -> Self {
         ValidatorClient {
-            sender: sender,
-            accounts: accounts,
+            sender,
+            accounts,
             filters: FilterManager::new(),
         }
     }
@@ -196,10 +187,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         let msg_bytes = match protobuf::Message::write_to_bytes(msg) {
             Ok(b) => b,
             Err(error) => {
-                return Err(String::from(format!(
-                    "Error serializing request: {:?}",
-                    error
-                )));
+                return Err(format!("Error serializing request: {:?}", error));
             }
         };
 
@@ -213,24 +201,21 @@ impl<S: MessageSender> ValidatorClient<S> {
         let mut future = match self.sender.send(msg_type, &correlation_id, &msg_bytes) {
             Ok(f) => f,
             Err(error) => {
-                return Err(String::from(format!(
-                    "Error unwrapping future: {:?}",
-                    error
-                )));
+                return Err(format!("Error unwrapping future: {:?}", error));
             }
         };
 
         let response_msg = match future.get() {
             Ok(m) => m,
             Err(error) => {
-                return Err(String::from(format!("Error getting future: {:?}", error)));
+                return Err(format!("Error getting future: {:?}", error));
             }
         };
 
         let response: U = match protobuf::parse_from_bytes(&response_msg.content) {
             Ok(r) => r,
             Err(error) => {
-                return Err(String::from(format!("Error parsing response: {:?}", error)));
+                return Err(format!("Error parsing response: {:?}", error));
             }
         };
 
@@ -242,23 +227,18 @@ impl<S: MessageSender> ValidatorClient<S> {
         T: protobuf::Message,
         U: protobuf::Message,
     {
-        let msg_bytes = protobuf::Message::write_to_bytes(msg).map_err(|error| {
-            Error::ParseError(String::from(format!(
-                "Error serializing request: {:?}",
-                error
-            )))
-        })?;
+        let msg_bytes = protobuf::Message::write_to_bytes(msg)
+            .map_err(|error| Error::ParseError(format!("Error serializing request: {:?}", error)))?;
 
         let correlation_id = uuid::Uuid::new_v4().to_string();
 
         let mut future = self.sender.send(msg_type, &correlation_id, &msg_bytes)?;
         let response_msg = future.get()?;
-        protobuf::parse_from_bytes(&response_msg.content).map_err(|error| {
-            Error::ParseError(String::from(format!("Error parsing response: {:?}", error)))
-        })
+        protobuf::parse_from_bytes(&response_msg.content)
+            .map_err(|error| Error::ParseError(format!("Error parsing response: {:?}", error)))
     }
 
-    pub fn send_transaction(&mut self, from: &str, txn: SethTransaction) -> Result<String, Error> {
+    pub fn send_transaction(&mut self, from: &str, txn: &SethTransaction) -> Result<String, Error> {
         let (batch, txn_signature) = self.make_batch(from, txn)?;
 
         let mut request = ClientBatchSubmitRequest::new();
@@ -276,13 +256,9 @@ impl<S: MessageSender> ValidatorClient<S> {
         }
     }
 
-    pub fn make_batch(&self, from: &str, txn: SethTransaction) -> Result<(Batch, String), Error> {
-        let payload = protobuf::Message::write_to_bytes(&txn.to_pb()).map_err(|error| {
-            Error::ParseError(String::from(format!(
-                "Error serializing payload: {:?}",
-                error
-            )))
-        })?;
+    pub fn make_batch(&self, from: &str, txn: &SethTransaction) -> Result<(Batch, String), Error> {
+        let payload = protobuf::Message::write_to_bytes(&txn.to_pb())
+            .map_err(|error| Error::ParseError(format!("Error serializing payload: {:?}", error)))?;
 
         let account = self
             .loaded_accounts()
@@ -313,10 +289,7 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         txn_header.set_signer_public_key(String::from(account.public_key()));
         let txn_header_bytes = protobuf::Message::write_to_bytes(&txn_header).map_err(|error| {
-            Error::ParseError(String::from(format!(
-                "Error serializing transaction header: {:?}",
-                error
-            )))
+            Error::ParseError(format!("Error serializing transaction header: {:?}", error))
         })?;
 
         let txn_signature = account.sign(&txn_header_bytes)?;
@@ -331,13 +304,9 @@ impl<S: MessageSender> ValidatorClient<S> {
         batch_header.set_transaction_ids(protobuf::RepeatedField::from_vec(vec![
             txn_signature.clone(),
         ]));
-        let batch_header_bytes =
-            protobuf::Message::write_to_bytes(&batch_header).map_err(|error| {
-                Error::ParseError(String::from(format!(
-                    "Error serializing batch header: {:?}",
-                    error
-                )))
-            })?;
+        let batch_header_bytes = protobuf::Message::write_to_bytes(&batch_header).map_err(
+            |error| Error::ParseError(format!("Error serializing batch header: {:?}", error)),
+        )?;
 
         let batch_signature = account.sign(&batch_header_bytes)?;
 
@@ -364,7 +333,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     }
                 };
                 if header.family_name == "seth" {
-                    transactions.push(String::from(txn.header_signature.clone()));
+                    transactions.push(txn.header_signature.clone());
                 }
             }
         }
@@ -411,7 +380,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             .map(SethReceipt::from_receipt_pb)
             .collect::<Result<Vec<SethReceipt>, Error>>()?;
         let mut seth_receipt_map = HashMap::with_capacity(seth_receipt_list.len());
-        for receipt in seth_receipt_list.into_iter() {
+        for receipt in seth_receipt_list {
             seth_receipt_map.insert(receipt.transaction_id.clone(), receipt);
         }
 
@@ -422,8 +391,8 @@ impl<S: MessageSender> ValidatorClient<S> {
         &mut self,
         txn_key: &TransactionKey,
     ) -> Result<(Transaction, Option<Block>), Error> {
-        match txn_key {
-            &TransactionKey::Signature(ref txn_id) => {
+        match *txn_key {
+            TransactionKey::Signature(ref txn_id) => {
                 let mut request = ClientTransactionGetRequest::new();
                 request.set_transaction_id((*txn_id).clone());
                 let mut response: ClientTransactionGetResponse = self.send_request(
@@ -446,7 +415,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     }
                 }
             }
-            &TransactionKey::Index((ref index, ref block_key)) => {
+            TransactionKey::Index((ref index, ref block_key)) => {
                 let mut idx = *index;
                 let mut block = self.get_block((*block_key).clone())?;
                 for mut batch in block.take_batches().into_iter() {
@@ -516,10 +485,10 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_entry(
         &mut self,
-        account_address: String,
+        account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmEntry>, String> {
-        let address = String::from(SETH_NS) + &account_address + "000000000000000000000000";
+        let address = String::from(SETH_NS) + account_address + "000000000000000000000000";
         let mut request = ClientStateGetRequest::new();
         request.set_address(address);
         match block {
@@ -530,7 +499,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                         request.set_state_root(state_root);
                     }
                     Err(error) => {
-                        return Err(String::from(format!("{:?}", error)));
+                        return Err(format!("{:?}", error));
                     }
                 }
             }
@@ -539,7 +508,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     request.set_state_root(state_root);
                 }
                 Err(error) => {
-                    return Err(String::from(format!("{:?}", error)));
+                    return Err(format!("{:?}", error));
                 }
             },
             BlockKey::Number(block_num) => match self.block_num_to_state_root(block_num) {
@@ -547,7 +516,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     request.set_state_root(state_root);
                 }
                 Err(error) => {
-                    return Err(String::from(format!("{:?}", error)));
+                    return Err(format!("{:?}", error));
                 }
             },
             BlockKey::Transaction(transaction_id) => {
@@ -556,7 +525,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                         request.set_state_root(state_root);
                     }
                     Err(error) => {
-                        return Err(String::from(format!("{:?}", error)));
+                        return Err(format!("{:?}", error));
                     }
                 }
             }
@@ -592,16 +561,13 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         match protobuf::parse_from_bytes(&state_data) {
             Ok(e) => Ok(Some(e)),
-            Err(error) => Err(String::from(format!(
-                "Failed to deserialize EVM entry: {:?}",
-                error
-            ))),
+            Err(error) => Err(format!("Failed to deserialize EVM entry: {:?}", error)),
         }
     }
 
     pub fn get_account(
         &mut self,
-        account_address: String,
+        account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmStateAccount>, String> {
         self.get_entry(account_address, block)
@@ -610,7 +576,7 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_storage(
         &mut self,
-        account_address: String,
+        account_address: &str,
         block: BlockKey,
     ) -> Result<Option<Vec<EvmStorage>>, String> {
         self.get_entry(account_address, block)
@@ -619,8 +585,8 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_storage_at(
         &mut self,
-        account_address: String,
-        storage_address: String,
+        account_address: &str,
+        storage_address: &str,
         block: BlockKey,
     ) -> Result<Option<Vec<u8>>, String> {
         let storage = self.get_storage(account_address, block)?;
@@ -633,16 +599,14 @@ impl<S: MessageSender> ValidatorClient<S> {
                         return Err(String::from("Failed to decode position, invalid hex."));
                     }
                 };
-                for entry in storage.into_iter() {
+                for entry in storage {
                     if entry.key == position {
-                        return Ok(Some(Vec::from(entry.value)));
+                        return Ok(Some(entry.value));
                     }
                 }
-                return Ok(None);
+                Ok(None)
             }
-            None => {
-                return Ok(None);
-            }
+            None => Ok(None),
         }
     }
 
@@ -698,7 +662,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
                     })
-                    .map(|block_header: BlockHeader| String::from(block_header.state_root_hash))
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -709,7 +673,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
                     })
-                    .map(|block_header: BlockHeader| String::from(block_header.state_root_hash))
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -720,7 +684,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
                     })
-                    .map(|block_header: BlockHeader| String::from(block_header.state_root_hash))
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 

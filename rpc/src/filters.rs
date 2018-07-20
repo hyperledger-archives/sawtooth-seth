@@ -20,6 +20,7 @@ use jsonrpc_core::{Error as RpcError, Value};
 use serde_json::Map;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use transactions::SethLog;
@@ -36,22 +37,20 @@ pub enum TopicFilter {
 
 impl TopicFilter {
     pub fn from_value(value: &Value) -> Result<Self, RpcError> {
-        match value {
-            &Value::Array(ref array) => {
+        match *value {
+            Value::Array(ref array) => {
                 let blobs = array
                     .iter()
                     .map(transform::string_from_hex_value)
                     .collect::<Result<Vec<String>, RpcError>>()?;
                 Ok(TopicFilter::OneOf(blobs))
             }
-            &Value::String(_) => {
+            Value::String(_) => {
                 let blob = transform::string_from_hex_value(value)?;
                 Ok(TopicFilter::Exactly(blob))
             }
-            &Value::Null => Ok(TopicFilter::All),
-            _ => {
-                return Err(RpcError::invalid_params("Invalid topic setting"));
-            }
+            Value::Null => Ok(TopicFilter::All),
+            _ => Err(RpcError::invalid_params("Invalid topic setting")),
         }
     }
     /// The topic passes this filter if:
@@ -59,10 +58,10 @@ impl TopicFilter {
     ///   2. The filter is Exactly and the topic and the filter are identitical
     ///   3. The filter is OneOf and the topic is with the filter's list of topics
     pub fn contains(&self, topic: &str) -> bool {
-        match self {
-            &TopicFilter::All => true,
-            &TopicFilter::Exactly(ref blob) => blob == topic,
-            &TopicFilter::OneOf(ref blobs) => blobs.contains(&String::from(topic)),
+        match *self {
+            TopicFilter::All => true,
+            TopicFilter::Exactly(ref blob) => blob == topic,
+            TopicFilter::OneOf(ref blobs) => blobs.contains(&String::from(topic)),
         }
     }
 }
@@ -77,7 +76,7 @@ pub struct LogFilter {
 }
 
 impl LogFilter {
-    pub fn from_map(filter: Map<String, Value>) -> Result<Self, RpcError> {
+    pub fn from_map(filter: &Map<String, Value>) -> Result<Self, RpcError> {
         let from_block = match filter.get("fromBlock") {
             Some(s) => {
                 let s = transform::u64_from_hex_value(s)?;
@@ -95,13 +94,10 @@ impl LogFilter {
 
         // Parse the address into a vec of strings
         let addresses = match filter.get("address") {
-            Some(&Value::Array(ref multiple)) => {
-                let addresses = multiple
-                    .iter()
-                    .map(|addr_val| transform::string_from_hex_value(addr_val))
-                    .collect::<Result<Vec<String>, RpcError>>()?;
-                addresses
-            }
+            Some(&Value::Array(ref multiple)) => multiple
+                .iter()
+                .map(|addr_val| transform::string_from_hex_value(addr_val))
+                .collect::<Result<Vec<String>, RpcError>>()?,
             Some(value) => {
                 let address = transform::string_from_hex_value(value)?;
                 vec![address]
@@ -117,10 +113,10 @@ impl LogFilter {
         })?;
 
         Ok(LogFilter {
-            from_block: from_block,
-            to_block: to_block,
-            addresses: addresses,
-            topics: topics,
+            from_block,
+            to_block,
+            addresses,
+            topics,
         })
     }
 
@@ -182,43 +178,34 @@ pub struct FilterEntry {
 
 #[derive(Debug, Clone)]
 pub struct FilterManager {
-    id_ctr: Arc<Mutex<FilterId>>,
+    id_ctr: Arc<AtomicUsize>,
     filters: Arc<Mutex<HashMap<FilterId, FilterEntry>>>,
 }
 
 impl FilterManager {
     pub fn new() -> Self {
         FilterManager {
-            id_ctr: Arc::new(Mutex::new(1)),
+            id_ctr: Arc::new(AtomicUsize::new(1)),
             filters: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     pub fn new_filter(&mut self, filter: Filter, block_num: u64) -> FilterId {
-        let filter_id = {
-            let mut ctr = self.id_ctr.lock().unwrap();
-            let r = *ctr;
-            *ctr += 1;
-            r
-        };
-        self.set_filter(&filter_id, filter, block_num);
+        let filter_id = self.id_ctr.fetch_add(1, Ordering::SeqCst);
+        self.set_filter(filter_id, filter, block_num);
         filter_id
     }
 
-    pub fn remove_filter(&mut self, filter_id: &FilterId) -> Option<FilterEntry> {
-        self.filters.lock().unwrap().remove(filter_id)
+    pub fn remove_filter(&mut self, filter_id: FilterId) -> Option<FilterEntry> {
+        self.filters.lock().unwrap().remove(&filter_id)
     }
 
-    pub fn get_filter(&mut self, filter_id: &FilterId) -> Option<FilterEntry> {
-        self.filters
-            .lock()
-            .unwrap()
-            .get(filter_id)
-            .map(|filter| filter.clone())
+    pub fn get_filter(&mut self, filter_id: FilterId) -> Option<FilterEntry> {
+        self.filters.lock().unwrap().get(&filter_id).cloned()
     }
 
-    pub fn update_latest_block(&mut self, filter_id: &FilterId, block_num: u64) -> bool {
-        if let Entry::Occupied(mut entry) = self.filters.lock().unwrap().entry(*filter_id) {
+    pub fn update_latest_block(&mut self, filter_id: FilterId, block_num: u64) -> bool {
+        if let Entry::Occupied(mut entry) = self.filters.lock().unwrap().entry(filter_id) {
             (*entry.get_mut()).last_block_sent = block_num;
             true
         } else {
@@ -228,18 +215,15 @@ impl FilterManager {
 
     pub fn set_filter(
         &mut self,
-        filter_id: &FilterId,
+        filter_id: FilterId,
         filter: Filter,
         block_num: u64,
     ) -> Option<FilterEntry> {
         let filter_entry = FilterEntry {
-            filter: filter,
+            filter,
             last_block_sent: block_num,
         };
-        self.filters
-            .lock()
-            .unwrap()
-            .insert(*filter_id, filter_entry)
+        self.filters.lock().unwrap().insert(filter_id, filter_entry)
     }
 }
 

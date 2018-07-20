@@ -18,9 +18,9 @@
 use jsonrpc_core::{Error, ErrorCode};
 
 pub fn not_implemented() -> Error {
-    return Error {
+    Error {
         code: ErrorCode::ServerError(-1),
         message: String::from("Method not implemented"),
         data: None,
-    };
+    }
 }

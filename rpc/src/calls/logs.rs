@@ -53,6 +53,7 @@ where
     methods
 }
 
+#[allow(needless_pass_by_value)]
 pub fn new_filter<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -61,7 +62,7 @@ where
     let (filter,): (Map<String, Value>,) = params
         .parse()
         .map_err(|_| Error::invalid_params("Takes [filter: OBJECT]"))?;
-    let log_filter = LogFilter::from_map(filter)?;
+    let log_filter = LogFilter::from_map(&filter)?;
 
     let current_block = client.get_current_block_number().map_err(|error| {
         error!("Failed to get current block number: {}", error);
@@ -75,6 +76,7 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn new_block_filter<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -88,6 +90,7 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn new_pending_transaction_filter<T>(
     _params: Params,
     mut client: ValidatorClient<T>,
@@ -106,6 +109,7 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn uninstall_filter<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -119,10 +123,11 @@ where
         })?;
 
     Ok(Value::Bool(
-        client.filters.remove_filter(&filter_id).is_some(),
+        client.filters.remove_filter(filter_id).is_some(),
     ))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_filter_changes<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -140,7 +145,7 @@ where
         last_block_sent,
     } = client
         .filters
-        .get_filter(&filter_id)
+        .get_filter(filter_id)
         .ok_or_else(|| Error::invalid_params(format!("Unknown filter id: {}", filter_id)))?;
 
     let blocks = client.get_blocks_since(last_block_sent).map_err(|error| {
@@ -164,11 +169,7 @@ where
                             let header: Result<TransactionHeader, _> =
                                 protobuf::parse_from_bytes(&txn.header);
                             if let Ok(header) = header {
-                                if header.family_name == "seth" {
-                                    true
-                                } else {
-                                    false
-                                }
+                                header.family_name == "seth"
                             } else {
                                 false
                             }
@@ -179,7 +180,7 @@ where
             .collect(),
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
-            for &(_, ref block) in blocks.iter() {
+            for &(_, ref block) in &blocks {
                 let logs = get_logs_from_block_and_filter(&mut client, block, &log_filter)?;
                 all_logs.extend(logs.into_iter());
             }
@@ -190,12 +191,13 @@ where
     // NOTE: Updating is delayed until there are no more error sources that could cause an early
     // return after upadting the filter
     if let Some(&(block_num, _)) = blocks.last() {
-        client.filters.update_latest_block(&filter_id, block_num);
+        client.filters.update_latest_block(filter_id, block_num);
     }
 
     Ok(Value::Array(response))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_filter_logs<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -208,12 +210,9 @@ where
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
-    let FilterEntry {
-        filter,
-        last_block_sent: _,
-    } = client
+    let FilterEntry { filter, .. } = client
         .filters
-        .get_filter(&filter_id)
+        .get_filter(filter_id)
         .ok_or_else(|| Error::invalid_params(format!("Unknown filter id: {}", filter_id)))?;
 
     if let Filter::Log(log_filter) = filter {
@@ -226,6 +225,7 @@ where
     }
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_logs<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -234,7 +234,7 @@ where
     let (filter,): (Map<String, Value>,) = params
         .parse()
         .map_err(|_| Error::invalid_params("Takes [filter: OBJECT]"))?;
-    let log_filter = LogFilter::from_map(filter)?;
+    let log_filter = LogFilter::from_map(&filter)?;
 
     get_logs_from_filter(&mut client, &log_filter)
 }
@@ -341,7 +341,7 @@ where
                 .collect();
             (txn_id, logs)
         })
-        .filter(|&(_, ref logs)| logs.len() > 0)
+        .filter(|&(_, ref logs)| !logs.is_empty())
         .collect();
     warn!("Filtered Logs: {:?}", logs);
 
@@ -355,7 +355,7 @@ where
         .collect::<Vec<_>>();
 
     let mut log_objects = Vec::with_capacity(logs.len());
-    for (txn_id, logs) in logs.into_iter() {
+    for (txn_id, logs) in logs {
         let index = transactions
             .iter()
             .position(|txn| txn.header_signature == txn_id)
@@ -366,7 +366,7 @@ where
                 );
                 Error::internal_error()
             })?;
-        for log in logs.iter() {
+        for log in &logs {
             let log_obj = transform::make_log_obj(log, &txn_id, index as u64, block_id, block_num);
             log_objects.push(log_obj);
         }

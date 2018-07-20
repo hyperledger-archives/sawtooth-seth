@@ -38,6 +38,7 @@ where
 }
 
 // Version refers to the particular network this JSON-RPC client is connected to
+#[allow(needless_pass_by_value)]
 pub fn version<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -47,6 +48,7 @@ where
 }
 
 // Return the number of actual Sawtooth peers
+#[allow(needless_pass_by_value)]
 pub fn peer_count<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -61,6 +63,7 @@ where
 }
 
 // Return whether we are listening for connections, which is always true
+#[allow(needless_pass_by_value)]
 pub fn listening<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,

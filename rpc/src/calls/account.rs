@@ -44,19 +44,17 @@ where
     methods
 }
 
-fn validate_block_key(block: String) -> Result<BlockKey, Error> {
+fn validate_block_key(block: &str) -> Result<BlockKey, Error> {
     match block.parse() {
         Ok(k) => Ok(k),
         Err(BlockKeyParseError::Invalid) => {
-            return Err(Error::invalid_params("Failed to parse block number"));
+            Err(Error::invalid_params("Failed to parse block number"))
         }
-        Err(BlockKeyParseError::Unsupported) => {
-            return Err(error::not_implemented());
-        }
+        Err(BlockKeyParseError::Unsupported) => Err(error::not_implemented()),
     }
 }
 
-fn validate_account_address(address: String) -> Result<String, Error> {
+fn validate_account_address(address: &str) -> Result<String, Error> {
     if address.len() != 42 {
         Err(Error::invalid_params(format!(
             "Invalid address length: {} != {}",
@@ -68,7 +66,7 @@ fn validate_account_address(address: String) -> Result<String, Error> {
     }
 }
 
-fn validate_storage_address(address: String) -> Result<String, Error> {
+fn validate_storage_address(address: &str) -> Result<String, Error> {
     if address.len() < 4 || address.len() % 2 != 0 {
         Err(Error::invalid_params(format!(
             "Invalid storage position: {}",
@@ -79,6 +77,7 @@ fn validate_storage_address(address: String) -> Result<String, Error> {
     }
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_balance<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -89,6 +88,7 @@ where
     })
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_storage_at<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -103,11 +103,11 @@ where
         }
     };
 
-    let key = validate_block_key(block)?;
-    let account_address = validate_account_address(address)?;
-    let storage_address = validate_storage_address(position)?;
+    let key = validate_block_key(&block)?;
+    let account_address = validate_account_address(&address)?;
+    let storage_address = validate_storage_address(&position)?;
 
-    match client.get_storage_at(account_address, storage_address, key) {
+    match client.get_storage_at(&account_address, &storage_address, key) {
         Ok(Some(value)) => Ok(transform::hex_prefix(&transform::bytes_to_hex_str(&value))),
         Ok(None) => Ok(Value::Null),
         Err(error) => {
@@ -117,6 +117,7 @@ where
     }
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_code<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -127,6 +128,7 @@ where
     })
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_transaction_count<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -137,6 +139,7 @@ where
     })
 }
 
+#[allow(needless_pass_by_value)]
 fn get_account<T, F>(params: Params, mut client: ValidatorClient<T>, f: F) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -152,10 +155,10 @@ where
         }
     };
 
-    let key = validate_block_key(block)?;
-    let address = validate_account_address(address)?;
+    let key = validate_block_key(&block)?;
+    let address = validate_account_address(&address)?;
 
-    match client.get_account(address, key) {
+    match client.get_account(&address, key) {
         Ok(Some(account)) => Ok(f(account)),
         Ok(None) => Ok(Value::Null),
         Err(error) => {
@@ -165,6 +168,7 @@ where
     }
 }
 
+#[allow(needless_pass_by_value)]
 pub fn accounts<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,

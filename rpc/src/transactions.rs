@@ -14,6 +14,7 @@
  * limitations under the License.
  * ------------------------------------------------------------------------------
  */
+#![allow(unknown_lints)]
 
 use protobuf;
 
@@ -60,20 +61,20 @@ impl SethTransaction {
 
     pub fn to_pb(&self) -> SethTrasactionPb {
         let mut txn = SethTrasactionPb::new();
-        match self {
-            &SethTransaction::CreateExternalAccount(ref inner) => {
+        match *self {
+            SethTransaction::CreateExternalAccount(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_EXTERNAL_ACCOUNT);
                 txn.set_create_external_account(inner.clone());
             }
-            &SethTransaction::CreateContractAccount(ref inner) => {
+            SethTransaction::CreateContractAccount(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::CREATE_CONTRACT_ACCOUNT);
                 txn.set_create_contract_account(inner.clone());
             }
-            &SethTransaction::MessageCall(ref inner) => {
+            SethTransaction::MessageCall(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::MESSAGE_CALL);
                 txn.set_message_call(inner.clone());
             }
-            &SethTransaction::SetPermissions(ref inner) => {
+            SethTransaction::SetPermissions(ref inner) => {
                 txn.set_transaction_type(SethTransaction_TransactionType::SET_PERMISSIONS);
                 txn.set_set_permissions(inner.clone());
             }
@@ -99,7 +100,7 @@ impl Transaction {
             .map_err(|_| Error::ParseError(String::from("Failed to parse header")))?;
         let inner: Option<SethTransaction> = protobuf::parse_from_bytes(&txn.payload)
             .map_err(|_| Error::ParseError(String::from("Failed to parse payload")))
-            .map(|seth_txn_pb| SethTransaction::try_from(seth_txn_pb))?;
+            .map(SethTransaction::try_from)?;
         match inner {
             Some(seth_txn) => Ok(Transaction {
                 signer_public_key: header.take_signer_public_key(),
@@ -135,6 +136,7 @@ impl Transaction {
         }
     }
 
+    #[allow(wrong_self_convention)]
     pub fn from_addr(&self) -> String {
         public_key_to_address(&transform::hex_str_to_bytes(&self.signer_public_key).unwrap())
     }
@@ -190,9 +192,9 @@ impl SethLog {
         let data: String = transform::bytes_to_hex_str(event.get_data());
 
         Ok(SethLog {
-            address: address,
-            topics: topics,
-            data: data,
+            address,
+            topics,
+            data,
         })
     }
 }
@@ -247,10 +249,10 @@ impl SethReceipt {
 
         Ok(SethReceipt {
             transaction_id: String::from(receipt.get_transaction_id()),
-            contract_address: contract_address,
-            gas_used: gas_used,
-            return_value: return_value,
-            logs: logs,
+            contract_address,
+            gas_used,
+            return_value,
+            logs,
         })
     }
 }

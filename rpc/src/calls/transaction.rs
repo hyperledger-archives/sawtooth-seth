@@ -68,6 +68,7 @@ where
     methods
 }
 
+#[allow(needless_pass_by_value)]
 pub fn send_transaction<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -82,7 +83,7 @@ where
         .and_then(|f| f.ok_or_else(|| Error::invalid_params("`from` not set")))?;
     let data = transform::get_bytes_from_map(&txn, "data")
         .and_then(|f| f.ok_or_else(|| Error::invalid_params("`data` not set")))?;
-    let txn_count = match client.get_account(from.clone(), BlockKey::Latest) {
+    let txn_count = match client.get_account(&from, BlockKey::Latest) {
         Ok(Some(a)) => a.nonce,
         Ok(None) => {
             return Err(Error::invalid_params("Invalid `from` address"));
@@ -95,9 +96,9 @@ where
 
     // Optional Arguments
     let to = transform::get_bytes_from_map(&txn, "to")?;
-    let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90000))?;
+    let gas = transform::get_u64_from_map(&txn, "gas").map(|g| g.unwrap_or(90_000))?;
     let gas_price =
-        transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10000000000000))?;
+        transform::get_u64_from_map(&txn, "gasPrice").map(|g| g.unwrap_or(10_000_000_000_000))?;
     let value = transform::get_u64_from_map(&txn, "value").map(|g| g.unwrap_or(0))?;
     let nonce = transform::get_u64_from_map(&txn, "nonce").map(|g| g.unwrap_or(txn_count))?;
 
@@ -122,7 +123,7 @@ where
         SethTransaction::CreateContractAccount(txn)
     };
 
-    let txn_signature = client.send_transaction(&from, txn).map_err(|error| {
+    let txn_signature = client.send_transaction(&from, &txn).map_err(|error| {
         error!("{:?}", error);
         Error::internal_error()
     })?;
@@ -130,6 +131,7 @@ where
     Ok(transform::hex_prefix(&txn_signature))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn send_raw_transaction<T>(
     _params: Params,
     mut _client: ValidatorClient<T>,
@@ -142,6 +144,7 @@ where
     Err(error::not_implemented())
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_transaction_by_hash<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -168,6 +171,7 @@ where
     get_transaction(client, &TransactionKey::Signature(txn_hash))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_transaction_by_block_hash_and_index<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -210,6 +214,7 @@ where
     )
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_transaction_by_block_number_and_index<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -279,21 +284,21 @@ where
                 }
             };
             // We know the transaction index already, because get_transaction_and_block succeeded
-            match txn_key {
-                &TransactionKey::Index((index, _)) => Ok(transform::make_txn_obj(
-                    txn,
+            match *txn_key {
+                TransactionKey::Index((index, _)) => Ok(transform::make_txn_obj(
+                    &txn,
                     index,
                     &block.header_signature,
                     block_header.block_num,
                 )),
-                &TransactionKey::Signature(ref txn_id) => {
+                TransactionKey::Signature(ref txn_id) => {
                     let txn_id = (*txn_id).clone();
                     let mut index = 0;
                     for mut batch in block.take_batches().into_iter() {
                         for transaction in batch.take_transactions().into_iter() {
                             if transaction.header_signature == txn_id {
                                 return Ok(transform::make_txn_obj(
-                                    txn,
+                                    &txn,
                                     index,
                                     &block.header_signature,
                                     block_header.block_num,
@@ -304,17 +309,18 @@ where
                     }
                     // This should never happen, because we fetched the block and transaction
                     // together.
-                    return Err(Error::internal_error());
+                    Err(Error::internal_error())
                 }
             }
         }
         None => {
             // Transaction exists, but isn't in a block yet
-            Ok(transform::make_txn_obj_no_block(txn))
+            Ok(transform::make_txn_obj_no_block(&txn))
         }
     }
 }
 
+#[allow(needless_pass_by_value)]
 pub fn get_transaction_receipt<T>(
     params: Params,
     mut client: ValidatorClient<T>,
@@ -328,7 +334,7 @@ where
         .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))
         .and_then(|(v,): (String,)| {
             v.get(2..)
-                .map(|v| String::from(v))
+                .map(String::from)
                 .ok_or_else(|| Error::invalid_params("Invalid transaction hash, must have 0x"))
         })?;
     let receipt = match client.get_receipts(&[txn_id.clone()]) {
@@ -387,6 +393,7 @@ where
     ))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn gas_price<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -395,6 +402,7 @@ where
     Ok(Value::String(format!("{:#x}", 0)))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn estimate_gas<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -404,6 +412,7 @@ where
     Err(error::not_implemented())
 }
 
+#[allow(needless_pass_by_value)]
 pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -414,7 +423,7 @@ where
         .map_err(|_| Error::invalid_params("Takes [txnHash: DATA(64)]"))?;
     let address = address
         .get(2..)
-        .map(|a| String::from(a))
+        .map(String::from)
         .ok_or_else(|| Error::invalid_params("Address must have 0x prefix"))?;
 
     let payload = payload
@@ -453,6 +462,7 @@ where
     Ok(transform::hex_prefix(&signature))
 }
 
+#[allow(needless_pass_by_value)]
 pub fn call<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -463,6 +473,7 @@ where
 }
 
 // Always return false
+#[allow(needless_pass_by_value)]
 pub fn syncing<T>(_params: Params, mut _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
