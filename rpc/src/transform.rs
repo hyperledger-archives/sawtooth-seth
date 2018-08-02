@@ -168,7 +168,10 @@ pub fn make_txn_receipt_obj(
     map.insert(String::from("gasUsed"), num_to_hex(&receipt.gas_used));
     map.insert(
         String::from("contractAddress"),
-        hex_prefix(&receipt.contract_address),
+        match receipt.contract_address.len() {
+            0 => Value::Null,
+            _ => hex_prefix(&receipt.contract_address),
+        },
     );
     map.insert(
         String::from("returnValue"),

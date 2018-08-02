@@ -83,9 +83,14 @@ where
     T: MessageSender,
 {
     info!("eth_getBalance");
-    get_account(params, client, |account| {
+    let balance = get_account(params, client, |account| {
         transform::num_to_hex(&account.balance)
-    })
+    });
+
+    match balance {
+        Ok(Value::Null) => Ok("0x0".into()),
+        other => other,
+    }
 }
 
 #[allow(needless_pass_by_value)]
@@ -123,9 +128,14 @@ where
     T: MessageSender,
 {
     info!("eth_getCode");
-    get_account(params, client, |account| {
+    let code = get_account(params, client, |account| {
         transform::hex_prefix(&transform::bytes_to_hex_str(&account.code))
-    })
+    });
+
+    match code {
+        Ok(Value::Null) => Ok("0x".into()),
+        other => other,
+    }
 }
 
 #[allow(needless_pass_by_value)]
@@ -134,9 +144,15 @@ where
     T: MessageSender,
 {
     info!("eth_getTransactionCount");
-    get_account(params, client, |account| {
+    let nonce = get_account(params, client, |account| {
         transform::num_to_hex(&account.nonce)
-    })
+    });
+
+    // The transaction count of a non-existent address is 0, not null
+    match nonce {
+        Ok(Value::Null) => Ok("0x0".into()),
+        other => other,
+    }
 }
 
 #[allow(needless_pass_by_value)]
