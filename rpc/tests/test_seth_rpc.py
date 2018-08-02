@@ -340,7 +340,7 @@ class SethRpcTest(unittest.TestCase):
 
         self._send_state_no_resource(msg)
         result = self.rpc.get_result()
-        self.assertIsNone(result)
+        self.assertEqual(result, "0x0")
 
     def test_get_code(self):
         """Test that an account's code is retrieved correctly."""
@@ -378,7 +378,7 @@ class SethRpcTest(unittest.TestCase):
 
         self._send_state_no_resource(msg)
         result = self.rpc.get_result()
-        self.assertIsNone(result)
+        self.assertEqual(result, "0x")
 
     def test_get_storage_at(self):
         """Test that an account's storage is retrieved correctly."""
