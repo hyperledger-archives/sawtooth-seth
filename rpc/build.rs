@@ -52,6 +52,5 @@ fn glob_simple(pattern: &str) -> Vec<String> {
                 .to_str()
                 .expect("utf-8")
                 .to_owned()
-        })
-        .collect()
+        }).collect()
 }

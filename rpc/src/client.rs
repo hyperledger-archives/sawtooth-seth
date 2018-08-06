@@ -227,8 +227,9 @@ impl<S: MessageSender> ValidatorClient<S> {
         T: protobuf::Message,
         U: protobuf::Message,
     {
-        let msg_bytes = protobuf::Message::write_to_bytes(msg)
-            .map_err(|error| Error::ParseError(format!("Error serializing request: {:?}", error)))?;
+        let msg_bytes = protobuf::Message::write_to_bytes(msg).map_err(|error| {
+            Error::ParseError(format!("Error serializing request: {:?}", error))
+        })?;
 
         let correlation_id = uuid::Uuid::new_v4().to_string();
 
@@ -257,8 +258,9 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn make_batch(&self, from: &str, txn: &SethTransaction) -> Result<(Batch, String), Error> {
-        let payload = protobuf::Message::write_to_bytes(&txn.to_pb())
-            .map_err(|error| Error::ParseError(format!("Error serializing payload: {:?}", error)))?;
+        let payload = protobuf::Message::write_to_bytes(&txn.to_pb()).map_err(|error| {
+            Error::ParseError(format!("Error serializing payload: {:?}", error))
+        })?;
 
         let account = self
             .loaded_accounts()
@@ -304,9 +306,10 @@ impl<S: MessageSender> ValidatorClient<S> {
         batch_header.set_transaction_ids(protobuf::RepeatedField::from_vec(vec![
             txn_signature.clone(),
         ]));
-        let batch_header_bytes = protobuf::Message::write_to_bytes(&batch_header).map_err(
-            |error| Error::ParseError(format!("Error serializing batch header: {:?}", error)),
-        )?;
+        let batch_header_bytes =
+            protobuf::Message::write_to_bytes(&batch_header).map_err(|error| {
+                Error::ParseError(format!("Error serializing batch header: {:?}", error))
+            })?;
 
         let batch_signature = account.sign(&batch_header_bytes)?;
 
@@ -625,17 +628,19 @@ impl<S: MessageSender> ValidatorClient<S> {
 
     pub fn get_current_block_number(&mut self) -> Result<u64, Error> {
         let block = self.get_current_block()?;
-        let block_header: BlockHeader = protobuf::parse_from_bytes(&block.header).map_err(
-            |error| Error::ParseError(format!("Error parsing block_header: {:?}", error)),
-        )?;
+        let block_header: BlockHeader =
+            protobuf::parse_from_bytes(&block.header).map_err(|error| {
+                Error::ParseError(format!("Error parsing block_header: {:?}", error))
+            })?;
         Ok(block_header.block_num)
     }
 
     pub fn get_blocks_since(&mut self, since: u64) -> Result<Vec<(u64, Block)>, Error> {
         let block = self.get_current_block()?;
-        let block_header: BlockHeader = protobuf::parse_from_bytes(&block.header).map_err(
-            |error| Error::ParseError(format!("Error parsing block_header: {:?}", error)),
-        )?;
+        let block_header: BlockHeader =
+            protobuf::parse_from_bytes(&block.header).map_err(|error| {
+                Error::ParseError(format!("Error parsing block_header: {:?}", error))
+            })?;
         let block_num = block_header.block_num;
         if block_num <= since {
             return Ok(Vec::new());
@@ -644,9 +649,10 @@ impl<S: MessageSender> ValidatorClient<S> {
         let mut blocks = Vec::with_capacity((block_num - (since + 1)) as usize);
         for block_num in (since + 1)..block_num {
             let block = self.get_block(BlockKey::Number(block_num))?;
-            let block_header: BlockHeader = protobuf::parse_from_bytes(&block.header).map_err(
-                |error| Error::ParseError(format!("Error parsing block_header: {:?}", error)),
-            )?;
+            let block_header: BlockHeader =
+                protobuf::parse_from_bytes(&block.header).map_err(|error| {
+                    Error::ParseError(format!("Error parsing block_header: {:?}", error))
+                })?;
             let block_num = block_header.block_num;
             blocks.push((block_num, block));
         }
@@ -661,8 +667,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    })
-                    .map(|block_header: BlockHeader| block_header.state_root_hash)
+                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -672,8 +677,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    })
-                    .map(|block_header: BlockHeader| block_header.state_root_hash)
+                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -683,8 +687,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    })
-                    .map(|block_header: BlockHeader| block_header.state_root_hash)
+                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
