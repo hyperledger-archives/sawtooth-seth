@@ -104,6 +104,8 @@ class SethRpcTest(unittest.TestCase):
         cls.return_value_s = "2a"
         cls.return_value_b = bytes([0x2a])
 
+        assert cls.rpc.call("personal_unlockAccount", [cls.account_address, None, None])
+
     # -- Network tests -- #
     def test_net_version(self):
         """Test that the network id 19 is returned."""

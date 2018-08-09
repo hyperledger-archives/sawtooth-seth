@@ -23,6 +23,7 @@ use failure::Error;
 use serde_json::to_string_pretty;
 use std::fs::File;
 use std::io::Read;
+use std::str::from_utf8;
 
 /// Returns Clap configuration
 pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
@@ -75,7 +76,6 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
                         .short("p")
                         .long("pass-file")
                         .takes_value(true)
-                        .required(true)
                         .help("Path to file containing password to encrypt key with"),
                 ]),
             SubCommand::with_name("list").about("Lists seth accounts"),
@@ -203,8 +203,10 @@ pub fn do_import(client: &Client, key_file: &str, pass_file: Option<&str>) -> Re
         None => None,
     };
 
-    let account_id: String =
-        client.send_rpc_transaction("personal_importRawKey", &json!([key, password]))?;
+    let account_id: String = client.send_rpc_transaction(
+        "personal_importRawKey",
+        &json!([from_utf8(&key)?, password]),
+    )?;
 
     println!("\"{}\"", account_id);
 

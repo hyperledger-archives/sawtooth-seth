@@ -35,7 +35,7 @@ services:
     working_dir: /project/sawtooth-seth
     entrypoint: |
       bash -c "
-        seth config init --url http://rest-api:8080
+        seth config init --url http://seth-rpc:3030
         tail -f /dev/null
       "
 

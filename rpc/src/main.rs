@@ -17,29 +17,37 @@
 
 #[macro_use]
 extern crate clap;
-#[macro_use]
-extern crate log;
 extern crate crypto;
+extern crate dirs;
 extern crate futures_cpupool;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
+#[macro_use]
+extern crate log;
 extern crate protobuf;
-extern crate rpassword;
 extern crate sawtooth_sdk;
 extern crate serde_json;
 extern crate simple_logging;
 extern crate tiny_keccak;
 extern crate uuid;
 
-use log::LogLevelFilter;
-use std::process;
-
-use sawtooth_sdk::messaging::stream::*;
-use sawtooth_sdk::messaging::zmq_stream::*;
-
-use jsonrpc_core::IoHandler;
-use jsonrpc_core::Params;
-use jsonrpc_http_server::ServerBuilder;
+/// Creates a custom `jsonrpc_core::Error` object, and logs the message
+macro_rules! fail {
+    ($msg:expr) => {{
+        error!("{}", $msg);
+        Error {
+            code: (-32069i64).into(),
+            message: $msg.into(),
+            data: None,
+        }
+    }};
+    ($msg:expr, $err:expr) => {{
+        // Don't return error message in JSON-RPC response, as it may
+        // contain sensitive information
+        error!("{}: {}", $msg, $err);
+        fail!($msg)
+    }};
+}
 
 mod accounts;
 mod calls;
@@ -53,7 +61,13 @@ mod transform;
 use accounts::Account;
 use calls::*;
 use client::ValidatorClient;
+use jsonrpc_core::{IoHandler, Params};
+use jsonrpc_http_server::ServerBuilder;
+use log::LogLevelFilter;
 use requests::{RequestExecutor, RequestHandler};
+use sawtooth_sdk::messaging::stream::*;
+use sawtooth_sdk::messaging::zmq_stream::*;
+use std::process;
 
 const SERVER_THREADS: usize = 3;
 
@@ -78,7 +92,7 @@ fn main() {
         .values_of_lossy("unlock")
         .unwrap_or_else(Vec::new)
         .iter()
-        .map(|alias| abort_if_err(Account::load_from_alias(alias)))
+        .map(|alias| abort_if_err(Account::load_from_file(alias, &None)))
         .collect();
 
     for account in &accounts {
@@ -130,6 +144,8 @@ where
     methods.extend(logs::get_method_list().into_iter());
     methods.extend(network::get_method_list().into_iter());
     methods.extend(transaction::get_method_list().into_iter());
+    methods.extend(personal::get_method_list().into_iter());
+    methods.extend(seth::get_method_list().into_iter());
 
     methods
 }

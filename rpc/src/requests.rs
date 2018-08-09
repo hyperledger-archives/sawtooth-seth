@@ -15,12 +15,10 @@
  * ------------------------------------------------------------------------------
  */
 
+use super::client::ValidatorClient;
 use futures_cpupool::CpuPool;
 use jsonrpc_core::{BoxFuture, Error, Params, Value};
-
 use sawtooth_sdk::messaging::stream::*;
-
-use super::client::ValidatorClient;
 
 pub type RequestHandler<T> = fn(Params, ValidatorClient<T>) -> Result<Value, Error>;
 

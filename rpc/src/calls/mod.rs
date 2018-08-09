@@ -21,4 +21,6 @@ pub mod block;
 pub mod error;
 pub mod logs;
 pub mod network;
+pub mod personal;
+pub mod seth;
 pub mod transaction;

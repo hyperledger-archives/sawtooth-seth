@@ -20,12 +20,12 @@ authors = ["sawtooth"]
 
 [dependencies]
 clap = "2.26"
+dirs = "1.0"
 futures-cpupool = "0.1"
 jsonrpc-core = "8.0"
 jsonrpc-http-server = "8.0"
 log = "0.3"
-protobuf="2.0"
-rpassword = "1.0"
+protobuf = "2.0"
 rust-crypto = "0.2"
 sawtooth_sdk = { git = "https://github.com/hyperledger/sawtooth-core" }
 serde_json = "1.0"
