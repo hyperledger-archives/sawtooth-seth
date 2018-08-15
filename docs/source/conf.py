@@ -63,9 +63,9 @@ source_suffix = '.rst'
 master_doc = 'contents'
 
 # General information about the project.
-project = u'Sawtooth'
-copyright = u'2015-2017, Intel Corporation'
-author = u'Intel Corporation'
+project = 'Sawtooth Seth'
+copyright = '2015-2018, Intel Corporation'
+author = 'Hyperledger Sawtooth Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -226,7 +226,7 @@ html_show_sphinx = False
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'SawtoothLakeDoc'
+htmlhelp_basename = 'SawtoothSethDoc'
 
 PREAMBLE = ''
 
@@ -249,10 +249,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-  (master_doc, 'sawtooth.tex', u'Sawtooth Documentation',
-   u'Intel Corporation', 'manual')
-]
+latex_documents = [(
+    master_doc,
+    'sawtooth-seth.tex',
+    'Sawtooth Seth Documentation',
+    author,
+    'manual',
+)]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -279,10 +282,14 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'intelmaidenlane', u'Sawtooth Documentation',
-     [author], 1)
-]
+# Not currently used
+# man_pages = [(
+#     master_doc,
+#     'sawtooth-seth',
+#     'Sawtooth Seth Documentation',
+#     [author],
+#     1,
+# )]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
@@ -293,11 +300,15 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-  (master_doc, 'SawtoothLake', u'Sawtooth Documentation',
-   author, 'SawtoothLake', 'One line description of project.',
-   'Miscellaneous'),
-]
+texinfo_documents = [(
+    master_doc,
+    'SawtoothSeth',
+    'Sawtooth Seth Documentation',
+    author,
+    'SawtoothSeth',
+    'Ethereum-compatible transaction family for the Hyperledger Sawtooth platform',
+    'Miscellaneous'
+)]
 
 # Documents to append as an appendix to all manuals.
 #texinfo_appendices = []

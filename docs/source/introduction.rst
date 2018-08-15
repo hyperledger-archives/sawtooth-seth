@@ -103,7 +103,7 @@ short-term finality is less important.
 Algorithms for achieving consensus with arbitrary faults generally require
 some form of voting among a known set of participants. Two general approaches
 have been proposed. The first, often referred to as "Nakamoto consensus",
-elects a leader through some form of “lottery”. The leader then proposes a
+elects a leader through some form of "lottery". The leader then proposes a
 block that can be added to a chain of previously committed blocks. In Bitcoin,
 the first participant to successfully solve a cryptographic puzzle wins
 the leader-election lottery. The elected leader broadcasts the new block
@@ -127,7 +127,7 @@ dev_mode and PoET.
   * Dev_mode is a simplified random leader algorithm that is useful
     for developers and test networks that require only crash fault tolerance.
 
-  * PoET, short for “Proof of Elapsed Time" is a Nakamoto-style consensus
+  * PoET, short for "Proof of Elapsed Time" is a Nakamoto-style consensus
     algorithm. It is designed to be a production-grade protocol capable of
     supporting large network populations. Sawtooth includes an implementation
     which simulates the secure instructions. This should make it easier for
@@ -137,7 +137,7 @@ dev_mode and PoET.
 
 
 Getting Sawtooth
-=====================
+================
 
 The Sawtooth platform is distributed in source code form with
 an Apache license. You can get the code `here

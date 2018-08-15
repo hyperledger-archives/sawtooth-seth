@@ -31,8 +31,8 @@ Sawtooth are:
    and Sawtooth Global State addresses.
 2. Define and implement an efficient method for maintaining accounts and
    account storage in Sawtooth Global State.
-3. Define and implement an “EVM-Wrapper” at the Transaction Processor level for
-   handling additional “Ethereum-like” and “Burrow-like” features not
+3. Define and implement an "EVM-Wrapper" at the Transaction Processor level for
+   handling additional "Ethereum-like" and "Burrow-like" features not
    implemented by the EVM, including:
 
     a. Handling account creation transactions and storing the resulting code in
@@ -126,7 +126,7 @@ The following fields defined above shall be ignored for this version of the
 spec:
 
 * balance - Since this version of the spec does not include an incentive system
-  or associated cryptocurrency, maintaining a balance isn’t meaningful.
+  or associated cryptocurrency, maintaining a balance isn't meaningful.
 
 Addressing
 ==========
@@ -135,7 +135,7 @@ EVM Prefix
 ----------
 All data associated with the Seth Transaction Family shall be
 stored under the prefix formed by taking the first 3 bytes of the SHA512 hash
-of the UTF-8 encoded string “seth”. This shall be referred to as the EVM
+of the UTF-8 encoded string "seth". This shall be referred to as the EVM
 prefix.::
 
     >>> hashlib.sha512('seth'.encode('utf-8')).hexdigest()[0:6]
@@ -145,16 +145,16 @@ Account Addresses
 -----------------
 The address of an account depends on which type of account it is:
 
-* EOA - Given an EOA’s private key, the address is the, “rightmost 160-bits of
-  the Keccak hash of the corresponding ECDSA public key,” from the yellow paper.
-  The “Keccak hash” shall be taken to mean SHA3.
+* EOA - Given an EOA's private key, the address is the, "rightmost 160-bits of
+  the Keccak hash of the corresponding ECDSA public key," from the yellow paper.
+  The "Keccak hash" shall be taken to mean SHA3.
 * CA - The address of a CA is the last 20 bytes of the 256-byte SHA3 hash of
   the byte array formed by concatenating the sender address and the big endian
-  encoding of the sender’s current nonce. In other words, the address of a CA is
+  encoding of the sender's current nonce. In other words, the address of a CA is
   derived from hashing the creating accounts address and its nonce.
 
 Accounts in the above format shall be stored in global state at the address
-formed by concatenating the EVM prefix, address of the account, and enough 0’s
+formed by concatenating the EVM prefix, address of the account, and enough 0's
 to form a valid global state address.::
 
     >>> state_address = 'a84eda' + account_address + '0'*12
@@ -309,20 +309,20 @@ described below:
    transaction is invalid.
 4. If the transaction type is MESSAGE_CALL,
 
-    a. The sender’s account will be retrieved from state using the sender
+    a. The sender's account will be retrieved from state using the sender
        address. If the account does not exist, the transaction is invalid.
     b. Check that the account has permissions to make message calls. If the
        account does not have permissions, the transaction is invalid.
     c. Check that the nonce in the transaction matches the nonce stored in state
        for the account. If it does not, the transaction is invalid.
-    d. The receiver’s account will be retrieved from state using the address in
+    d. The receiver's account will be retrieved from state using the address in
        the `to` field. If the address is invalid, the account does not exist, or
        the account does not contain any code, the transaction is invalid.
     e. The EVM will be called using:
 
         - The sender account for the `caller` argument
         - The receiver account for the `callee` argument
-        - The `code` field in the receiver’s account for the `code` argument
+        - The `code` field in the receiver's account for the `code` argument
         - The `data` field in the transaction payload for the `input` argument.
           If no data field is set, the transaction is invalid.
         - 0 for the `value` argument.
@@ -337,14 +337,14 @@ described below:
 
 5. If the transaction is CREATE_CONTRACT_ACCOUNT,
 
-    a. The sender’s account will be retrieved from state using the sender
+    a. The sender's account will be retrieved from state using the sender
        address. If the account does not exist, the transaction is invalid.
     b. Check that the account has permissions to make contract accounts. If the
        account does not have permissions, the transaction is invalid.
     c. Check that the nonce in the transaction matches the nonce stored in state
        for the account. If it does not, the transaction is invalid.
     d. A Contract Account shall be created at a new address derived from the
-       sender account as described above. The sender account’s nonce shall then
+       sender account as described above. The sender account's nonce shall then
        be incremented.
     e. Validate that that creating account has permissions to set permissions
        if permissions are included. If it does not have permission the
@@ -402,7 +402,7 @@ described below:
 
      a. Check that permissions are set in the transaction. If there are not
         any permissions, the transaction is invalid.
-     b. The sender’s account will be retrieved from state using the sender
+     b. The sender's account will be retrieved from state using the sender
         address. If the account does not exist, the transaction is invalid.
      c. Check that the account has permissions to make contract accounts. If the
         account does not have permissions, the transaction is invalid.
@@ -444,7 +444,7 @@ The fields of this message are:
 The Ethereum specification defines a transaction receipt with additional fields.
 However, within Sawtooth, receipt data for a given transaction is limited to
 what can be computed during the execution of a transaction. Given that a
-transaction processor’s knowledge is limited to that of the transaction itself
+transaction processor's knowledge is limited to that of the transaction itself
 and current state, the values that can be included in the Seth receipt are
 limited to the above. Additional contextual information that may be required can
 be computed later by inspecting the block that the transaction was executed in.
@@ -452,21 +452,21 @@ be computed later by inspecting the block that the transaction was executed in.
 Events
 ------
 
-Ethereum defines a set of LOGX for X in [0, 4] instructions that allow contracts
+Ethereum defines a set of LOGX for X in ``[0, 4]`` instructions that allow contracts
 to log off-chain data. Solidity uses these instructions to implement an event
 subscription system. To make Seth compatible with both, the LOGX instructions
-generate `Sawtooth Events <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/events_and_transactions_receipts.html>`.
+generate `Sawtooth Events`_.
 Like Seth's transaction receipts, these events contain only the data that is
 available during transaction execution.
 
-The ``event_type`` field is set to ``“seth_log_event”``. The ``event_data``
+The ``event_type`` field is set to ``"seth_log_event"``. The ``event_data``
 field contains a copy of the data argument passed to the EVM LOGX instruction.
 an individual transaction contains the following protobuf message. The
 ``attributes`` field contains:
 
 - An attribute with the key ``"address"`` and the address of the contract that
   generated the event as its value.
-- For each topic Y in [1..X], and attribute with the key ``"topicY"`` and the
+- For each topic Y in ``[1..X]``, and attribute with the key ``"topicY"`` and the
   topic data for that topic as its value.
 
 .. code-block:: protobuf
@@ -479,3 +479,5 @@ an individual transaction contains the following protobuf message. The
       Attribute { "topicX": <topic data> },
   	],
   }
+
+.. _Sawtooth Events: https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/events_and_transactions_receipts.html
