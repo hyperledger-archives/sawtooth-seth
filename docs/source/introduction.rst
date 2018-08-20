@@ -1,161 +1,72 @@
+..
+   Copyright 2017 Intel Corporation
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
 ************
 Introduction
 ************
 
+The primary goal of the Sawtooth-Ethereum integration project, affectionately
+dubbed "Seth", is to add support for running Ethereum Virtual Machine smart
+contracts to the Hyperledger Sawtooth platform. In order to make this possible,
+the Hyperledger Sawtooth project worked with the `Hyperledger Burrow`_ project
+to integrate their EVM implementation, the Burrow EVM, into with the Hyperledger
+Sawtooth platform.
 
-Hyperledger Sawtooth is an enterprise distributed ledger (aka blockchain) project.
-Our design philosophy targets keeping distributed ledgers *distributed* and
-making smart contracts *safe* - particularly for enterprise use.
+.. _Hyperledger Burrow: https://github.com/hyperledger/burrow
 
-In fitting with this enterprise focus, Sawtooth is also highly modular.
-This enables enterprises and consortia to make policy decisions that they are
-best equipped to make.
+The secondary goal of Seth is to make it easy to port existing EVM smart
+contracts and DApps that depend on them to Sawtooth. This has been largely
+accomplished by replicating the `Ethereum JSON RPC API`_.
 
-We are an open source project under the Hyperledger umbrella. We welcome
-working with individuals and companies interested in the advancement of
-distributed ledger technology. Please see the community section for ways to
-interact with and become a part of the Sawtooth community.
+.. _Ethereum JSON RPC API: https://github.com/ethereum/wiki/wiki/JSON-RPC
 
+Seth is composed of three components:
 
-Sawtooth's Ledger
-=================
-Distributed ledgers are shared databases with the unique feature that they do
-not rely on a central authority or intermediary. Instead of a single,
-centralized database, each participant operates a copy of the database,
-verifies transactions, and engages in a protocol that ensures universal
-agreement on the state of the ledger. While Bitcoin is the most well-known
-distributed ledger, the technology has been proposed for many different
-applications ranging from international remittance, insurance claim
-processing, supply chain management and the Internet of Things (IoT).
+1. The :ref:`seth <seth-cli-reference-label>` client
+#. The :ref:`seth-tp <seth-tp-reference-label>` transaction processor
+#. The :ref:`seth-rpc <seth-rpc-reference-label>` server
 
-Distributed ledgers generally consist of three basic components:
+The ``seth`` client is the user-facing CLI tool for interacting with a Sawtooth
+network that has Seth deployed on it. The ``seth-tp`` transaction processor is
+the component that implements "Ethereum-like" functionality within the Sawtooth
+platform. Running Seth on a Sawtooth network is equivalent to connecting a
+``seth-tp`` process to all validator nodes. The ``seth-rpc`` server is an HTTP
+server that acts as an adapter between the `Ethereum JSON RPC API`_ and the
+client interface provided by Sawtooth.
 
-    * A data model that captures the current state of the ledger
+It is important to note that Seth is not a complete Ethereum implementation. The
+Sawtooth platform has made fundamental design decisions that differ from those
+made by the Ethereum platform. While most EVM smart contracts can be run on the
+Sawtooth network, there are some differences to be aware of:
 
-    * A language of transactions that change the ledger state
-
-    * A protocol used to build consensus among participants around
-      which transactions will be accepted by the ledger.
-
-Transaction Families
-====================
-In Sawtooth, the data model and transaction language are implemented
-in a *transaction family*. While we expect users to build custom transaction
-families that reflect the unique requirements of their ledgers, we provide
-several core transaction families as models\:
-
-    * Validator Registry - Provides a methodology
-      for registering ledger services.
-
-    * IntegerKey - Used for testing deployed ledgers.
-
-    * Settings - Provides a reference implementation for storing
-      on-chain configuration settings.
-
-    * Identity - Handles on-chain permissioning for transactor
-      and validator keys to streamline managing identities
-      for lists of public keys.
-
-Additional transaction families provide models for specific areas\:
-
-    * Smallbank - Handles performance analysis for benchmarking
-      and performance testing when comparing the performance of
-      blockchain systems.
-      This transaction family is based on the H-Store Smallbank benchmark.
-
-    * Seth - Enables the creation and execution of smart contracts.
-      This transaction family integrates the Hyperledger Burrow
-      implementation of the Ethereum Virtual Machine (EVM)
-      into the Hyperledger Sawtooth framework using the
-      Sawtooth Go SDK.
-
-    * BlockInfo - Provides a methodology for storing information
-      about a configureable number of historic blocks.
-      This transaction family is used for Seth smart contracts.
-
-We also provide several example transaction families to demonstrate
-Sawtooth functionality\:
-
-    * XO - Allows users to play Tic-Tac-Toe, also known as
-      "noughts and crosses" or "Xs and Os".
-
-    * Track and Trade - Provides a methodology for users to track goods
-      as they move through a supply chain.
-      This transaction family includes the history of ownership and
-      custodianship, as well as histories for a variety of properties
-      such as temperature and location.
-
-Consensus
-=========
-
-Consensus is the process of building agreement among a group of mutually
-distrusting participants. There are many different algorithms for building
-consensus based on requirements related to performance, scalability,
-consistency, threat model, and failure model. While most distributed ledgers
-operate with an assumption of Byzantine failures (malicious attacker),
-other properties are largely determined by application requirements.
-For example, ledgers used to record financial transactions often require
-high transaction rates with relatively few participants and immediate
-finality of commitment. Consumer markets, in contrast, require substantial
-aggregate throughput across a large number of participants; however,
-short-term finality is less important.
-
-Algorithms for achieving consensus with arbitrary faults generally require
-some form of voting among a known set of participants. Two general approaches
-have been proposed. The first, often referred to as "Nakamoto consensus",
-elects a leader through some form of "lottery". The leader then proposes a
-block that can be added to a chain of previously committed blocks. In Bitcoin,
-the first participant to successfully solve a cryptographic puzzle wins
-the leader-election lottery. The elected leader broadcasts the new block
-to the rest of the participants who implicitly vote to accept the block by
-adding the block to a chain of accepted blocks and proposing subsequent
-transaction blocks that build on that chain.
-
-The second approach is based on traditional
-`Byzantine Fault Tolerance (BFT)
-<https://en.wikipedia.org/wiki/Byzantine_fault_tolerance>`_
-algorithms and uses multiple rounds of explicit votes to achieve consensus.
-`Ripple <https://ripple.com/>`_ and `Stellar <https://www.stellar.org/>`_
-developed consensus protocols that extend traditional BFT for open
-participation.
-
-Sawtooth abstracts the core concepts of consensus and isolates consensus
-from transaction semantics. The interface supports plugging in various
-consensus implementations. Sawtooth provides two such implementations:
-dev_mode and PoET.
-
-  * Dev_mode is a simplified random leader algorithm that is useful
-    for developers and test networks that require only crash fault tolerance.
-
-  * PoET, short for "Proof of Elapsed Time" is a Nakamoto-style consensus
-    algorithm. It is designed to be a production-grade protocol capable of
-    supporting large network populations. Sawtooth includes an implementation
-    which simulates the secure instructions. This should make it easier for
-    the community to work with the software but also forgoes Byzantine fault
-    tolerance.  For more information, see
-    `PoET 1.0 Specification <https://sawtooth.hyperledger.org/docs/core/releases/latest/architecture/poet.html>`.
-
-
-Getting Sawtooth
-================
-
-The Sawtooth platform is distributed in source code form with
-an Apache license. You can get the code `here
-<https://github.com/hyperledger/sawtooth-core>`_ and start building your own
-distributed ledger.
-
-Repositories
-============
-
-One repository contains all of the the code needed:
-
-sawtooth-core
-    Contains fundamental classes used throughout the Sawtooth project, as well as:
-
-    * The implementation of the validator process which runs on each node
-    * SDKs for writing transaction processing or validation logic in a variety
-      of languages
-    * Tools including a Vagrant environment for easily launching a network of
-      validators
-    * Dockerfiles to support development or launching a network of validators
-    * Source files for this documentation
+1. Blocks within Sawtooth are not identified by a 32-byte block hash. They are
+   instead identified by a 64-byte header signature. When running smart
+   contracts that use the BLOCKHASH instruction, the first 32 bytes of the
+   header signature are used in place of a block hash.
+#. The public Ethereum network depends on economic incentives to limit execution
+   resources. On the other hand, the Hyperledger Burrow project depends on
+   permissions to control and limit execution resources. Seth currently only
+   supports the permissioned-network model. As a consequence, "gas" is free but
+   finite and permissions can be applied to all accounts.
+#. Transaction execution within Sawtooth is modularized so that transactions
+   cannot have knowledge of being executed within the context of a block chain.
+   This feature has useful implications from a design perspective, such as
+   simplifying the Sawtooth state transaction function. However, it is in
+   direct opposition to transaction execution within Ethereum, in which
+   transactions can depend on the block numbers, hashes, and timestamps. By
+   default, these instructions are not supported by Seth. However, if the Block
+   Info Transaction Family is running on the same network as Seth, these
+   instructions will attempt to read from state at the addresses defined by that
+   family.

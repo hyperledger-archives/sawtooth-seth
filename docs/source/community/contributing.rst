@@ -7,17 +7,15 @@ Ways to Contribute
 ==================
 
 Contributions by the community help grow and optimize the capabilities of
-Hyperledger Sawtooth, and are the most effective method of having a positive
+Sawtooth Seth, and are the most effective method of having a positive
 impact on the project.
 
 **Different ways you can contribute**
 
-* Bugs or Issues (issues or defects found when working with Sawtooth)
+* Bugs or Issues (issues or defects found when working with Sawtooth Seth)
 * Core Features & Enhancements (expanded capabilities or optimization)
-* Arcade Features (games that demonstrate Sawtooth such as Tic-Tac-Toe
-  and Battleship)
 * New or Enhanced Documentation (improve existing documentation or create new)
-* Testing Events and Results (functional, performance or scalability)
+* Testing Events and Results (functional, performance, or scalability)
 
 **Unassigned JIRA Issues**
 
@@ -30,7 +28,7 @@ Commit Process
 ==============
 
 Hyperledger Sawtooth is Apache 2.0 licensed and accepts contributions
-via `GitHub <https://github.com/hyperledger/sawtooth-core>`_
+via `GitHub <https://github.com/hyperledger/sawtooth-seth>`_
 pull requests. When contributing code please do the following:
 
 * Fork the repository and make your changes in a feature branch.
@@ -38,8 +36,6 @@ pull requests. When contributing code please do the following:
   to existing tests.
 * Please ensure the unit and integration tests run successfully. Both are run
   with `./bin/run_tests`.
-* Please ensure that lint passes by running './bin/run_lint -s master'.
-  On success, the command produces no output.
 
 **Pull Request Guidelines**
 
@@ -88,8 +84,8 @@ These checks are:
 
 **Integrating GitHub Commits with JIRA**
 
-You can link JIRA issues to your Hyperledger Sawtooth GitHub commits to integrate
-the developer's activity with the associated issue. JIRA uses the issue key to
+You can link JIRA issues to your Sawtooth Seth GitHub commits to integrate
+development activity with the associated issue. JIRA uses the issue key to
 associate the commit with the issue, so the commit can be summarized in the
 development panel for the JIRA issue.
 
