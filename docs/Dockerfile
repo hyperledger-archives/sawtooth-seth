@@ -28,7 +28,6 @@
 
 FROM ubuntu:xenial
 
-
 RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
  || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
@@ -95,8 +94,8 @@ COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
 
-WORKDIR /project/sawtooth-seth/cli/src/seth_cli/cli
-RUN go build -o /project/sawtooth-seth/cli/bin/seth
+WORKDIR /project/sawtooth-seth/cli-go/src/seth_cli/cli
+RUN go build -o /project/sawtooth-seth/cli-go/bin/seth
 
 WORKDIR /project/sawtooth-seth/processor/src/seth_tp
 RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp

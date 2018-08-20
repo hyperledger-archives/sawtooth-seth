@@ -85,7 +85,7 @@ services:
       dockerfile: ./cli/Dockerfile
       args:
         ISOLATION_ID: ${ISOLATION_ID}
-    image: sawtooth-seth-cli:${ISOLATION_ID}
+    image: sawtooth-seth-cli-go:${ISOLATION_ID}
     expose:
       - 8080
     depends_on:
