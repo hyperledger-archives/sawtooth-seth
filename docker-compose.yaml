@@ -31,6 +31,28 @@ services:
       - ./contracts:/project/sawtooth-seth/contracts
       - sawtooth:/root/.sawtooth
     depends_on:
+      - validator
+    working_dir: /project/sawtooth-seth
+    entrypoint: |
+      bash -c "
+        seth config init --url http://rest-api:8080
+        tail -f /dev/null
+      "
+
+  seth-cli-go:
+    build:
+      context: .
+      dockerfile: ./cli-go/Dockerfile
+      args:
+        - ISOLATION_ID=${ISOLATION_ID}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    image: sawtooth-seth-cli-go:${ISOLATION_ID}
+    container_name: seth-cli-go
+    volumes:
+      - ./contracts:/project/sawtooth-seth/contracts
+    depends_on:
       - rest-api
     working_dir: /project/sawtooth-seth
     entrypoint: |
@@ -91,7 +113,7 @@ services:
     image: hyperledger/sawtooth-validator:1.0
     container_name: sawtooth-validator
     ports:
-      - 4004
+      - '4004:4004/tcp'
       - 8800
     command: |
       bash -c "

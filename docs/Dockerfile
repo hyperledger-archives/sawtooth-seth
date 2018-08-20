@@ -102,7 +102,7 @@ RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
 
 WORKDIR /project/sawtooth-seth/rpc
 RUN mkdir /project/sawtooth-seth/rpc/bin
-RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
+RUN cargo build && cp ../target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
 
 WORKDIR /project/sawtooth-seth/docs
 CMD make html latexpdf

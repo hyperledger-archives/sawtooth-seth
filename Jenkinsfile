@@ -67,12 +67,15 @@ node ('master') {
         }
 
         stage("Run Lint") {
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID run_go_fmt'
+            sh 'docker run --rm sawtooth-seth-cli-go:$ISOLATION_ID run_go_fmt'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo +nightly fmt -- --check'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo +nightly clippy'
         }
 
         // Run the tests
         stage("Run Tests") {
             sh './bin/run_tests'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo test'
         }
 
         stage ("Build documentation") {
