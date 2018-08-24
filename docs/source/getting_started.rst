@@ -24,10 +24,12 @@ Seth is packaged separately from the rest of the Sawtooth project. Currently
 the best way to run Seth is to use the provided docker-compose file. Building
 Seth requires an environment that has the Docker Engine installed.
 
-To get Seth, clone the sawtooth-seth GitHub repository::
+To get Seth, clone the `sawtooth-seth`_ GitHub repository::
 
-    $ git clone https://github.com/hyperledger/sawtooth-seth
+    $ git clone https://github.com/hyperledger/sawtooth-seth.git
     $ cd sawtooth-seth
+
+.. _sawtooth-seth: https://github.com/hyperledger/sawtooth-seth
 
 Starting Up Seth
 ================
@@ -90,7 +92,7 @@ start up a shell in that container::
 You should now be logged in as root in the container. From this shell, you can
 generate a new, password-encrypted key with the following::
 
-    # openssl ecparam -genkey -name secp256k1 | openssl ec -out key-file.pem -aes128
+    $ openssl ecparam -genkey -name secp256k1 | openssl ec -out key-file.pem -aes128
 
 You can use any encryption cipher by changing the final ``-aes128`` flag or omit
 the flag and to generate a key without it being encrypted.
@@ -98,19 +100,19 @@ the flag and to generate a key without it being encrypted.
 Now we are ready to set up the account on the network. To do this, we need to
 use the ``seth`` command. From the prompt where you generated the key, run::
 
-    # seth account import key-file.pem myalias
+    $ seth account import key-file.pem myalias
 
 This will copy your key to an internal directory and create an alias for the key
 which you will use to reference the key in future commands. Finally, to submit
 a transaction to the network to create your account, do::
 
-    # seth account create --nonce=0 --wait myalias
+    $ seth account create --nonce=0 --wait myalias
 
 The command should print the address of your newly created account upon success.
 This will be a (40 character) hex string. You can verify that the account has
 been created by running::
 
-    # seth show account {address}
+    $ seth show account {address}
 
 This will print out some information stored in state about your account. Since
 this is not a contract account, there won't be a lot there but the address of

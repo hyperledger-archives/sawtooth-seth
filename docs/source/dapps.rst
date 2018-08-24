@@ -202,7 +202,7 @@ spec for details on parameters and return values.
 +----------------------------------------+---------+---------------------------+
 | eth_getFilterChanges                   | Partial | For pending transaction   |
 |                                        |         | filters, transactions that|
-|                                        |         | committed transactoins are|
+|                                        |         | committed transactions are|
 |                                        |         | returned instead.         |
 +----------------------------------------+---------+---------------------------+
 | eth_getFilterLogs                      |  Full   |                           |

@@ -21,8 +21,8 @@ Once you have an account created, you can use it to deploy EVM smart contracts.
 To demonstrate how to deploy and call contracts, we will be using the following
 Solidity contract, which is based loosely on the IntegerKey Transaction Family.
 `Solidity`_ is a high-level language for defining contracts that compiles to EVM
-byte code for deployment. To follow along with this guide, you should create a
-new file with this contract::
+byte code for deployment. To follow along with this guide, you should create the
+file ``contracts/contract.sol`` with these contents::
 
   pragma solidity ^0.4.0;
 
@@ -51,10 +51,10 @@ new file with this contract::
 
 .. _Solidity: https://solidity.readthedocs.io/en/develop/
 
-Save this contract in a file called "contract.sol". If you are working with the
-development environment described in :doc:`./getting_started` you should save this
-file in the sawtooth-seth/contracts directory on your host so that it is available
-within the seth container.
+You can also use the copy already existing in the repo::
+
+    cd sawtooth-seth/
+    cp contracts/examples/simple_intkey/simple_intkey.sol contracts/contract.sol
 
 Compiling Contracts
 ===================
@@ -71,9 +71,9 @@ run::
 
     $ solc --bin contract.sol
 
-    ======= contract.sol:intkey =======
+    ======= simple_intkey.sol:intkey =======
     Binary:
-    ...byte array here...
+    608060405234801561001057600080fd5b50610239806100206000396000f300608060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680631ab06ee514610067578063812600df1461009e5780639507d39a146100cb578063c20efb901461010c575b600080fd5b34801561007357600080fd5b5061009c6004803603810190808035906020019092919080359060200190929190505050610139565b005b3480156100aa57600080fd5b506100c960048036038101908080359060200190929190505050610193565b005b3480156100d757600080fd5b506100f6600480360381019080803590602001909291905050506101c2565b6040518082815260200191505060405180910390f35b34801561011857600080fd5b50610137600480360381019080803590602001909291905050506101de565b005b80600080848152602001908152602001600020819055507f545b620a3000f6303b158b321f06b4e95e28a27d70aecac8c6bdac4f48a9f6b38282604051808381526020018281526020019250505060405180910390a15050565b600160008083815260200190815260200160002054016000808381526020019081526020016000208190555050565b6000806000838152602001908152602001600020549050919050565b6001600080838152602001908152602001600020540360008083815260200190815260200160002081905550505600a165627a7a72305820db9e778e020441599ea5a4c88fbc38a17f36647f87712224f92815ad23c3d6a00029
 
 Save the blob of hex-encoded bytes somewhere as we are going to use it in the
 next step.
@@ -99,7 +99,7 @@ run::
 
 You will notice that the above command uses the argument ``address``, not
 ``contract``. This is because an account is short for "external account" and a
-contract is short for "contract account." That is, they are actually both
+contract is short for "contract account". That is, they are actually both
 accounts, but a contract account is an account with a contract that is owned by
 another account.
 
@@ -131,14 +131,15 @@ docker container.
 .. _Application Binary Interface: https://solidity.readthedocs.io/en/develop/abi-spec.html
 .. _ethereumjs-abi: https://www.npmjs.com/package/ethereumjs-abi
 
-To use this library to call a function in contract, you can use the
-``simpleEncode``. The following shows how to call the ``set()`` function in the
-contract we deployed earlier with arguments ``19`` and ``42``::
+To use this library to call a function in contract, you can use ``simpleEncode``.
+The following shows how to call the ``set()`` function in the contract we deployed
+earlier with arguments ``19`` and ``42``::
 
     $ node
     > var abi = require('ethereumjs-abi')
+    undefined
     > abi.simpleEncode("set(uint,uint)", "0x13", "0x2a").toString("hex")
-    ...byte array here...
+    '1ab06ee50000000000000000000000000000000000000000000000000000000000000013000000000000000000000000000000000000000000000000000000000000002a'
 
 To call our contract and run ``set(19,42)``, run::
 
