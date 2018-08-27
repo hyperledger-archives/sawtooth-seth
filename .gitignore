@@ -5,6 +5,7 @@
 
 # Everything else
 /build/
+/target/
 
 /docs/build/
 /docs/source/_autogen/
@@ -12,11 +13,14 @@
 
 /integration/**/__pycache__/
 
-/cli/bin/
-/common/protobuf/
-/processor/bin/
-/rpc/Cargo.lock
-/rpc/target/
-/rpc/src/messages/*.rs
-!/rpc/src/messages/mod.rs
+# Go binaries
+/*/bin/
+
+# Auto-generated protobuf
+/common/src/protobuf
+/*/src/messages/*.rs
+!/*/src/messages/mod.rs
 /rpc/tests/protobuf/
+
+# Don't lock dependencies
+Cargo.lock

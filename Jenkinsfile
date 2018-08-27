@@ -67,12 +67,15 @@ node ('master') {
         }
 
         stage("Run Lint") {
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID run_go_fmt'
+            sh 'docker run --rm sawtooth-seth-cli-go:$ISOLATION_ID run_go_fmt'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo +nightly fmt -- --check'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo +nightly clippy'
         }
 
         // Run the tests
         stage("Run Tests") {
             sh './bin/run_tests'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo test'
         }
 
         stage ("Build documentation") {
@@ -82,6 +85,7 @@ node ('master') {
 
         stage("Archive Build artifacts") {
             sh 'docker-compose -f docker-compose-installed.yaml build'
+            sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli-go:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
             sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
             sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-tp:$ISOLATION_ID cp /debs/sawtooth-seth-tp_0.2.0_amd64.deb /build'
             sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-rpc:$ISOLATION_ID cp /debs/sawtooth-seth-rpc_0.2.0_amd64.deb /build'

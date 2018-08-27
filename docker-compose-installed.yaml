@@ -27,6 +27,25 @@ services:
     volumes:
       - ./build/debs:/build
       - ./contracts:/contracts
+    working_dir: /project/sawtooth-seth
+    entrypoint: |
+      bash -c "
+        cp /debs/*.deb /build
+        seth config init --url http://rest-api:8080 &&
+        tail -f /dev/null
+      "
+
+  seth-cli-go:
+    build:
+      context: .
+      dockerfile: ./cli-go/Dockerfile-installed
+      args:
+        ISOLATION_ID: ${ISOLATION_ID}
+    image: sawtooth-seth-cli-go:${ISOLATION_ID}
+    container_name: seth-cli-go
+    volumes:
+      - ./build/debs:/build
+      - ./contracts:/contracts
     depends_on:
       - rest-api
     working_dir: /project/sawtooth-seth

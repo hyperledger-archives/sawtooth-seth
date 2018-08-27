@@ -70,3 +70,7 @@ Sawtooth network, there are some differences to be aware of:
    Info Transaction Family is running on the same network as Seth, these
    instructions will attempt to read from state at the addresses defined by that
    family.
+
+.. note::
+
+    Code documentation can be `found here <../cargo/seth/index.html>`_.

@@ -7,8 +7,8 @@ cd $top_dir
 dirs="
 $top_dir/processor/src/seth_tp
 $top_dir/processor/src/seth_tp/handler
-$top_dir/cli/src/seth_cli/cli
-$top_dir/cli/src/seth_cli/client
+$top_dir/cli-go/src/seth_cli/cli
+$top_dir/cli-go/src/seth_cli/client
 $top_dir/common/src/common
 "
 

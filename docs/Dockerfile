@@ -28,7 +28,6 @@
 
 FROM ubuntu:xenial
 
-
 RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
  || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
@@ -60,8 +59,8 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1
 
 RUN pip3 install sphinx==1.5.6 sphinx_rtd_theme
 
-ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.9/bin
-ENV GOPATH=/go:/project/sawtooth-seth/common:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli:/project/sawtooth-seth/processor
+ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.9/bin
+ENV GOPATH=/go:/project/sawtooth-seth/common:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli-go:/project/sawtooth-seth/processor
 
 RUN go get -u \
     github.com/btcsuite/btcd/btcec \
@@ -95,15 +94,14 @@ COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
 
-WORKDIR /project/sawtooth-seth/cli/src/seth_cli/cli
-RUN go build -o /project/sawtooth-seth/cli/bin/seth
+WORKDIR /project/sawtooth-seth/cli-go/src/seth_cli/cli
+RUN go build -o /project/sawtooth-seth/cli-go/bin/seth
 
 WORKDIR /project/sawtooth-seth/processor/src/seth_tp
 RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
 
-WORKDIR /project/sawtooth-seth/rpc
-RUN mkdir /project/sawtooth-seth/rpc/bin
-RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
+WORKDIR /project/sawtooth-seth
+RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/bin/seth-rpc && cargo doc --no-deps
 
 WORKDIR /project/sawtooth-seth/docs
 CMD make html latexpdf
