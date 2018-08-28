@@ -28,13 +28,11 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
     T: MessageSender,
 {
-    let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
-
-    methods.push((String::from("net_version"), version));
-    methods.push((String::from("net_peerCount"), peer_count));
-    methods.push((String::from("net_listening"), listening));
-
-    methods
+    vec![
+        ("net_version".into(), version),
+        ("net_peerCount".into(), peer_count),
+        ("net_listening".into(), listening),
+    ]
 }
 
 // Version refers to the particular network this JSON-RPC client is connected to

@@ -39,33 +39,25 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
     T: MessageSender,
 {
-    let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
-
-    methods.push((String::from("eth_sendTransaction"), send_transaction));
-    methods.push((String::from("eth_sendRawTransaction"), send_raw_transaction));
-    methods.push((
-        String::from("eth_getTransactionByHash"),
-        get_transaction_by_hash,
-    ));
-    methods.push((
-        String::from("eth_getTransactionByBlockHashAndIndex"),
-        get_transaction_by_block_hash_and_index,
-    ));
-    methods.push((
-        String::from("eth_getTransactionByBlockNumberAndIndex"),
-        get_transaction_by_block_number_and_index,
-    ));
-    methods.push((
-        String::from("eth_getTransactionReceipt"),
-        get_transaction_receipt,
-    ));
-    methods.push((String::from("eth_gasPrice"), gas_price));
-    methods.push((String::from("eth_estimateGas"), estimate_gas));
-    methods.push((String::from("eth_sign"), sign));
-    methods.push((String::from("eth_call"), call));
-    methods.push((String::from("eth_syncing"), syncing));
-
-    methods
+    vec![
+        ("eth_call".into(), call),
+        ("eth_estimateGas".into(), estimate_gas),
+        ("eth_gasPrice".into(), gas_price),
+        (
+            "eth_getTransactionByBlockHashAndIndex".into(),
+            get_transaction_by_block_hash_and_index,
+        ),
+        (
+            "eth_getTransactionByBlockNumberAndIndex".into(),
+            get_transaction_by_block_number_and_index,
+        ),
+        ("eth_getTransactionByHash".into(), get_transaction_by_hash),
+        ("eth_getTransactionReceipt".into(), get_transaction_receipt),
+        ("eth_sendRawTransaction".into(), send_raw_transaction),
+        ("eth_sendTransaction".into(), send_transaction),
+        ("eth_sign".into(), sign),
+        ("eth_syncing".into(), syncing),
+    ]
 }
 
 #[allow(needless_pass_by_value)]
