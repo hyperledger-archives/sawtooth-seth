@@ -110,7 +110,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn uninstall_filter<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn uninstall_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
