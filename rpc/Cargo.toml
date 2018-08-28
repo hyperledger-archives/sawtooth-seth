@@ -19,21 +19,21 @@ version = "0.2.0"
 authors = ["sawtooth"]
 
 [dependencies]
+clap = "2.26"
+futures-cpupool = "0.1"
 jsonrpc-core = "8.0"
 jsonrpc-http-server = "8.0"
-futures-cpupool = "0.1"
-clap = "2.26"
-protobuf="2.0"
-sawtooth_sdk = { git = "https://github.com/hyperledger/sawtooth-core" }
-uuid = { version = "0.5", features = ["v4"] }
 log = "0.3"
-simple-logging = "1.0"
-serde_json = "1.0"
+protobuf="2.0"
 rpassword = "1.0"
-tiny-keccak = "1.3"
 rust-crypto = "0.2"
+sawtooth_sdk = { git = "https://github.com/hyperledger/sawtooth-core" }
+serde_json = "1.0"
+simple-logging = "1.0"
+tiny-keccak = "1.3"
+uuid = { version = "0.5", features = ["v4"] }
 
 [build-dependencies]
 cc = "1.0"
-protoc-rust = "2.0"
 glob = "0.2"
+protoc-rust = "2.0"
