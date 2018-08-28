@@ -241,10 +241,22 @@ mod tests {
 
     #[test]
     fn parse_topics() {
-        assert_eq!(TopicFilter::Null, TopicFilter::from_value(&Value::Null));
         assert_eq!(
-            TopicFilter::Data(String::from("foo")),
-            TopicFilter::from_value(&Value::String(String::from("foo")))
+            TopicFilter::All,
+            TopicFilter::from_value(&Value::Null).unwrap()
+        );
+
+        assert_eq!(
+            TopicFilter::Exactly(String::from("123")),
+            TopicFilter::from_value(&Value::String(String::from("0x123"))).unwrap()
+        );
+
+        assert_eq!(
+            TopicFilter::OneOf(vec![String::from("123"), String::from("456")]),
+            TopicFilter::from_value(&Value::Array(vec![
+                Value::String(String::from("0x123")),
+                Value::String(String::from("0x456")),
+            ])).unwrap()
         );
     }
 }
