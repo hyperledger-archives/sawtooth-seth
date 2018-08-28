@@ -46,7 +46,7 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
  && chmod +x /usr/bin/rustup-init \
  && rustup-init -y
 
-ENV PATH=$PATH:/project/sawtooth-seth/bin:/root/.cargo/bin:/protoc3/bin:/project/sawtooth-seth/rpc/bin \
+ENV PATH=$PATH:/project/sawtooth-seth/bin:/root/.cargo/bin:/protoc3/bin \
     CARGO_INCREMENTAL=0
 
 WORKDIR /project/sawtooth-seth/rpc
@@ -56,6 +56,4 @@ COPY protos/ /project/sawtooth-seth/protos
 COPY rpc/ /project/sawtooth-seth/rpc
 COPY tests/ /project/sawtooth-seth/tests
 
-RUN mkdir /project/sawtooth-seth/rpc/bin \
- && cargo build \
- && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
+RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/bin/seth-rpc
