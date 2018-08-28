@@ -54,7 +54,7 @@ where
 
 // Return the block number of the current chain head, in hex, as a string
 #[allow(needless_pass_by_value)]
-pub fn block_number<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn block_number<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -77,7 +77,7 @@ where
 fn get_block_obj<T>(
     block_key: BlockKey,
     full: bool,
-    mut client: ValidatorClient<T>,
+    client: ValidatorClient<T>,
 ) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -168,7 +168,7 @@ where
 
 fn get_block_transaction_count<T>(
     block_key: BlockKey,
-    mut client: ValidatorClient<T>,
+    client: ValidatorClient<T>,
 ) -> Result<Value, Error>
 where
     T: MessageSender,

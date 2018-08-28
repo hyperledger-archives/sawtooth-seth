@@ -190,21 +190,21 @@ impl FilterManager {
         }
     }
 
-    pub fn new_filter(&mut self, filter: Filter, block_num: u64) -> FilterId {
+    pub fn new_filter(&self, filter: Filter, block_num: u64) -> FilterId {
         let filter_id = self.id_ctr.fetch_add(1, Ordering::SeqCst);
         self.set_filter(filter_id, filter, block_num);
         filter_id
     }
 
-    pub fn remove_filter(&mut self, filter_id: FilterId) -> Option<FilterEntry> {
+    pub fn remove_filter(&self, filter_id: FilterId) -> Option<FilterEntry> {
         self.filters.lock().unwrap().remove(&filter_id)
     }
 
-    pub fn get_filter(&mut self, filter_id: FilterId) -> Option<FilterEntry> {
+    pub fn get_filter(&self, filter_id: FilterId) -> Option<FilterEntry> {
         self.filters.lock().unwrap().get(&filter_id).cloned()
     }
 
-    pub fn update_latest_block(&mut self, filter_id: FilterId, block_num: u64) -> bool {
+    pub fn update_latest_block(&self, filter_id: FilterId, block_num: u64) -> bool {
         if let Entry::Occupied(mut entry) = self.filters.lock().unwrap().entry(filter_id) {
             (*entry.get_mut()).last_block_sent = block_num;
             true
@@ -214,7 +214,7 @@ impl FilterManager {
     }
 
     pub fn set_filter(
-        &mut self,
+        &self,
         filter_id: FilterId,
         filter: Filter,
         block_num: u64,

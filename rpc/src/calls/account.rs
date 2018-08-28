@@ -94,7 +94,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn get_storage_at<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn get_storage_at<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -156,7 +156,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-fn get_account<T, F>(params: Params, mut client: ValidatorClient<T>, f: F) -> Result<Value, Error>
+fn get_account<T, F>(params: Params, client: ValidatorClient<T>, f: F) -> Result<Value, Error>
 where
     T: MessageSender,
     F: Fn(EvmStateAccount) -> Value,

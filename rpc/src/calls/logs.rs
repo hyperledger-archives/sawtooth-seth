@@ -54,7 +54,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn new_filter<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn new_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -77,7 +77,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn new_block_filter<T>(_params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn new_block_filter<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -93,7 +93,7 @@ where
 #[allow(needless_pass_by_value)]
 pub fn new_pending_transaction_filter<T>(
     _params: Params,
-    mut client: ValidatorClient<T>,
+    client: ValidatorClient<T>,
 ) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -110,7 +110,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn uninstall_filter<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn uninstall_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -128,7 +128,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn get_filter_changes<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn get_filter_changes<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -179,7 +179,7 @@ where
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
             for &(_, ref block) in &blocks {
-                let logs = get_logs_from_block_and_filter(&mut client, block, &log_filter)?;
+                let logs = get_logs_from_block_and_filter(&client, block, &log_filter)?;
                 all_logs.extend(logs.into_iter());
             }
             all_logs
@@ -196,7 +196,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn get_filter_logs<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn get_filter_logs<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -214,7 +214,7 @@ where
         .ok_or_else(|| Error::invalid_params(format!("Unknown filter id: {}", filter_id)))?;
 
     if let Filter::Log(log_filter) = filter {
-        get_logs_from_filter(&mut client, &log_filter)
+        get_logs_from_filter(&client, &log_filter)
     } else {
         Err(Error::invalid_params(format!(
             "Filter {} is not a log filter",
@@ -224,7 +224,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn get_logs<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn get_logs<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -234,11 +234,11 @@ where
         .map_err(|_| Error::invalid_params("Takes [filter: OBJECT]"))?;
     let log_filter = LogFilter::from_map(&filter)?;
 
-    get_logs_from_filter(&mut client, &log_filter)
+    get_logs_from_filter(&client, &log_filter)
 }
 
 fn get_logs_from_filter<T>(
-    mut client: &mut ValidatorClient<T>,
+    client: &ValidatorClient<T>,
     log_filter: &LogFilter,
 ) -> Result<Value, Error>
 where
@@ -254,7 +254,7 @@ where
                 Error::internal_error()
             })?;
 
-            let logs = get_logs_from_block_and_filter(&mut client, &block, &log_filter)?;
+            let logs = get_logs_from_block_and_filter(client, &block, &log_filter)?;
             Ok(Value::Array(logs))
         }
         // Request for logs from a block to the latest block
@@ -265,7 +265,7 @@ where
                 match client.get_block(BlockKey::Number(block_index)) {
                     Ok(block) => {
                         let logs =
-                            get_logs_from_block_and_filter(&mut client, &block, &log_filter)?;
+                            get_logs_from_block_and_filter(client, &block, &log_filter)?;
                         all_logs.extend(logs.into_iter());
                     }
                     Err(ClientError::NoResource) => {
@@ -287,7 +287,7 @@ where
                 match client.get_block(BlockKey::Number(block_index)) {
                     Ok(block) => {
                         let logs =
-                            get_logs_from_block_and_filter(&mut client, &block, &log_filter)?;
+                            get_logs_from_block_and_filter(client, &block, &log_filter)?;
                         all_logs.extend(logs.into_iter());
                     }
                     Err(ClientError::NoResource) => {
@@ -308,7 +308,7 @@ where
 }
 
 fn get_logs_from_block_and_filter<T>(
-    client: &mut ValidatorClient<T>,
+    client: &ValidatorClient<T>,
     block: &Block,
     log_filter: &LogFilter,
 ) -> Result<Vec<Value>, Error>

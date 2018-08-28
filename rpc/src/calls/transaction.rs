@@ -69,7 +69,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-pub fn send_transaction<T>(params: Params, mut client: ValidatorClient<T>) -> Result<Value, Error>
+pub fn send_transaction<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
@@ -255,7 +255,7 @@ where
 }
 
 fn get_transaction<T>(
-    mut client: ValidatorClient<T>,
+    client: ValidatorClient<T>,
     txn_key: &TransactionKey,
 ) -> Result<Value, Error>
 where
@@ -323,7 +323,7 @@ where
 #[allow(needless_pass_by_value)]
 pub fn get_transaction_receipt<T>(
     params: Params,
-    mut client: ValidatorClient<T>,
+    client: ValidatorClient<T>,
 ) -> Result<Value, Error>
 where
     T: MessageSender,

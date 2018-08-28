@@ -179,7 +179,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         &self.accounts
     }
 
-    pub fn request<T, U>(&mut self, msg_type: Message_MessageType, msg: &T) -> Result<U, String>
+    pub fn request<T, U>(&self, msg_type: Message_MessageType, msg: &T) -> Result<U, String>
     where
         T: protobuf::Message,
         U: protobuf::Message,
@@ -222,7 +222,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         Ok(response)
     }
 
-    pub fn send_request<T, U>(&mut self, msg_type: Message_MessageType, msg: &T) -> Result<U, Error>
+    pub fn send_request<T, U>(&self, msg_type: Message_MessageType, msg: &T) -> Result<U, Error>
     where
         T: protobuf::Message,
         U: protobuf::Message,
@@ -239,7 +239,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             .map_err(|error| Error::ParseError(format!("Error parsing response: {:?}", error)))
     }
 
-    pub fn send_transaction(&mut self, from: &str, txn: &SethTransaction) -> Result<String, Error> {
+    pub fn send_transaction(&self, from: &str, txn: &SethTransaction) -> Result<String, Error> {
         let (batch, txn_signature) = self.make_batch(from, txn)?;
 
         let mut request = ClientBatchSubmitRequest::new();
@@ -322,7 +322,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_receipts_from_block(
-        &mut self,
+        &self,
         block: &Block,
     ) -> Result<HashMap<String, SethReceipt>, String> {
         let batches = &block.batches;
@@ -353,7 +353,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_receipts(
-        &mut self,
+        &self,
         transaction_ids: &[String],
     ) -> Result<HashMap<String, SethReceipt>, Error> {
         let mut request = ClientReceiptGetRequest::new();
@@ -391,7 +391,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_transaction_and_block(
-        &mut self,
+        &self,
         txn_key: &TransactionKey,
     ) -> Result<(Transaction, Option<Block>), Error> {
         match *txn_key {
@@ -435,7 +435,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         }
     }
 
-    pub fn get_block(&mut self, block_key: BlockKey) -> Result<Block, Error> {
+    pub fn get_block(&self, block_key: BlockKey) -> Result<Block, Error> {
         let response: ClientBlockGetResponse;
         match block_key {
             BlockKey::Signature(block_id) => {
@@ -487,7 +487,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_entry(
-        &mut self,
+        &self,
         account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmEntry>, String> {
@@ -569,7 +569,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_account(
-        &mut self,
+        &self,
         account_address: &str,
         block: BlockKey,
     ) -> Result<Option<EvmStateAccount>, String> {
@@ -578,7 +578,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_storage(
-        &mut self,
+        &self,
         account_address: &str,
         block: BlockKey,
     ) -> Result<Option<Vec<EvmStorage>>, String> {
@@ -587,7 +587,7 @@ impl<S: MessageSender> ValidatorClient<S> {
     }
 
     pub fn get_storage_at(
-        &mut self,
+        &self,
         account_address: &str,
         storage_address: &str,
         block: BlockKey,
@@ -613,7 +613,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         }
     }
 
-    pub fn get_current_block(&mut self) -> Result<Block, Error> {
+    pub fn get_current_block(&self) -> Result<Block, Error> {
         let mut paging = ClientPagingControls::new();
         paging.set_limit(1);
         let mut request = ClientBlockListRequest::new();
@@ -626,7 +626,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         Ok(block.clone())
     }
 
-    pub fn get_current_block_number(&mut self) -> Result<u64, Error> {
+    pub fn get_current_block_number(&self) -> Result<u64, Error> {
         let block = self.get_current_block()?;
         let block_header: BlockHeader =
             protobuf::parse_from_bytes(&block.header).map_err(|error| {
@@ -635,7 +635,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         Ok(block_header.block_num)
     }
 
-    pub fn get_blocks_since(&mut self, since: u64) -> Result<Vec<(u64, Block)>, Error> {
+    pub fn get_blocks_since(&self, since: u64) -> Result<Vec<(u64, Block)>, Error> {
         let block = self.get_current_block()?;
         let block_header: BlockHeader =
             protobuf::parse_from_bytes(&block.header).map_err(|error| {
@@ -661,7 +661,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         Ok(blocks)
     }
 
-    fn block_num_to_state_root(&mut self, block_num: u64) -> Result<String, Error> {
+    fn block_num_to_state_root(&self, block_num: u64) -> Result<String, Error> {
         self.get_block(BlockKey::Number(block_num))
             .and_then(|block| {
                 protobuf::parse_from_bytes(&block.header)
@@ -671,7 +671,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             })
     }
 
-    fn block_id_to_state_root(&mut self, block_id: String) -> Result<String, Error> {
+    fn block_id_to_state_root(&self, block_id: String) -> Result<String, Error> {
         self.get_block(BlockKey::Signature(block_id))
             .and_then(|block| {
                 protobuf::parse_from_bytes(&block.header)
@@ -681,7 +681,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             })
     }
 
-    fn transaction_to_state_root(&mut self, transaction_id: String) -> Result<String, Error> {
+    fn transaction_to_state_root(&self, transaction_id: String) -> Result<String, Error> {
         self.get_block(BlockKey::Transaction(transaction_id))
             .and_then(|block| {
                 protobuf::parse_from_bytes(&block.header)
@@ -691,7 +691,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             })
     }
 
-    pub fn get_peers(&mut self) -> Result<usize, Error> {
+    pub fn get_peers(&self) -> Result<usize, Error> {
         let request = ClientPeersGetRequest::new();
         let response: ClientPeersGetResponse =
             self.send_request(Message_MessageType::CLIENT_PEERS_GET_REQUEST, &request)?;
