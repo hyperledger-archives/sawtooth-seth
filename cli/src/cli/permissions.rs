@@ -107,8 +107,7 @@ pub fn do_get(client: &Client, address: &str) -> Result<(), Error> {
         _ => address,
     };
 
-    let result: String =
-        client.send_rpc_transaction("seth_getPermissions", &json!(vec![address]))?;
+    let result: String = client.send_rpc_transaction("seth_getPermissions", &json!(vec![address]))?;
 
     println!("\"{}\"", result);
 

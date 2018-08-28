@@ -173,9 +173,11 @@ where
                             } else {
                                 false
                             }
-                        }).map(|txn| transform::hex_prefix(&txn.header_signature))
+                        })
+                        .map(|txn| transform::hex_prefix(&txn.header_signature))
                 })
-            }).collect(),
+            })
+            .collect(),
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
             for &(_, ref block) in &blocks {
@@ -338,7 +340,8 @@ where
                 .filter(|log: &SethLog| log_filter.contains(&log, None))
                 .collect();
             (txn_id, logs)
-        }).filter(|&(_, ref logs)| !logs.is_empty())
+        })
+        .filter(|&(_, ref logs)| !logs.is_empty())
         .collect();
     warn!("Filtered Logs: {:?}", logs);
 
