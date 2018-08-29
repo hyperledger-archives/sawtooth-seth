@@ -30,18 +30,13 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
     T: MessageSender,
 {
-    let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
-
-    methods.push((String::from("eth_getBalance"), get_balance));
-    methods.push((String::from("eth_getStorageAt"), get_storage_at));
-    methods.push((String::from("eth_getCode"), get_code));
-    methods.push((String::from("eth_accounts"), accounts));
-    methods.push((
-        String::from("eth_getTransactionCount"),
-        get_transaction_count,
-    ));
-
-    methods
+    vec![
+        ("eth_getBalance".into(), get_balance),
+        ("eth_getStorageAt".into(), get_storage_at),
+        ("eth_getCode".into(), get_code),
+        ("eth_accounts".into(), accounts),
+        ("eth_getTransactionCount".into(), get_transaction_count),
+    ]
 }
 
 fn validate_block_key(block: &str) -> Result<BlockKey, Error> {

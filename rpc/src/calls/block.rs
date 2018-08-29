@@ -35,21 +35,19 @@ pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
     T: MessageSender,
 {
-    let mut methods: Vec<(String, RequestHandler<T>)> = Vec::new();
-
-    methods.push((String::from("eth_blockNumber"), block_number));
-    methods.push((String::from("eth_getBlockByHash"), get_block_by_hash));
-    methods.push((String::from("eth_getBlockByNumber"), get_block_by_number));
-    methods.push((
-        String::from("eth_getBlockTransactionCountByHash"),
-        get_block_transaction_count_by_hash,
-    ));
-    methods.push((
-        String::from("eth_getBlockTransactionCountByNumber"),
-        get_block_transaction_count_by_number,
-    ));
-
-    methods
+    vec![
+        ("eth_blockNumber".into(), block_number),
+        ("eth_getBlockByHash".into(), get_block_by_hash),
+        ("eth_getBlockByNumber".into(), get_block_by_number),
+        (
+            "eth_getBlockTransactionCountByHash".into(),
+            get_block_transaction_count_by_hash,
+        ),
+        (
+            "eth_getBlockTransactionCountByNumber".into(),
+            get_block_transaction_count_by_number,
+        ),
+    ]
 }
 
 // Return the block number of the current chain head, in hex, as a string
