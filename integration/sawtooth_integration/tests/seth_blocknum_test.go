@@ -18,7 +18,7 @@
  package tests
 
 import (
-  "burrow/word256"
+  "github.com/hyperledger/burrow/binary"
   "encoding/base64"
   "encoding/hex"
   "fmt"
@@ -60,7 +60,7 @@ func TestBlockNumber(t *testing.T) {
 
   cmd, _ := hex.DecodeString(BLOCKNUM_0)
   contractCallResult, err := client.MessageCall(priv, contractCreateResult.Address, cmd, nonce, 1000, WAIT, false)
-  blockNum := word256.Uint64FromWord256(word256.RightPadWord256(contractCallResult.ReturnValue))
+  blockNum := binary.Uint64FromWord256(binary.RightPadWord256(contractCallResult.ReturnValue))
 
   // Get number of current block from BlockInfo
   blockInfoAddr, err := NewBlockInfoAddr(2);

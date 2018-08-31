@@ -19,9 +19,9 @@ package tests
 
 import (
   "encoding/hex"
-  "testing"
+  "github.com/hyperledger/burrow/binary"
   "seth_cli/client"
-  "burrow/word256"
+  "testing"
 )
 
 const (
@@ -113,7 +113,7 @@ func TestIntkey(t *testing.T) {
   if err != nil {
     t.Fatal(err)
   }
-  value := word256.Uint64FromWord256(word256.RightPadWord256(callGetResult.ReturnValue))
+  value := binary.Uint64FromWord256(binary.RightPadWord256(callGetResult.ReturnValue))
   if value != 41 {
     t.Fatalf("Contract returned incorrect value: %v", value)
   }

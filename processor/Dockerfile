@@ -16,7 +16,7 @@
 FROM ubuntu:xenial
 
 ENV GOPATH=/project/sawtooth-seth/processor
-ENV PATH=$PATH:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
+ENV PATH=$PATH:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.10/bin
 WORKDIR $GOPATH/src/seth_tp
 
 RUN \
@@ -27,13 +27,14 @@ RUN \
   https_proxy=$HTTPS_PROXY; \
  fi
 
-RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
+RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9 \
+ || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9) \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
+ && echo 'deb http://ppa.launchpad.net/gophers/archive/ubuntu xenial main' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
     git \
-    golang-1.9-go \
+    golang-1.10-go \
     libssl-dev \
     libzmq3-dev \
     openssl \
@@ -58,6 +59,14 @@ RUN go get -u \
     github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
+    github.com/hyperledger/burrow/acm \
+    github.com/hyperledger/burrow/binary \
+    github.com/hyperledger/burrow/crypto \
+    github.com/hyperledger/burrow/execution/errors \
+    github.com/hyperledger/burrow/execution/evm \
+    github.com/hyperledger/burrow/execution/exec \
+    github.com/hyperledger/burrow/logging \
+    github.com/hyperledger/burrow/permission \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
     github.com/satori/go.uuid \
@@ -71,6 +80,13 @@ RUN go get github.com/hyperledger/sawtooth-sdk-go \
 COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
+
+# TODO: master is broken and/or incomplete, so just overwriting these files with fixed copies for now
+COPY vendor/state.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/acm/state/state.go
+COPY vendor/vm.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/execution/evm/vm.go
+COPY vendor/state_cache.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/acm/state/state_cache.go
+COPY vendor/memory_state.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/acm/state/memory_state.go
+COPY vendor/fake_app_state.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/execution/evm/fake_app_state.go
 
 ENV GOPATH=$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/common
 RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp

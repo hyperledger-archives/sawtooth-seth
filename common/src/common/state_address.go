@@ -18,9 +18,9 @@
 package common
 
 import (
-	"burrow/word256"
 	"encoding/hex"
 	"fmt"
+	"github.com/hyperledger/burrow/binary"
 )
 
 type StateAddr string
@@ -28,7 +28,7 @@ type StateAddr string
 func NewStateAddrFromBytes(b []byte) (StateAddr, error) {
 	switch len(b) {
 	case EVMADDRLEN:
-		b := word256.RightPadBytes(b, 32)
+		b := binary.RightPadBytes(b, 32)
 		return StateAddr(PREFIX + hex.EncodeToString(b)), nil
 	case STATEADDRLEN:
 		return StateAddr(hex.EncodeToString(b)), nil
@@ -52,8 +52,8 @@ func NewStateAddrFromString(s string) (sa StateAddr, err error) {
 
 func NewBlockInfoAddr(n int64) (StateAddr, error) {
 	buf := [8]byte{}
-	word256.PutInt64BE(buf[:], n)
-	bytes := word256.LeftPadBytes(buf[:], 31)
+	binary.PutInt64BE(buf[:], n)
+	bytes := binary.LeftPadBytes(buf[:], 31)
 	return StateAddr(BLOCK_INFO_NAMESPACE + hex.EncodeToString(bytes)), nil
 }
 

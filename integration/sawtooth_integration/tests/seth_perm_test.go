@@ -18,7 +18,7 @@
 package tests
 
 import (
-	ptypes "burrow/permission/types"
+	"github.com/hyperledger/burrow/permission"
 	"encoding/hex"
 	"seth_cli/client"
 	. "common"
@@ -56,7 +56,7 @@ func TestPermissions(t *testing.T) {
 
 	// Now that we have an account, we can disable all global permissions
 	globalPermsAddr := GlobalPermissionsAddress().Bytes()
-	zeroPerms := &EvmPermissions{Perms: uint64(0), SetBit: uint64(ptypes.AllPermFlags)}
+	zeroPerms := &EvmPermissions{Perms: uint64(0), SetBit: uint64(permission.AllPermFlags)}
 	err = client.SetPermissions(priv, globalPermsAddr, zeroPerms, nonce, WAIT)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -69,7 +69,7 @@ func TestPermissions(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	setPerms := globalPermsEntry.GetAccount().GetPermissions()
-	if setPerms.Perms != uint64(0) || setPerms.SetBit != uint64(ptypes.AllPermFlags) {
+	if setPerms.Perms != uint64(0) || setPerms.SetBit != uint64(permission.AllPermFlags) {
 		t.Fatalf(
 			"Global permissions not set correctly. Should be (0, ALL) but got (%v, %v)",
 			setPerms.Perms, setPerms.SetBit,
@@ -84,8 +84,8 @@ func TestPermissions(t *testing.T) {
 
 	// Create a new account that can create and call contracts
 	perms2 := &EvmPermissions{
-		Perms:  uint64(ptypes.CreateContract | ptypes.Call),
-		SetBit: uint64(ptypes.CreateContract | ptypes.Call),
+		Perms:  uint64(permission.CreateContract | permission.Call),
+		SetBit: uint64(permission.CreateContract | permission.Call),
 	}
 	result, err := client.CreateExternalAccount(priv2, priv, perms2, nonce, WAIT)
 	if err != nil {
@@ -104,8 +104,8 @@ func TestPermissions(t *testing.T) {
 
 	// Verify the account can't change permissions
 	err = client.SetPermissions(priv2, globalPermsAddr, &EvmPermissions{
-		Perms:  uint64(ptypes.AllPermFlags),
-		SetBit: uint64(ptypes.AllPermFlags),
+		Perms:  uint64(permission.AllPermFlags),
+		SetBit: uint64(permission.AllPermFlags),
 	}, nonce2, WAIT)
 	if err == nil || err.Error() != "Invalid transaction." {
 		t.Fatal("Should not have created permissions.")
@@ -115,7 +115,7 @@ func TestPermissions(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	setPerms = globalPermsEntry.GetAccount().GetPermissions()
-	if setPerms.Perms != uint64(0) || setPerms.SetBit != uint64(ptypes.AllPermFlags) {
+	if setPerms.Perms != uint64(0) || setPerms.SetBit != uint64(permission.AllPermFlags) {
 		t.Fatalf("Permissions changed but changing permissions is disabled.")
 	}
 
