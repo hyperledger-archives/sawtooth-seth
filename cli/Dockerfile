@@ -52,7 +52,7 @@ ENV PATH=$PATH:/project/sawtooth-seth/bin:/root/.cargo/bin:/protoc3/bin \
 
 RUN rustup install nightly && \
     rustup component add clippy-preview --toolchain nightly && \
-    rustup component add rustfmt-preview --toolchain nightly
+    rustup component add rustfmt-preview --toolchain stable
 
 WORKDIR /project/sawtooth-seth/cli
 

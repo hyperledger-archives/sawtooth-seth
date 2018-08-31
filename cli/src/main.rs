@@ -104,7 +104,8 @@ fn run() -> Result<(), Error> {
             cli::event::get_cli(),
             cli::permissions::get_cli(),
             cli::receipt::get_cli(),
-        ]).get_matches();
+        ])
+        .get_matches();
 
     match matches.subcommand() {
         ("account", Some(am)) => cli::account::parse_cli(am.subcommand())?,
