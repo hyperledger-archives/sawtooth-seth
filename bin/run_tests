@@ -17,9 +17,14 @@
 
 
 # Exit on non-zero exit code from subcommand
-set -e
+set -eux
 
 export PATH=$PATH:$(cd $(dirname $0) ; pwd)
+
+docker-compose build seth-rpc seth-cli seth-cli-go
+
+docker run --rm sawtooth-seth-rpc:${ISOLATION_ID:-latest} cargo test
+docker run --rm sawtooth-seth-cli:${ISOLATION_ID:-latest} cargo test
 
 run_docker_test ./tests/unit_seth.yaml
 run_docker_test seth_client_test
