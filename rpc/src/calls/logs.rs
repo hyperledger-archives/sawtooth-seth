@@ -171,11 +171,9 @@ where
                             } else {
                                 false
                             }
-                        })
-                        .map(|txn| transform::hex_prefix(&txn.header_signature))
+                        }).map(|txn| transform::hex_prefix(&txn.header_signature))
                 })
-            })
-            .collect(),
+            }).collect(),
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
             for &(_, ref block) in &blocks {
@@ -264,8 +262,7 @@ where
             loop {
                 match client.get_block(BlockKey::Number(block_index)) {
                     Ok(block) => {
-                        let logs =
-                            get_logs_from_block_and_filter(client, &block, &log_filter)?;
+                        let logs = get_logs_from_block_and_filter(client, &block, &log_filter)?;
                         all_logs.extend(logs.into_iter());
                     }
                     Err(ClientError::NoResource) => {
@@ -286,8 +283,7 @@ where
             for block_index in from..to {
                 match client.get_block(BlockKey::Number(block_index)) {
                     Ok(block) => {
-                        let logs =
-                            get_logs_from_block_and_filter(client, &block, &log_filter)?;
+                        let logs = get_logs_from_block_and_filter(client, &block, &log_filter)?;
                         all_logs.extend(logs.into_iter());
                     }
                     Err(ClientError::NoResource) => {
@@ -338,8 +334,7 @@ where
                 .filter(|log: &SethLog| log_filter.contains(&log, None))
                 .collect();
             (txn_id, logs)
-        })
-        .filter(|&(_, ref logs)| !logs.is_empty())
+        }).filter(|&(_, ref logs)| !logs.is_empty())
         .collect();
     warn!("Filtered Logs: {:?}", logs);
 
