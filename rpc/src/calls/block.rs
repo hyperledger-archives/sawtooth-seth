@@ -15,21 +15,16 @@
  * ------------------------------------------------------------------------------
  */
 
+use client::{BlockKey, Error as ClientError, ValidatorClient};
 use jsonrpc_core::{Error, Params, Value};
 use protobuf;
-use serde_json::Map;
-
 use requests::RequestHandler;
-
-use std::str::FromStr;
-
-use client::{BlockKey, Error as ClientError, ValidatorClient};
-use transform;
-
 use sawtooth_sdk::messages::block::BlockHeader;
 use sawtooth_sdk::messaging::stream::*;
-
+use serde_json::Map;
+use std::str::FromStr;
 use transactions::TransactionKey;
+use transform;
 
 pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
@@ -50,17 +45,22 @@ where
     ]
 }
 
-// Return the block number of the current chain head, in hex, as a string
+/// Endpoint that returns the number of the most recent block.
+///
+/// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber
+/// Returns number as a hex string
 #[allow(needless_pass_by_value)]
 pub fn block_number<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
     info!("eth_blockNumber");
+
     let block = client.get_current_block().map_err(|err| {
         error!("Error requesting block: {:?}", err);
         Error::internal_error()
     })?;
+
     let block_header: BlockHeader = match protobuf::parse_from_bytes(&block.header) {
         Ok(r) => r,
         Err(error) => {
@@ -72,6 +72,122 @@ where
     Ok(Value::String(format!("{:#x}", block_header.block_num)))
 }
 
+/// Endpoint that returns information about a block by hash.
+///
+/// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash
+/// In Sawtooth, the hash is the blocks signature, which is 64 bytes vs Ethereum's 32.
+pub fn get_block_by_hash<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
+    info!("eth_getBlockByHash");
+
+    let (block_hash, full): (String, bool) = match params.parse() {
+        Ok(t) => t,
+        Err(_) => {
+            return Err(Error::invalid_params(
+                "Takes [blockHash: DATA(64), full: BOOL]",
+            ));
+        }
+    };
+
+    let block_hash = match block_hash.get(2..) {
+        Some(bh) => String::from(bh),
+        None => {
+            return Err(Error::invalid_params("Invalid block hash, must have 0x"));
+        }
+    };
+
+    get_block_obj(BlockKey::Signature(block_hash), full, client)
+}
+
+/// Endpoint that returns the number of transactions in a block matching the given block number.
+///
+/// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber
+pub fn get_block_by_number<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
+    info!("eth_getBlockByNumber");
+
+    let (block_num, full): (String, bool) = match params.parse() {
+        Ok(t) => t,
+        Err(_) => {
+            return Err(Error::invalid_params(
+                "Takes [blockNum: QUANTITY|TAG, full: BOOL]",
+            ));
+        }
+    };
+
+    let block_key = match BlockKey::from_str(block_num.as_str()) {
+        Ok(k) => k,
+        Err(_) => {
+            return Err(Error::invalid_params("Invalid block number"));
+        }
+    };
+
+    get_block_obj(block_key, full, client)
+}
+
+/// Endpoint that returns the number of transactions in a block from a block matching the given block hash
+///
+/// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblocktransactioncountbyhash
+pub fn get_block_transaction_count_by_hash<T>(
+    params: Params,
+    client: ValidatorClient<T>,
+) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
+    info!("eth_getBlockTransactionCountByHash");
+
+    let (block_hash,): (String,) = match params.parse() {
+        Ok(t) => t,
+        Err(_) => {
+            return Err(Error::invalid_params("Takes [blockHash: DATA(64)]"));
+        }
+    };
+
+    let block_hash = match block_hash.get(2..) {
+        Some(bh) => String::from(bh),
+        None => {
+            return Err(Error::invalid_params("Invalid block hash, must have 0x"));
+        }
+    };
+
+    get_block_transaction_count(BlockKey::Signature(block_hash), client)
+}
+
+/// Endpoint that returns the number of transactions in a block
+///
+/// Block is identified by number
+pub fn get_block_transaction_count_by_number<T>(
+    params: Params,
+    client: ValidatorClient<T>,
+) -> Result<Value, Error>
+where
+    T: MessageSender,
+{
+    info!("eth_getBlockTransactionCountByNumber");
+
+    let (block_num,): (String,) = match params.parse() {
+        Ok(t) => t,
+        Err(_) => {
+            return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG]"));
+        }
+    };
+
+    let block_key = match BlockKey::from_str(block_num.as_str()) {
+        Ok(k) => k,
+        Err(_) => {
+            return Err(Error::invalid_params("Invalid block number"));
+        }
+    };
+
+    get_block_transaction_count(block_key, client)
+}
+
+/// Returns information about a block as a `json_rpc::Value` object
 fn get_block_obj<T>(
     block_key: BlockKey,
     full: bool,
@@ -126,6 +242,7 @@ where
             return Err(Error::internal_error());
         }
     };
+
     let mut transactions = Vec::new();
     let mut gas: u64 = 0;
     for (txn_id, receipt) in receipts {
@@ -164,6 +281,7 @@ where
     Ok(Value::Object(bob))
 }
 
+/// Returns the number of transactions for the given block as a hex string
 fn get_block_transaction_count<T>(
     block_key: BlockKey,
     client: ValidatorClient<T>,
@@ -190,99 +308,4 @@ where
             .iter()
             .fold(0, |acc, batch| acc + batch.transactions.len()),
     ))
-}
-
-// Returns a block object using its "hash" to identify it. In Sawtooth, this is the blocks
-// signature, which is 64 bytes instead of 32.
-pub fn get_block_by_hash<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
-where
-    T: MessageSender,
-{
-    info!("eth_getBlockByHash");
-    let (block_hash, full): (String, bool) = match params.parse() {
-        Ok(t) => t,
-        Err(_) => {
-            return Err(Error::invalid_params(
-                "Takes [blockHash: DATA(64), full: BOOL]",
-            ));
-        }
-    };
-    let block_hash = match block_hash.get(2..) {
-        Some(bh) => String::from(bh),
-        None => {
-            return Err(Error::invalid_params("Invalid block hash, must have 0x"));
-        }
-    };
-
-    get_block_obj(BlockKey::Signature(block_hash), full, client)
-}
-
-pub fn get_block_by_number<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
-where
-    T: MessageSender,
-{
-    info!("eth_getBlockByNumber");
-    let (block_num, full): (String, bool) = match params.parse() {
-        Ok(t) => t,
-        Err(_) => {
-            return Err(Error::invalid_params(
-                "Takes [blockNum: QUANTITY|TAG, full: BOOL]",
-            ));
-        }
-    };
-
-    let block_key = match BlockKey::from_str(block_num.as_str()) {
-        Ok(k) => k,
-        Err(_) => {
-            return Err(Error::invalid_params("Invalid block number"));
-        }
-    };
-    get_block_obj(block_key, full, client)
-}
-
-// Returns the number of transactions in a block
-pub fn get_block_transaction_count_by_hash<T>(
-    params: Params,
-    client: ValidatorClient<T>,
-) -> Result<Value, Error>
-where
-    T: MessageSender,
-{
-    info!("eth_getBlockTransactionCountByHash");
-    let (block_hash,): (String,) = match params.parse() {
-        Ok(t) => t,
-        Err(_) => {
-            return Err(Error::invalid_params("Takes [blockHash: DATA(64)]"));
-        }
-    };
-    let block_hash = match block_hash.get(2..) {
-        Some(bh) => String::from(bh),
-        None => {
-            return Err(Error::invalid_params("Invalid block hash, must have 0x"));
-        }
-    };
-    get_block_transaction_count(BlockKey::Signature(block_hash), client)
-}
-
-pub fn get_block_transaction_count_by_number<T>(
-    params: Params,
-    client: ValidatorClient<T>,
-) -> Result<Value, Error>
-where
-    T: MessageSender,
-{
-    info!("eth_getBlockTransactionCountByNumber");
-    let (block_num,): (String,) = match params.parse() {
-        Ok(t) => t,
-        Err(_) => {
-            return Err(Error::invalid_params("Takes [blockNum: QUANTITY|TAG]"));
-        }
-    };
-    let block_key = match BlockKey::from_str(block_num.as_str()) {
-        Ok(k) => k,
-        Err(_) => {
-            return Err(Error::invalid_params("Invalid block number"));
-        }
-    };
-    get_block_transaction_count(block_key, client)
 }
