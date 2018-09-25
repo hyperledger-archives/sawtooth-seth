@@ -68,8 +68,10 @@ node ('master') {
 
         stage("Run Lint") {
             sh 'docker run --rm sawtooth-seth-cli-go:$ISOLATION_ID run_go_fmt'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt --version'
             sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt -- --check'
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo +nightly clippy'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy --version'
+            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy -- -D clippy'
         }
 
         // Run the tests

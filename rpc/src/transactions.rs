@@ -213,14 +213,15 @@ impl SethReceipt {
             .get_data()
             .iter()
             .map(|d: &Vec<u8>| {
-                let r: Result<SethTransactionReceipt, Error> = protobuf::parse_from_bytes(
-                    d.as_slice(),
-                ).map_err(|error| {
-                    Error::ParseError(format!("Failed to deserialize Seth receipt: {:?}", error))
-                });
+                let r: Result<SethTransactionReceipt, Error> =
+                    protobuf::parse_from_bytes(d.as_slice()).map_err(|error| {
+                        Error::ParseError(format!(
+                            "Failed to deserialize Seth receipt: {:?}",
+                            error
+                        ))
+                    });
                 r
-            })
-            .collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
+            }).collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
 
         let seth_receipt_pb = seth_receipt_pbs.get(0).ok_or_else(|| {
             Error::ParseError(String::from("Receipt doesn't contain any seth receipts"))
