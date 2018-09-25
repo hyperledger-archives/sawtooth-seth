@@ -246,6 +246,7 @@ where
     get_transaction(client, &TransactionKey::Index((index, block_key)))
 }
 
+#[allow(needless_pass_by_value)]
 fn get_transaction<T>(
     client: ValidatorClient<T>,
     txn_key: &TransactionKey,
