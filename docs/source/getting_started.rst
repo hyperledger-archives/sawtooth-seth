@@ -83,11 +83,11 @@ Seth can understand. Seth accepts secp256k1 private keys in one of two formats:
 The following shows you how to generate a PEM encoded key that has been
 encrypted with a password.
 
-OpenSSL is already installed in the ``seth-cli`` Docker container, so we can just
+OpenSSL is already installed in the ``seth-cli-go`` Docker container, so we can just
 connect to the container and run the command from there. Do the following to
 start up a shell in that container::
 
-    $ docker exec -it seth-cli bash
+    $ docker exec -it seth-cli-go bash
 
 You should now be logged in as root in the container. From this shell, you can
 generate a new, password-encrypted key with the following::
