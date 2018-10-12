@@ -247,10 +247,7 @@ where
 }
 
 #[allow(needless_pass_by_value)]
-fn get_transaction<T>(
-    client: ValidatorClient<T>,
-    txn_key: &TransactionKey,
-) -> Result<Value, Error>
+fn get_transaction<T>(client: ValidatorClient<T>, txn_key: &TransactionKey) -> Result<Value, Error>
 where
     T: MessageSender,
 {

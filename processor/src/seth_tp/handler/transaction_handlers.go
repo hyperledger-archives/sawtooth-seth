@@ -233,8 +233,10 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 	// Initialize the new account
 	out, gasUsed, err := callVm(sapps, newAcct, nil, txn.GetInit(), nil, txn.GetGasLimit())
 	if err != nil {
+		logger.Debug("VM Runtime Error: ", err.Error())
 		return HandlerResult{
-			Error: &processor.InvalidTransactionError{Msg: err.Error()},
+			GasUsed:     gasUsed,
+			ReturnValue: out,
 		}
 	}
 	newAcct.Nonce = 1
@@ -309,8 +311,10 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	out, gasUsed, err := callVm(sapps, senderAcct, receiverAcct, receiverAcct.Code,
 		txn.GetData(), txn.GetGasLimit())
 	if err != nil {
+		logger.Debug("VM Runtime Error: ", err.Error())
 		return HandlerResult{
-			Error: &processor.InvalidTransactionError{Msg: err.Error()},
+			ReturnValue: out,
+			GasUsed:     gasUsed,
 		}
 	}
 	logger.Debug("Gas Used: ", gasUsed)
