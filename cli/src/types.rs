@@ -45,4 +45,5 @@ pub struct TransactionReceipt {
     pub contract_address: String,
     pub logs: Vec<TransactionLog>,
     pub return_value: String,
+    pub status: String,
 }

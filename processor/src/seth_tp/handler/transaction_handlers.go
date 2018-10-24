@@ -237,6 +237,7 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 		return HandlerResult{
 			GasUsed:     gasUsed,
 			ReturnValue: out,
+			Status:      0,
 		}
 	}
 	newAcct.Nonce = 1
@@ -251,6 +252,7 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 		GasUsed:     gasUsed,
 		ReturnValue: out,
 		NewAccount:  newAcct,
+		Status:      1,
 	}
 }
 
@@ -315,6 +317,7 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 		return HandlerResult{
 			ReturnValue: out,
 			GasUsed:     gasUsed,
+			Status:      1,
 		}
 	}
 	logger.Debug("Gas Used: ", gasUsed)
@@ -328,6 +331,7 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	return HandlerResult{
 		ReturnValue: out,
 		GasUsed:     gasUsed,
+		Status:      1,
 	}
 }
 

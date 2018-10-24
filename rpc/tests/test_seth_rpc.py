@@ -74,6 +74,7 @@ class SethRpcTest(unittest.TestCase):
         cls.block_num = 123
         cls.prev_block_id = "e" * 128
         cls.state_root = "d" * 64
+        cls.status = 1 
         cls.txn_id = "c" * 64
         cls.gas = 456
         # account values
@@ -773,6 +774,7 @@ class SethRpcTest(unittest.TestCase):
         self.assertEqual(result["cumulativeGasUsed"], hex(self.gas))
         self.assertEqual(result["gasUsed"], hex(self.gas))
         self.assertEqual(result["returnValue"], "0x" + self.return_value_s)
+        self.assertEqual(result["status"], hex(self.status))
         self.assertEqual(
             result["contractAddress"], "0x" + self.contract_address)
 
@@ -1069,6 +1071,7 @@ class SethRpcTest(unittest.TestCase):
                     gas_used=self.gas,
                     return_value=self.return_value_b,
                     contract_address=self.contract_address_b,
+                    status=self.status,
                     ).SerializeToString(),
                 ],
                 events=[Event(
@@ -1086,6 +1089,7 @@ class SethRpcTest(unittest.TestCase):
                     gas_used=self.gas,
                     return_value=self.return_value_b,
                     contract_address=self.contract_address_b,
+                    status=self.status,
                     ).SerializeToString(),
                 ],
                 events=[Event(
@@ -1200,6 +1204,7 @@ class SethRpcTest(unittest.TestCase):
                     gas_used=self.gas,
                     return_value=self.return_value_b,
                     contract_address=self.contract_address_b,
+                    status=self.status,
                     ).SerializeToString(),
                 ],
                 events=[Event(

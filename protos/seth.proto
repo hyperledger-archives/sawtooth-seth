@@ -169,6 +169,7 @@ message SethTransactionReceipt {
     bytes contract_address = 1; // A contract address, if created
     uint64 gas_used = 2; // The gas consumed by this transaction
     bytes return_value = 3; // The return value of the contract execution
+    uint32 status = 4; // 1 for success, 0 for VM runtime failure
 }
 
 // -- Logging --

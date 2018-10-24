@@ -426,10 +426,11 @@ the opaque data field.
 
 .. code-block:: protobuf
 
-  message EvmTransactionReceipt {
+  message SethTransactionReceipt {
       bytes contract_address = 1; // A contract address, if created
       uint64 gas_used = 2; // The gas consumed by this transaction
       bytes return_value = 3; // The return value of the contract execution
+      uint32 status = 4; // 1 for success, 0 for VM runtime failure
   }
 
 The fields of this message are:
@@ -440,6 +441,9 @@ The fields of this message are:
   transaction.
 - ``return_value``: The bytes returned by the EVM after executing the contract
   call or contract initialization data. Otherwise, nil.
+- ``status``: The flag which indicates whether the transaction executed
+  successfully. 1 for success, 0 for VM runtime failure. If 0, contract state
+  is left unmodified.
 
 The Ethereum specification defines a transaction receipt with additional fields.
 However, within Sawtooth, receipt data for a given transaction is limited to

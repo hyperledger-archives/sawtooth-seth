@@ -47,6 +47,7 @@ type ClientResult struct {
 	Address       []byte  `json:",omitempty"`
 	GasUsed       uint64  `json:",omitempty"`
 	ReturnValue   []byte  `json:",omitempty"`
+	Status        uint32  `json:",omitempty"`
 	Events        []Event `json:",omitempty"`
 }
 
@@ -192,6 +193,7 @@ func (c *Client) CreateExternalAccount(
 				Address:       newAcctAddr.Bytes(),
 				GasUsed:       sethReceipt.GetGasUsed(),
 				ReturnValue:   sethReceipt.GetReturnValue(),
+				Status:        sethReceipt.GetStatus(),
 				Events:        events,
 			}, nil
 		}
@@ -260,6 +262,7 @@ func (c *Client) CreateContractAccount(
 				Address:       newAcctAddr.Bytes(),
 				GasUsed:       sethReceipt.GetGasUsed(),
 				ReturnValue:   sethReceipt.GetReturnValue(),
+				Status:        sethReceipt.GetStatus(),
 				Events:        events,
 			}, nil
 		}
@@ -333,6 +336,7 @@ func (c *Client) MessageCall(
 				Address:       sethReceipt.GetContractAddress(),
 				GasUsed:       sethReceipt.GetGasUsed(),
 				ReturnValue:   sethReceipt.GetReturnValue(),
+				Status:        sethReceipt.GetStatus(),
 				Events:        events,
 			}, nil
 		}
@@ -469,6 +473,7 @@ func (c *Client) GetSethReceipt(txnID string) (*ClientResult, error) {
 		Address:     sethReceipt.GetContractAddress(),
 		GasUsed:     sethReceipt.GetGasUsed(),
 		ReturnValue: sethReceipt.GetReturnValue(),
+		Status:      sethReceipt.GetStatus(),
 	}, nil
 }
 

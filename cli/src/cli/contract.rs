@@ -155,7 +155,7 @@ pub fn do_call(
         })],
     )?;
 
-    let (gas_used, retval) = match wait {
+    let (gas_used, retval, status) = match wait {
         Some(w) => {
             let receipt: TransactionReceipt = client.wait_for_rpc_transaction(
                 "eth_getTransactionReceipt",
@@ -166,9 +166,10 @@ pub fn do_call(
             (
                 u64::from_str_radix(&receipt.gas_used[2..], 16)?,
                 receipt.return_value[2..].to_string(),
+                receipt.status[2..].to_string(),
             )
         }
-        None => (0u64, "<Not retrieved>".into()),
+        None => (0u64, "<Not retrieved>".into(), "0x0".into()),
     };
 
     println!(
@@ -177,6 +178,7 @@ pub fn do_call(
             "TransactionID": txn_id,
             "GasUsed": gas_used,
             "ReturnValue": retval,
+            "Status": status
         }))?
     );
 

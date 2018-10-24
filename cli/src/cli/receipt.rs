@@ -64,6 +64,7 @@ pub fn do_show(client: &Client, txn_id: &str) -> Result<(), Error> {
             "GasUsed": u64::from_str_radix(&receipt.gas_used[2..], 16)?,
             "Address": receipt.contract_address,
             "ReturnValue": receipt.return_value,
+            "Status": receipt.status,
         }))?
     );
 

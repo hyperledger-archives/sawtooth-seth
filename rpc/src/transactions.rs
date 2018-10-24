@@ -204,6 +204,7 @@ pub struct SethReceipt {
     pub contract_address: String,
     pub gas_used: u64,
     pub return_value: String,
+    pub status: u32,
     pub logs: Vec<SethLog>,
 }
 
@@ -247,12 +248,14 @@ impl SethReceipt {
         };
         let gas_used = seth_receipt_pb.get_gas_used();
         let return_value = transform::bytes_to_hex_str(seth_receipt_pb.get_return_value());
+        let status = seth_receipt_pb.get_status();
 
         Ok(SethReceipt {
             transaction_id: String::from(receipt.get_transaction_id()),
             contract_address,
             gas_used,
             return_value,
+            status,
             logs,
         })
     }

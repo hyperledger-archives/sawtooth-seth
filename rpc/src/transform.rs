@@ -175,6 +175,7 @@ pub fn make_txn_receipt_obj(
         String::from("returnValue"),
         hex_prefix(&receipt.return_value),
     );
+    map.insert(String::from("status"), num_to_hex(&receipt.status));
     map.insert(
         String::from("logs"),
         Value::Array(
