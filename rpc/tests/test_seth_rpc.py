@@ -80,6 +80,7 @@ class SethRpcTest(unittest.TestCase):
         # account values
         cls.public_key = "036d7bb6ca0fd581eb037e91042320af97508003264f08545a9db134df215f373e"
         cls.account_address = "434d46456b6973a678b77382fca0252629f4389f"
+        cls.account_address_b = bytes.fromhex(cls.account_address)
         cls.contract_address = "f" * 20 * 2
         cls.contract_address_b = bytes([0xff] * 20)
         cls.contract_init_s = "0" * 60 * 2
@@ -775,6 +776,8 @@ class SethRpcTest(unittest.TestCase):
         self.assertEqual(result["gasUsed"], hex(self.gas))
         self.assertEqual(result["returnValue"], "0x" + self.return_value_s)
         self.assertEqual(result["status"], hex(self.status))
+        self.assertEqual(result["from"], "0x" + self.account_address)
+        self.assertEqual(result["to"], "0x" + self.contract_address)
         self.assertEqual(
             result["contractAddress"], "0x" + self.contract_address)
 
@@ -1065,15 +1068,19 @@ class SethRpcTest(unittest.TestCase):
             )])],
         ))
 
+        receipt = SethTransactionReceipt(
+            gas_used=self.gas,
+            return_value=self.return_value_b,
+            contract_address=self.contract_address_b,
+            status=self.status,
+            to=self.contract_address_b,
+        )
+        # we can't use reserved words in python as properties or kwargs.
+        # work around this limitation by using setattr, instead.
+        setattr(receipt, 'from', self.account_address_b)
         receipts = [
             TransactionReceipt(
-                data=[SethTransactionReceipt(
-                    gas_used=self.gas,
-                    return_value=self.return_value_b,
-                    contract_address=self.contract_address_b,
-                    status=self.status,
-                    ).SerializeToString(),
-                ],
+                data=[receipt.SerializeToString()],
                 events=[Event(
                     event_type="seth_log_event",
                     attributes=[
@@ -1085,12 +1092,7 @@ class SethRpcTest(unittest.TestCase):
                 transaction_id=txn_ids[0],
             ),
             TransactionReceipt(
-                data=[SethTransactionReceipt(
-                    gas_used=self.gas,
-                    return_value=self.return_value_b,
-                    contract_address=self.contract_address_b,
-                    status=self.status,
-                    ).SerializeToString(),
+                data=[receipt.SerializeToString(),
                 ],
                 events=[Event(
                     event_type="seth_log_event",
@@ -1198,14 +1200,17 @@ class SethRpcTest(unittest.TestCase):
             msg)
 
     def _send_receipts_back(self, msg, receipts=None):
+        receipt = SethTransactionReceipt(
+                gas_used=self.gas,
+                return_value=self.return_value_b,
+                contract_address=self.contract_address_b,
+                status=self.status,
+                to=self.contract_address_b,
+                )
+        setattr(receipt, 'from', self.account_address_b)
         if receipts is None:
             receipts = [TransactionReceipt(
-                data=[SethTransactionReceipt(
-                    gas_used=self.gas,
-                    return_value=self.return_value_b,
-                    contract_address=self.contract_address_b,
-                    status=self.status,
-                    ).SerializeToString(),
+                data=[receipt.SerializeToString(),
                 ],
                 events=[Event(
                     event_type="seth_log_event",

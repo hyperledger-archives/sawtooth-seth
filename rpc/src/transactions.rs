@@ -200,6 +200,8 @@ impl SethLog {
 }
 
 pub struct SethReceipt {
+    pub from: String,
+    pub to: String,
     pub transaction_id: String,
     pub contract_address: String,
     pub gas_used: u64,
@@ -246,11 +248,38 @@ impl SethReceipt {
                 )))
             }
         };
+
+        let from = match seth_receipt_pb.get_from().len() {
+            20 => transform::bytes_to_hex_str(&seth_receipt_pb.get_from()),
+            32 => transform::bytes_to_hex_str(&seth_receipt_pb.get_from()[12..32]),
+            0 => String::new(),
+            _ => {
+                return Err(Error::ParseError(format!(
+                    "Invalid from address in Seth receipt: {:?}",
+                    transform::bytes_to_hex_str(&seth_receipt_pb.get_from())
+                )))
+            }
+        };
+
+        let to = match seth_receipt_pb.get_to().len() {
+            20 => transform::bytes_to_hex_str(&seth_receipt_pb.get_to()),
+            32 => transform::bytes_to_hex_str(&seth_receipt_pb.get_to()[12..32]),
+            0 => String::new(),
+            _ => {
+                return Err(Error::ParseError(format!(
+                    "Invalid to address in Seth receipt: {:?}",
+                    transform::bytes_to_hex_str(&seth_receipt_pb.get_to())
+                )))
+            }
+        };
+
         let gas_used = seth_receipt_pb.get_gas_used();
         let return_value = transform::bytes_to_hex_str(seth_receipt_pb.get_return_value());
         let status = seth_receipt_pb.get_status();
 
         Ok(SethReceipt {
+            from,
+            to,
             transaction_id: String::from(receipt.get_transaction_id()),
             contract_address,
             gas_used,

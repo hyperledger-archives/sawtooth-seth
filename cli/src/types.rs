@@ -36,6 +36,8 @@ pub struct TransactionLog {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionReceipt {
+    pub from: String,
+    pub to: String,
     pub transaction_hash: String,
     pub transaction_index: String,
     pub block_hash: String,

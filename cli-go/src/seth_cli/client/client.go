@@ -43,6 +43,8 @@ func New(url string) *Client {
 }
 
 type ClientResult struct {
+	From          []byte  `json:",omitempty"`
+	To            []byte  `json:",omitempty"`
 	TransactionID string  `json:",omitempty"`
 	Address       []byte  `json:",omitempty"`
 	GasUsed       uint64  `json:",omitempty"`
@@ -189,6 +191,8 @@ func (c *Client) CreateExternalAccount(
 		} else {
 			sethReceipt, events := c.parseTransactionReceipt(receipt)
 			return &ClientResult{
+				From:          sethReceipt.GetFrom(),
+				To:            sethReceipt.GetTo(),
 				TransactionID: txnID,
 				Address:       newAcctAddr.Bytes(),
 				GasUsed:       sethReceipt.GetGasUsed(),
@@ -258,6 +262,8 @@ func (c *Client) CreateContractAccount(
 		} else {
 			sethReceipt, events := c.parseTransactionReceipt(receipt)
 			return &ClientResult{
+				From:          sethReceipt.GetFrom(),
+				To:            sethReceipt.GetTo(),
 				TransactionID: txnID,
 				Address:       newAcctAddr.Bytes(),
 				GasUsed:       sethReceipt.GetGasUsed(),
@@ -332,6 +338,8 @@ func (c *Client) MessageCall(
 		} else {
 			sethReceipt, events := c.parseTransactionReceipt(receipt)
 			return &ClientResult{
+				From:          sethReceipt.GetFrom(),
+				To:            sethReceipt.GetTo(),
 				TransactionID: txnID,
 				Address:       sethReceipt.GetContractAddress(),
 				GasUsed:       sethReceipt.GetGasUsed(),
@@ -470,6 +478,8 @@ func (c *Client) GetSethReceipt(txnID string) (*ClientResult, error) {
 	}
 	sethReceipt, _ := c.parseTransactionReceipt(receipt)
 	return &ClientResult{
+		From:        sethReceipt.GetFrom(),
+		To:          sethReceipt.GetTo(),
 		Address:     sethReceipt.GetContractAddress(),
 		GasUsed:     sethReceipt.GetGasUsed(),
 		ReturnValue: sethReceipt.GetReturnValue(),

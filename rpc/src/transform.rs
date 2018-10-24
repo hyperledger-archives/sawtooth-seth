@@ -156,6 +156,20 @@ pub fn make_txn_receipt_obj(
         String::from("transactionHash"),
         hex_prefix(&receipt.transaction_id),
     );
+    map.insert(
+        String::from("from"),
+        match receipt.from.len() {
+            0 => Value::Null,
+            _ => hex_prefix(&receipt.from),
+        },
+    );
+    map.insert(
+        String::from("to"),
+        match receipt.to.len() {
+            0 => Value::Null,
+            _ => hex_prefix(&receipt.to),
+        },
+    );
     map.insert(String::from("transactionIndex"), num_to_hex(&txn_idx));
     map.insert(String::from("blockHash"), hex_prefix(block_id));
     map.insert(String::from("blockNumber"), num_to_hex(&block_num));

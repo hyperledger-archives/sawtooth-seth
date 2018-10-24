@@ -175,6 +175,8 @@ pub fn do_call(
     println!(
         "{}",
         to_string_pretty(&json!({
+            "From": from,
+            "To": address,
             "TransactionID": txn_id,
             "GasUsed": gas_used,
             "ReturnValue": retval,

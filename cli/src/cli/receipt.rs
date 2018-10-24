@@ -61,6 +61,8 @@ pub fn do_show(client: &Client, txn_id: &str) -> Result<(), Error> {
     println!(
         "{}",
         to_string_pretty(&json!({
+            "From": receipt.from,
+            "To": receipt.to,
             "GasUsed": u64::from_str_radix(&receipt.gas_used[2..], 16)?,
             "Address": receipt.contract_address,
             "ReturnValue": receipt.return_value,

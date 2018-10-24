@@ -235,6 +235,7 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 	if err != nil {
 		logger.Debug("VM Runtime Error: ", err.Error())
 		return HandlerResult{
+			From:        senderAcct.Address.Bytes(),
 			GasUsed:     gasUsed,
 			ReturnValue: out,
 			Status:      0,
@@ -249,6 +250,7 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 	sapps.UpdateAccount(newAcct)
 
 	return HandlerResult{
+		From:        senderAcct.Address.Bytes(),
 		GasUsed:     gasUsed,
 		ReturnValue: out,
 		NewAccount:  newAcct,
@@ -315,6 +317,8 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	if err != nil {
 		logger.Debug("VM Runtime Error: ", err.Error())
 		return HandlerResult{
+			From:        senderAcct.Address.Bytes(),
+			To:          receiverAcct.Address.Bytes(),
 			ReturnValue: out,
 			GasUsed:     gasUsed,
 			Status:      1,
@@ -329,6 +333,8 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	sapps.UpdateAccount(receiverAcct)
 
 	return HandlerResult{
+		From:        senderAcct.Address.Bytes(),
+		To:          receiverAcct.Address.Bytes(),
 		ReturnValue: out,
 		GasUsed:     gasUsed,
 		Status:      1,

@@ -33,6 +33,8 @@ import (
 )
 
 type HandlerResult struct {
+	From        []byte
+	To          []byte
 	GasUsed     uint64
 	ReturnValue []byte
 	Status      uint32
@@ -117,6 +119,8 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 		GasUsed:         result.GasUsed,
 		ReturnValue:     result.ReturnValue,
 		Status:          result.Status,
+		From:            result.From,
+		To:              result.To,
 	}
 	bytes, err := proto.Marshal(receipt)
 	if err != nil {
