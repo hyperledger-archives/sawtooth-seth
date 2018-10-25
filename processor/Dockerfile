@@ -59,19 +59,13 @@ RUN go get -u \
     github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
-    github.com/hyperledger/burrow/acm \
-    github.com/hyperledger/burrow/binary \
-    github.com/hyperledger/burrow/crypto \
-    github.com/hyperledger/burrow/execution/errors \
-    github.com/hyperledger/burrow/execution/evm \
-    github.com/hyperledger/burrow/execution/exec \
-    github.com/hyperledger/burrow/logging \
-    github.com/hyperledger/burrow/permission \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
     github.com/satori/go.uuid \
     golang.org/x/crypto/ripemd160 \
     gopkg.in/fatih/set.v0
+
+RUN git clone https://github.com/knkski/burrow.git $GOPATH/src/github.com/hyperledger/burrow
 
 RUN go get github.com/hyperledger/sawtooth-sdk-go \
  && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
@@ -80,13 +74,6 @@ RUN go get github.com/hyperledger/sawtooth-sdk-go \
 COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
-
-# TODO: master is broken and/or incomplete, so just overwriting these files with fixed copies for now
-COPY vendor/state.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/acm/state/state.go
-COPY vendor/vm.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/execution/evm/vm.go
-COPY vendor/state_cache.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/acm/state/state_cache.go
-COPY vendor/memory_state.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/acm/state/memory_state.go
-COPY vendor/fake_app_state.go /project/sawtooth-seth/processor/src/github.com/hyperledger/burrow/execution/evm/fake_app_state.go
 
 ENV GOPATH=$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/common
 RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
