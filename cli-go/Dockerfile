@@ -16,7 +16,7 @@
 FROM ubuntu:xenial
 
 ENV GOPATH=/project/sawtooth-seth/cli-go
-ENV PATH=$PATH:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.9/bin
+ENV PATH=$PATH:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.10/bin
 
 RUN \
  if [ ! -z $HTTP_PROXY ] && [ -z $http_proxy ]; then \
@@ -26,14 +26,15 @@ RUN \
   https_proxy=$HTTPS_PROXY; \
  fi
 
-RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
+RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9 \
+ || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9) \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
+ && echo 'deb http://ppa.launchpad.net/gophers/archive/ubuntu xenial main' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
     curl \
     git \
-    golang-1.9-go \
+    golang-1.10-go \
     libssl-dev \
     libzmq3-dev \
     openssl \
@@ -71,6 +72,8 @@ RUN go get -u \
     github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
+    github.com/hyperledger/burrow/binary \
+    github.com/hyperledger/burrow/execution/evm/sha3 \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
     github.com/pelletier/go-toml \

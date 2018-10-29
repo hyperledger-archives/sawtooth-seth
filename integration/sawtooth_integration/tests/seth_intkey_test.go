@@ -19,9 +19,9 @@ package tests
 
 import (
   "encoding/hex"
-  "testing"
+  "github.com/hyperledger/burrow/binary"
   "seth_cli/client"
-  "burrow/word256"
+  "testing"
 )
 
 const (
@@ -44,14 +44,14 @@ func TestIntkey(t *testing.T) {
   // Create the EOA
   _, err := client.CreateExternalAccount(priv, nil, nil, 0, WAIT)
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   nonce += 1
 
   // Create the Contract
   createContractResult, err := client.CreateContractAccount(priv, init, nil, nonce, 1000, WAIT)
   if err != nil {
-   t.Error(err.Error())
+   t.Fatal(err.Error())
   }
   nonce += 1
 
@@ -60,7 +60,7 @@ func TestIntkey(t *testing.T) {
   callSetResult, err := client.MessageCall(priv, createContractResult.Address, cmd, nonce, 1000, 300, false)
 
   if callSetResult.Events[0].Attributes[0].Key != "address" {
-    t.Errorf("Event was not created")
+    t.Fatalf("Event was not created")
   }
   nonce += 1
 
@@ -74,18 +74,18 @@ func TestIntkey(t *testing.T) {
     cmd, _ := hex.DecodeString(c)
     _, err = client.MessageCall(priv, createContractResult.Address, cmd, nonce, 1000, WAIT, false)
     if err != nil {
-      t.Error(err.Error())
+      t.Fatal(err.Error())
     }
     nonce += 1
   }
 
   entry, err := client.Get(createContractResult.Address)
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
 
   if len(entry.Storage) != 2 {
-    t.Errorf("Storage should have 2 keys, but has %v", len(entry.Storage))
+    t.Fatalf("Storage should have 2 keys, but has %v", len(entry.Storage))
   }
 
   keys := []string{
@@ -100,10 +100,10 @@ func TestIntkey(t *testing.T) {
     key := hex.EncodeToString(pair.GetKey())
     val := hex.EncodeToString(pair.GetValue())
     if key != keys[i] {
-      t.Errorf("Unexpected key in storage: %v", key)
+      t.Fatalf("Unexpected key in storage: %v", key)
     }
     if val != vals[i] {
-      t.Errorf("Key has unexpected value: %v = %v", key, val)
+      t.Fatalf("Key has unexpected value: %v = %v", key, val)
     }
   }
 
@@ -113,7 +113,7 @@ func TestIntkey(t *testing.T) {
   if err != nil {
     t.Fatal(err)
   }
-  value := word256.Uint64FromWord256(word256.RightPadWord256(callGetResult.ReturnValue))
+  value := binary.Uint64FromWord256(binary.RightPadWord256(callGetResult.ReturnValue))
   if value != 41 {
     t.Fatalf("Contract returned incorrect value: %v", value)
   }

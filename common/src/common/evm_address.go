@@ -18,11 +18,11 @@
 package common
 
 import (
-	"burrow/evm/sha3"
-	"burrow/word256"
 	"encoding/hex"
 	"fmt"
 	ellcurv "github.com/btcsuite/btcd/btcec"
+	"github.com/hyperledger/burrow/binary"
+	"github.com/hyperledger/burrow/execution/evm/sha3"
 )
 
 type EvmAddr [EVMADDRLEN]byte
@@ -88,7 +88,7 @@ func (ea *EvmAddr) Derive(nonce uint64) *EvmAddr {
 	const BUFLEN = EVMADDRLEN + 8
 	buf := make([]byte, BUFLEN)
 	copy(buf, ea.Bytes())
-	word256.PutUint64BE(buf[EVMADDRLEN:], nonce)
+	binary.PutUint64BE(buf[EVMADDRLEN:], nonce)
 
 	derived, err := NewEvmAddrFromBytes(sha3.Sha3(buf)[:EVMADDRLEN])
 	if err != nil {
@@ -97,8 +97,8 @@ func (ea *EvmAddr) Derive(nonce uint64) *EvmAddr {
 	return derived
 }
 
-func (ea *EvmAddr) ToWord256() word256.Word256 {
-	return word256.LeftPadWord256(ea.Bytes())
+func (ea *EvmAddr) ToWord256() binary.Word256 {
+	return binary.LeftPadWord256(ea.Bytes())
 }
 
 func (ea *EvmAddr) String() string {

@@ -28,16 +28,17 @@
 
 FROM ubuntu:xenial
 
-RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
+RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9 \
+ || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9) \
  && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
+ && echo 'deb http://ppa.launchpad.net/gophers/archive/ubuntu xenial main' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
     curl \
     dvipng \
     gcc \
     git \
-    golang-1.9-go \
+    golang-1.10-go \
     libssl-dev \
     libzmq3-dev \
     make \
@@ -59,7 +60,7 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1
 
 RUN pip3 install sphinx==1.5.6 sphinx_rtd_theme
 
-ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.9/bin
+ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.10/bin
 ENV GOPATH=/go:/project/sawtooth-seth/common:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli-go:/project/sawtooth-seth/processor
 
 RUN go get -u \
@@ -68,6 +69,8 @@ RUN go get -u \
     github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
+    github.com/hyperledger/burrow/binary \
+    github.com/hyperledger/burrow/execution/evm/sha3 \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
     github.com/pelletier/go-toml \

@@ -46,21 +46,21 @@ func TestContractChaining(t *testing.T) {
   // Create the EOA
   _, err := client.CreateExternalAccount(priv, nil, nil, 0, WAIT)
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   nonce += 1
 
   // Create callee contract
   _, err = client.CreateContractAccount(priv, init_callee, nil, nonce, 1000, WAIT)
   if err != nil {
-   t.Error(err.Error())
+   t.Fatal(err.Error())
   }
   nonce += 1
 
   // Create caller contract
   callerContractResult, err := client.CreateContractAccount(priv, init_caller, nil, nonce, 1000, WAIT)
   if err != nil {
-   t.Error(err.Error())
+   t.Fatal(err.Error())
   }
   nonce += 1
 
