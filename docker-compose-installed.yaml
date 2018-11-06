@@ -65,6 +65,8 @@ services:
       dockerfile: ./processor/Dockerfile-installed
       args:
         ISOLATION_ID: ${ISOLATION_ID}
+    tty: true
+    stdin_open: true
     image: sawtooth-seth-tp:${ISOLATION_ID}
     container_name: seth-tp
     volumes:

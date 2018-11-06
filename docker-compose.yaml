@@ -73,6 +73,8 @@ services:
         - http_proxy
         - https_proxy
         - no_proxy
+    tty: true
+    stdin_open: true
     image: sawtooth-seth-tp:${ISOLATION_ID}
     container_name: seth-tp
     depends_on:
