@@ -69,8 +69,6 @@ RUN go get -u \
     github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
-    github.com/hyperledger/burrow/binary \
-    github.com/hyperledger/burrow/execution/evm/sha3 \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
     github.com/pelletier/go-toml \
@@ -78,6 +76,8 @@ RUN go get -u \
     golang.org/x/crypto/ripemd160 \
     golang.org/x/crypto/ssh/terminal \
     gopkg.in/fatih/set.v0
+
+RUN git clone https://github.com/knkski/burrow.git /go/src/github.com/hyperledger/burrow
 
 RUN go get github.com/hyperledger/sawtooth-sdk-go \
  && cd /go/src/github.com/hyperledger/sawtooth-sdk-go \
