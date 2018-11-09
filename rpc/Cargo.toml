@@ -27,7 +27,7 @@ log = "0.3"
 protobuf="2.0"
 rpassword = "1.0"
 rust-crypto = "0.2"
-sawtooth_sdk = { git = "https://github.com/hyperledger/sawtooth-core" }
+sawtooth-sdk = "^0.1"
 serde_json = "1.0"
 simple-logging = "1.0"
 tiny-keccak = "1.3"
