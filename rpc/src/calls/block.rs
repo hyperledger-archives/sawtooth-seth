@@ -25,6 +25,7 @@ use serde_json::Map;
 use std::str::FromStr;
 use transactions::TransactionKey;
 use transform;
+use transform::make_txn_obj_no_block;
 
 pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
@@ -256,7 +257,7 @@ where
                         return Err(Error::internal_error());
                     }
                 };
-            transactions.push(transform::make_txn_obj_no_block(&txn))
+            transactions.push(make_txn_obj_no_block(&txn))
         } else {
             transactions.push(transform::hex_prefix(&txn_id));
         }

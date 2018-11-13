@@ -31,8 +31,6 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
                 .about("Sets seth permissions")
                 .args(&[
                     Arg::with_name("address")
-                        .short("a")
-                        .long("address")
                         .takes_value(true)
                         .required(true)
                         .help(
@@ -49,8 +47,6 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
             SubCommand::with_name("get")
                 .about("Gets seth permissions")
                 .args(&[Arg::with_name("address")
-                    .short("a")
-                    .long("address")
                     .takes_value(true)
                     .required(true)
                     .help("Address that permissions are being retrieved for")]),

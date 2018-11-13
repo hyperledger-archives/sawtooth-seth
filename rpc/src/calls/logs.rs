@@ -15,23 +15,20 @@
  * ------------------------------------------------------------------------------
  */
 
-use std::collections::HashMap;
-
-use jsonrpc_core::{Error, Params, Value};
-use protobuf;
-use serde_json::Map;
-
 use client::{BlockKey, Error as ClientError, ValidatorClient};
-use requests::RequestHandler;
-use transform;
-
-use sawtooth_sdk::messaging::stream::MessageSender;
-
 use error;
 use filters::*;
+use jsonrpc_core::{Error, ErrorCode, Params, Value};
+use protobuf;
+use requests::RequestHandler;
 use sawtooth_sdk::messages::block::{Block, BlockHeader};
 use sawtooth_sdk::messages::transaction::TransactionHeader;
+use sawtooth_sdk::messaging::stream::MessageSender;
+use serde_json::Map;
+use std::collections::HashMap;
 use transactions::SethLog;
+use transform;
+use transform::make_log_obj;
 
 pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
@@ -115,8 +112,9 @@ where
     info!("eth_uninstallFilter");
     let filter_id = params
         .parse()
-        .and_then(|(v,): (Value,)| transform::string_from_hex_value(&v))
-        .and_then(|s| {
+        .and_then(|(v,): (Value,)| {
+            transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
+        }).and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
@@ -131,10 +129,12 @@ where
     T: MessageSender,
 {
     info!("eth_getFilterChanges");
+
     let filter_id = params
         .parse()
-        .and_then(|(v,): (Value,)| transform::string_from_hex_value(&v))
-        .and_then(|s| {
+        .and_then(|(v,): (Value,)| {
+            transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
+        }).and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
@@ -201,8 +201,9 @@ where
     info!("eth_getFilterLogs");
     let filter_id = params
         .parse()
-        .and_then(|(v,): (Value,)| transform::string_from_hex_value(&v))
-        .and_then(|s| {
+        .and_then(|(v,): (Value,)| {
+            transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
+        }).and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
@@ -360,7 +361,7 @@ where
                 Error::internal_error()
             })?;
         for log in &logs {
-            let log_obj = transform::make_log_obj(log, &txn_id, index as u64, block_id, block_num);
+            let log_obj = make_log_obj(log, &txn_id, index as u64, block_id, block_num);
             log_objects.push(log_obj);
         }
     }

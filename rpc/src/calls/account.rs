@@ -185,8 +185,12 @@ where
     T: MessageSender,
 {
     info!("eth_accounts");
+
+    let accounts = client.loaded_accounts();
+    let loaded_accounts = accounts.read().unwrap();
+
     Ok(Value::Array(
-        Vec::from(client.loaded_accounts())
+        loaded_accounts
             .iter()
             .map(|account| transform::hex_prefix(account.address()))
             .collect(),
