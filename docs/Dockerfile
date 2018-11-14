@@ -30,7 +30,7 @@ FROM ubuntu:xenial
 
 RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9 \
  || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD 9AD198E9) \
- && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
+ && echo 'deb http://repo.sawtooth.me/ubuntu/bumper/stable xenial universe' >> /etc/apt/sources.list \
  && echo 'deb http://ppa.launchpad.net/gophers/archive/ubuntu xenial main' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
