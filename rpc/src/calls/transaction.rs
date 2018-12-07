@@ -57,7 +57,6 @@ where
     ]
 }
 
-#[allow(needless_pass_by_value)]
 pub fn send_transaction<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -130,7 +129,6 @@ where
     Ok(transform::hex_prefix(&txn_signature))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn send_raw_transaction<T>(_params: Params, _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -140,7 +138,6 @@ where
     Err(error::not_implemented())
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_transaction_by_hash<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -167,7 +164,6 @@ where
     get_transaction(client, &TransactionKey::Signature(txn_hash))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_transaction_by_block_hash_and_index<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -210,7 +206,6 @@ where
     )
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_transaction_by_block_number_and_index<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -250,7 +245,6 @@ where
     get_transaction(client, &TransactionKey::Index((index, block_key)))
 }
 
-#[allow(needless_pass_by_value)]
 fn get_transaction<T>(client: ValidatorClient<T>, txn_key: &TransactionKey) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -314,7 +308,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_transaction_receipt<T>(
     params: Params,
     client: ValidatorClient<T>,
@@ -387,7 +380,6 @@ where
     ))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn gas_price<T>(_params: Params, _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -396,7 +388,6 @@ where
     Ok(Value::String(format!("{:#x}", 0)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn estimate_gas<T>(_params: Params, _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -406,7 +397,6 @@ where
     Err(error::not_implemented())
 }
 
-#[allow(needless_pass_by_value)]
 pub fn sign<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -459,7 +449,6 @@ where
     Ok(transform::hex_prefix(&signature))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn call<T>(_: Params, _: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -470,7 +459,6 @@ where
 }
 
 // Always return false
-#[allow(needless_pass_by_value)]
 pub fn syncing<T>(_params: Params, _client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,

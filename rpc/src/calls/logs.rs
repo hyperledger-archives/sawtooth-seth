@@ -48,7 +48,6 @@ where
     ]
 }
 
-#[allow(needless_pass_by_value)]
 pub fn new_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -71,7 +70,6 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn new_block_filter<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -85,7 +83,6 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn new_pending_transaction_filter<T>(
     _params: Params,
     client: ValidatorClient<T>,
@@ -104,7 +101,6 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn uninstall_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -124,7 +120,6 @@ where
     ))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_filter_changes<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -197,7 +192,6 @@ where
     Ok(Value::Array(response))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_filter_logs<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -227,7 +221,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_logs<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,

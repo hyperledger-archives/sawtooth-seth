@@ -50,7 +50,6 @@ where
 ///
 /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber
 /// Returns number as a hex string
-#[allow(needless_pass_by_value)]
 pub fn block_number<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -189,7 +188,6 @@ where
 }
 
 /// Returns information about a block as a `json_rpc::Value` object
-#[allow(needless_pass_by_value)]
 fn get_block_obj<T>(
     block_key: BlockKey,
     full: bool,
@@ -284,7 +282,6 @@ where
 }
 
 /// Returns the number of transactions for the given block as a hex string
-#[allow(needless_pass_by_value)]
 fn get_block_transaction_count<T>(
     block_key: BlockKey,
     client: ValidatorClient<T>,

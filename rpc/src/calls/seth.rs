@@ -37,7 +37,6 @@ where
     ]
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_permissions<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -58,7 +57,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn set_permissions<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,

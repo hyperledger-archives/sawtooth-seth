@@ -43,7 +43,6 @@ where
     ]
 }
 
-#[allow(needless_pass_by_value)]
 /// Returns a list of loaded accounts
 pub fn list_accounts<T>(_: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
@@ -62,7 +61,6 @@ where
     ))
 }
 
-#[allow(needless_pass_by_value)]
 /// Creates a new account
 pub fn new_account<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
@@ -173,7 +171,6 @@ where
     Ok(transform::hex_prefix(&account.address()))
 }
 
-#[allow(needless_pass_by_value)]
 /// Unlocks an account, loading it from disk if necessary
 pub fn unlock_account<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
@@ -201,7 +198,6 @@ where
     ))
 }
 
-#[allow(needless_pass_by_value)]
 /// Imports a raw, hex-encoded secp256k1 key
 pub fn import_raw_key<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
