@@ -121,7 +121,8 @@ impl Client {
                 "jsonrpc": "2.0",
                 "method": method,
                 "params": params
-            })).send()?;
+            }))
+            .send()?;
 
         let body: JsonRpcResponse<D> = response.json()?;
 

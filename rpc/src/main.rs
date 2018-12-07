@@ -82,7 +82,8 @@ fn main() {
         (@arg unlock: --unlock... +takes_value
          "The aliases of the accounts to unlock.")
         (@arg verbose: -v... "Increase the logging level.")
-    ).get_matches();
+    )
+    .get_matches();
 
     let bind = arg_matches.value_of("bind").unwrap_or("127.0.0.1:3030");
     let connect = arg_matches

@@ -114,7 +114,8 @@ where
         .parse()
         .and_then(|(v,): (Value,)| {
             transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
-        }).and_then(|s| {
+        })
+        .and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
@@ -134,7 +135,8 @@ where
         .parse()
         .and_then(|(v,): (Value,)| {
             transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
-        }).and_then(|s| {
+        })
+        .and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
@@ -171,9 +173,11 @@ where
                             } else {
                                 false
                             }
-                        }).map(|txn| transform::hex_prefix(&txn.header_signature))
+                        })
+                        .map(|txn| transform::hex_prefix(&txn.header_signature))
                 })
-            }).collect(),
+            })
+            .collect(),
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
             for &(_, ref block) in &blocks {
@@ -203,7 +207,8 @@ where
         .parse()
         .and_then(|(v,): (Value,)| {
             transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
-        }).and_then(|s| {
+        })
+        .and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
 
@@ -335,7 +340,8 @@ where
                 .filter(|log: &SethLog| log_filter.contains(&log, None))
                 .collect();
             (txn_id, logs)
-        }).filter(|&(_, ref logs)| !logs.is_empty())
+        })
+        .filter(|&(_, ref logs)| !logs.is_empty())
         .collect();
     warn!("Filtered Logs: {:?}", logs);
 

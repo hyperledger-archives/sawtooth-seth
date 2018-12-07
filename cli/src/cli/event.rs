@@ -28,13 +28,11 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("event")
         .about("Manages seth events")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommands(vec![
-            SubCommand::with_name("list")
-                .about("Lists seth events")
-                .args(&[Arg::with_name("txn-id")
-                    .required(true)
-                    .help("Which transaction to show events for")]),
-        ])
+        .subcommands(vec![SubCommand::with_name("list")
+            .about("Lists seth events")
+            .args(&[Arg::with_name("txn-id")
+                .required(true)
+                .help("Which transaction to show events for")])])
 }
 
 /// Handles parsing Clap CLI matches

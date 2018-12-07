@@ -99,7 +99,8 @@ where
                 .ok_or_else(|| fail!("Couldn't unlock account"))?
                 .public_key(),
             &SethTransaction::try_from(txn).ok_or_else(|| fail!("Couldn't create transaction"))?,
-        ).map_err(|err| fail!("Couldn't send transaction", err))?;
+        )
+        .map_err(|err| fail!("Couldn't send transaction", err))?;
 
     Ok(Value::Bool(true))
 }

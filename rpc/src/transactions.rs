@@ -221,7 +221,8 @@ impl SethReceipt {
                         ))
                     });
                 r
-            }).collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
+            })
+            .collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
 
         let seth_receipt_pb = seth_receipt_pbs.get(0).ok_or_else(|| {
             Error::ParseError(String::from("Receipt doesn't contain any seth receipts"))

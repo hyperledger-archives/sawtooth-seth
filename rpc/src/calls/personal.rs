@@ -109,7 +109,8 @@ where
     let pem_bytes = match password {
         Some(pw) => priv_key.to_pem_with_password(pw),
         None => priv_key.to_pem(),
-    }.map_err(|err| fail!("Couldn't convert key to pem string", err))?;
+    }
+    .map_err(|err| fail!("Couldn't convert key to pem string", err))?;
 
     let account = Account::load_from_str(&pem_bytes, password)
         .map_err(|err| fail!("Error generating key", err))?;
@@ -162,7 +163,8 @@ where
         .send_transaction(
             &sender,
             &SethTransaction::try_from(txn).ok_or_else(Error::internal_error)?,
-        ).map_err(|err| fail!("Error sending transaction", err))?;
+        )
+        .map_err(|err| fail!("Error sending transaction", err))?;
 
     client
         .unlock_account(&account, Some(0))
@@ -217,7 +219,8 @@ where
     let pem_str = match password {
         Some(ref pw) => priv_key.to_pem_with_password(&pw),
         None => priv_key.to_pem(),
-    }.map_err(|err| fail!("Couldn't load key", err))?;
+    }
+    .map_err(|err| fail!("Couldn't load key", err))?;
 
     let account = Account::load_from_str(&pem_str, &password)
         .map_err(|err| fail!("Error loading account from key", err))?;
@@ -242,7 +245,8 @@ where
         .send_transaction(
             &account.address(),
             &SethTransaction::try_from(txn).ok_or_else(Error::internal_error)?,
-        ).map_err(|err| fail!("Error sending transaction", err))?;
+        )
+        .map_err(|err| fail!("Error sending transaction", err))?;
 
     client
         .unlock_account(&account, Some(0))

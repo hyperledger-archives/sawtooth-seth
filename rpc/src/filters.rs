@@ -44,7 +44,8 @@ impl TopicFilter {
                     .map(|b| {
                         transform::string_from_hex_value(b)
                             .map_err(|_| RpcError::new(ErrorCode::ParseError))
-                    }).collect::<Result<Vec<String>, RpcError>>()?;
+                    })
+                    .collect::<Result<Vec<String>, RpcError>>()?;
                 Ok(TopicFilter::OneOf(blobs))
             }
             Value::String(_) => {
@@ -104,7 +105,8 @@ impl LogFilter {
                 .map(|addr_val| {
                     transform::string_from_hex_value(addr_val)
                         .map_err(|_| RpcError::new(ErrorCode::ParseError))
-                }).collect::<Result<Vec<String>, RpcError>>()?,
+                })
+                .collect::<Result<Vec<String>, RpcError>>()?,
             Some(value) => {
                 let address = transform::string_from_hex_value(value)
                     .map_err(|_| RpcError::new(ErrorCode::ParseError))?;
@@ -266,7 +268,8 @@ mod tests {
             TopicFilter::from_value(&Value::Array(vec![
                 Value::String(String::from("0x123")),
                 Value::String(String::from("0x456")),
-            ])).unwrap()
+            ]))
+            .unwrap()
         );
     }
 }

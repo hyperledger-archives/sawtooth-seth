@@ -29,14 +29,12 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("config")
         .about("Manages seth config")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommands(vec![
-            SubCommand::with_name("init")
-                .about("Initializes seth config")
-                .args(&[Arg::with_name("url")
-                    .long("--url")
-                    .takes_value(true)
-                    .help("The URL of the JSON-RPC API")]),
-        ])
+        .subcommands(vec![SubCommand::with_name("init")
+            .about("Initializes seth config")
+            .args(&[Arg::with_name("url")
+                .long("--url")
+                .takes_value(true)
+                .help("The URL of the JSON-RPC API")])])
 }
 
 /// Handles parsing Clap CLI matches

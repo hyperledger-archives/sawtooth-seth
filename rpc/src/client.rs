@@ -346,17 +346,20 @@ impl<S: MessageSender> ValidatorClient<S> {
                 );
                 Err(Error::AccountLoadError)?
             }
-            (None, SethTransaction::CreateExternalAccount(ref txnpb)) => if txnpb.to.is_empty() {
-                Account::load_from_file(from, &None).map_err(|_| Error::AccountLoadError)?
-            } else {
-                error!("Account with address `{}` not found.", from);
-                Err(Error::AccountLoadError)?
-            },
+            (None, SethTransaction::CreateExternalAccount(ref txnpb)) => {
+                if txnpb.to.is_empty() {
+                    Account::load_from_file(from, &None).map_err(|_| Error::AccountLoadError)?
+                } else {
+                    error!("Account with address `{}` not found.", from);
+                    Err(Error::AccountLoadError)?
+                }
+            }
             (None, _) => {
                 error!("Account with address `{}` not found.", from);
                 Err(Error::AccountLoadError)?
             }
-        }.clone();
+        }
+        .clone();
 
         let mut txn_header = TransactionHeader::new();
         txn_header.set_batcher_public_key(String::from(account.public_key()));
@@ -391,7 +394,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         let mut batch_header = BatchHeader::new();
         batch_header.set_signer_public_key(String::from(account.public_key()));
         batch_header.set_transaction_ids(protobuf::RepeatedField::from_vec(vec![
-            txn_signature.clone(),
+            txn_signature.clone()
         ]));
         let batch_header_bytes =
             protobuf::Message::write_to_bytes(&batch_header).map_err(|error| {
@@ -754,7 +757,8 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
+                    })
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -764,7 +768,8 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
+                    })
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -774,7 +779,8 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
+                    })
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 

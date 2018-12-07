@@ -355,7 +355,8 @@ where
                 txn_id, error
             );
             Error::internal_error()
-        }).and_then(|(_, block_option)| {
+        })
+        .and_then(|(_, block_option)| {
             block_option.ok_or_else(|| {
                 error!("Txn `{}` had receipt but block was missing", txn_id);
                 Error::internal_error()
@@ -425,7 +426,8 @@ where
         .and_then(|p| {
             transform::hex_str_to_bytes(&p)
                 .ok_or_else(|| Error::invalid_params("Payload is invalid hex"))
-        }).and_then(|payload_data| {
+        })
+        .and_then(|payload_data| {
             let payload_string = String::from_utf8(payload_data.clone()).map_err(|error| {
                 Error::invalid_params(format!("Payload is invalid utf8: {}", error))
             })?;
@@ -446,7 +448,8 @@ where
         .find(|account| account.address() == address)
         .ok_or_else(|| {
             Error::invalid_params(format!("Account with address `{}` not found.", address))
-        })?.clone();
+        })?
+        .clone();
 
     let signature = account.sign(&payload).map_err(|error| {
         error!("Error signing payload: {}", error);
