@@ -19,7 +19,7 @@ services:
   seth-cli:
     build:
       context: .
-      dockerfile: ./cli/Dockerfile-installed
+      dockerfile: ./cli/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-cli:${ISOLATION_ID}
@@ -38,7 +38,7 @@ services:
   seth-cli-go:
     build:
       context: .
-      dockerfile: ./cli-go/Dockerfile-installed
+      dockerfile: ./cli-go/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-cli-go:${ISOLATION_ID}
@@ -62,7 +62,7 @@ services:
   seth-tp:
     build:
       context: .
-      dockerfile: ./processor/Dockerfile-installed
+      dockerfile: ./processor/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     tty: true
@@ -134,7 +134,7 @@ services:
   seth-rpc:
     build:
       context: .
-      dockerfile: ./rpc/Dockerfile-installed
+      dockerfile: ./rpc/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-rpc:${ISOLATION_ID}
