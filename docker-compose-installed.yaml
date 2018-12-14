@@ -106,6 +106,13 @@ services:
         --connect tcp://validator:4004
         --bind rest-api:8080
 
+  devmode-rust:
+    image: hyperledger/sawtooth-devmode-engine-rust:nightly
+    container_name: devmode-engine-rust
+    depends_on:
+      - validator
+    command: devmode-engine-rust -v --connect tcp://validator:5050
+
   validator:
     image: hyperledger/sawtooth-validator:nightly
     container_name: sawtooth-validator
@@ -121,6 +128,8 @@ services:
           -o config-genesis.batch &&
         sawset proposal create \
           -k /etc/sawtooth/keys/validator.priv \
+          sawtooth.consensus.algorithm.name=Devmode \
+          sawtooth.consensus.algorithm.version=0.1 \
           sawtooth.validator.batch_injectors=block_info \
           -o config.batch &&
         sawadm genesis config-genesis.batch config.batch
