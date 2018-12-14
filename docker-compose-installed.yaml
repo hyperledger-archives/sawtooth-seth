@@ -81,21 +81,21 @@ services:
       "
 
   block-info-tp:
-    image: hyperledger/sawtooth-block-info-tp:1.0
+    image: hyperledger/sawtooth-block-info-tp:nightly
     container_name: block-info-tp
     depends_on:
       - validator
     command: block-info-tp -vv --connect tcp://validator:4004
 
   settings-tp:
-    image: hyperledger/sawtooth-settings-tp:1.0
+    image: hyperledger/sawtooth-settings-tp:nightly
     container_name: settings-tp
     depends_on:
       - validator
     command: settings-tp -vv --connect tcp://validator:4004
 
   rest-api:
-    image: hyperledger/sawtooth-rest-api:1.0
+    image: hyperledger/sawtooth-rest-api:nightly
     container_name: rest-api
     ports:
       - '8080:8080'
@@ -107,7 +107,7 @@ services:
         --bind rest-api:8080
 
   validator:
-    image: hyperledger/sawtooth-validator:1.0
+    image: hyperledger/sawtooth-validator:nightly
     container_name: sawtooth-validator
     ports:
       - 4004
