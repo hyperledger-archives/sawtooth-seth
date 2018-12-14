@@ -72,7 +72,6 @@ fn validate_storage_address(address: &str) -> Result<String, Error> {
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_balance<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -88,7 +87,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_storage_at<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -117,7 +115,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_code<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -133,7 +130,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_transaction_count<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -150,7 +146,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 fn get_account<T, F>(params: Params, client: ValidatorClient<T>, f: F) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -179,7 +174,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn accounts<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,

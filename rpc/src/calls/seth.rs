@@ -37,7 +37,6 @@ where
     ]
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_permissions<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -58,7 +57,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn set_permissions<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -99,7 +97,8 @@ where
                 .ok_or_else(|| fail!("Couldn't unlock account"))?
                 .public_key(),
             &SethTransaction::try_from(txn).ok_or_else(|| fail!("Couldn't create transaction"))?,
-        ).map_err(|err| fail!("Couldn't send transaction", err))?;
+        )
+        .map_err(|err| fail!("Couldn't send transaction", err))?;
 
     Ok(Value::Bool(true))
 }

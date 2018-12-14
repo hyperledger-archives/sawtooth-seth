@@ -28,13 +28,11 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("receipt")
         .about("Manages seth receipts")
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommands(vec![
-            SubCommand::with_name("show")
-                .about("Manages seth receipts")
-                .args(&[Arg::with_name("txn-id")
-                    .required(true)
-                    .help("Transaction ID of receipt to show")]),
-        ])
+        .subcommands(vec![SubCommand::with_name("show")
+            .about("Manages seth receipts")
+            .args(&[Arg::with_name("txn-id")
+                .required(true)
+                .help("Transaction ID of receipt to show")])])
 }
 
 /// Handles parsing Clap CLI matches

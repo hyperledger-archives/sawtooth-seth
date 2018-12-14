@@ -136,7 +136,7 @@ impl Transaction {
         }
     }
 
-    #[allow(wrong_self_convention)]
+    #[allow(clippy::wrong_self_convention)]
     pub fn from_addr(&self) -> String {
         public_key_to_address(&transform::hex_str_to_bytes(&self.signer_public_key).unwrap())
     }
@@ -221,7 +221,8 @@ impl SethReceipt {
                         ))
                     });
                 r
-            }).collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
+            })
+            .collect::<Result<Vec<SethTransactionReceipt>, Error>>()?;
 
         let seth_receipt_pb = seth_receipt_pbs.get(0).ok_or_else(|| {
             Error::ParseError(String::from("Receipt doesn't contain any seth receipts"))
