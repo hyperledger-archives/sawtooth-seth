@@ -21,8 +21,11 @@ import (
 	. "common"
 	"fmt"
 	"github.com/hyperledger/burrow/acm"
+	"github.com/hyperledger/burrow/acm/state"
 	"github.com/hyperledger/burrow/binary"
 	"github.com/hyperledger/burrow/crypto"
+	"github.com/hyperledger/burrow/execution/errors"
+	"github.com/hyperledger/burrow/execution/evm"
 	"github.com/hyperledger/burrow/permission"
 	"github.com/hyperledger/sawtooth-sdk-go/processor"
 	. "protobuf/seth_pb2"
@@ -33,7 +36,8 @@ import (
 // SawtoothAppState implements the interface used by the Burrow EVM to
 // access global state
 type SawtoothAppState struct {
-	mgr *StateManager
+	mgr   *StateManager
+	error errors.CodedError
 }
 
 func NewSawtoothAppState(state *processor.Context) *SawtoothAppState {
@@ -44,7 +48,7 @@ func NewSawtoothAppState(state *processor.Context) *SawtoothAppState {
 
 // GetAccount retrieves an existing account with the given address. Returns nil
 // if the account doesn't exist.
-func (s *SawtoothAppState) GetAccount(addr crypto.Address) (acm.Account, error) {
+func (s *SawtoothAppState) GetAccount(addr crypto.Address) (*acm.Account, error) {
 	addrBytes := addr.Bytes()
 	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
 	if err != nil {
@@ -65,8 +69,8 @@ func (s *SawtoothAppState) GetAccount(addr crypto.Address) (acm.Account, error) 
 
 // UpdateAccount updates the account in state. Creates the account if it doesn't
 // exist yet.
-func (s *SawtoothAppState) UpdateAccount(acct acm.Account) error {
-	addrBytes := acm.AsConcreteAccount(acct).Address.Bytes()
+func (s *SawtoothAppState) UpdateAccount(acct *acm.Account) error {
+	addrBytes := acct.Address.Bytes()
 	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
 	if err != nil {
 		return err
@@ -95,11 +99,11 @@ func (s *SawtoothAppState) UpdateAccount(acct acm.Account) error {
 
 // RemoveAccount removes the account and associated storage from global state
 // and panics if it doesn't exist.
-func (s *SawtoothAppState) RemoveAccount(acct crypto.Address) error {
+func (s *SawtoothAppState) RemoveAccount(acct crypto.Address) {
 	addrBytes := acct.Bytes()
 	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
 	if err != nil {
-		return err
+		panic(fmt.Sprintf("Error while removing account: %v", err))
 	}
 	logger.Debugf("RemoveAccount(%v)", vmAddress)
 
@@ -109,46 +113,36 @@ func (s *SawtoothAppState) RemoveAccount(acct crypto.Address) error {
 			"Tried to DelEntry(%v) but nothing exists there", vmAddress,
 		))
 	}
-
-	return nil
 }
 
 // CreateAccount creates a new Contract Account using the given existing
 // account to generate a new address. panics if the given account doesn't exist
 // or the address of the newly created account conflicts with an existing
 // account.
-func (s *SawtoothAppState) CreateAccount(creator *acm.MutableAccount) acm.Account {
-	addrBytes := acm.AsConcreteAccount(creator).Address.Bytes()
-	creatorAddress, err := NewEvmAddrFromBytes(addrBytes)
+func (s *SawtoothAppState) CreateAccount(address crypto.Address) {
+	addrBytes := address.Bytes()
+	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
 	if err != nil {
-		panic(err.Error())
+		panic(fmt.Sprintf("Error while creating account: %v", err))
 	}
-	logger.Debugf("CreateAccount(%v)", creatorAddress)
-
-	// Get address of new account
-	newAddress := creatorAddress.Derive(uint64(creator.Sequence()))
-
-	// Increment nonce
-	creator.IncSequence()
+	logger.Debugf("CreateAccount(%v)", vmAddress)
 
 	// If it already exists, something has gone wrong
-	entry, err := s.mgr.NewEntry(newAddress)
+	_, err = s.mgr.NewEntry(vmAddress)
 	if err != nil {
 		panic(fmt.Sprintf(
-			"Failed to NewEntry(%v): %v", newAddress, err.Error(),
+			"Failed to NewEntry(%v): %v", address, err.Error(),
 		))
 	}
-
-	return toVmAccount(entry.GetAccount())
 }
 
 // GetStorage gets the 256 bit value stored with the given key in the given
 // account, returns zero if the key does not exist.
-func (s *SawtoothAppState) GetStorage(address crypto.Address, key binary.Word256) (binary.Word256, error) {
+func (s *SawtoothAppState) GetStorage(address crypto.Address, key binary.Word256) binary.Word256 {
 	addrBytes := address.Bytes()
 	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
 	if err != nil {
-		return binary.Zero256, err
+		panic(fmt.Sprintf("Error while getting storage: %v", err))
 	}
 	logger.Debugf("GetStorage(%v, %v)", vmAddress, key.Bytes())
 
@@ -160,19 +154,19 @@ func (s *SawtoothAppState) GetStorage(address crypto.Address, key binary.Word256
 	for _, pair := range storage {
 		k := binary.LeftPadWord256(pair.GetKey())
 		if k.Compare(key) == 0 {
-			return binary.LeftPadWord256(pair.GetValue()), nil
+			return binary.LeftPadWord256(pair.GetValue())
 		}
 	}
 
 	logger.Debugf("Key %v not set for account %v", key.Bytes(), vmAddress)
-	return binary.Zero256, nil
+	return binary.Zero256
 }
 
-func (s *SawtoothAppState) SetStorage(address crypto.Address, key, value binary.Word256) error {
+func (s *SawtoothAppState) SetStorage(address crypto.Address, key, value binary.Word256) {
 	addrBytes := address.Bytes()
 	vmAddress, err := NewEvmAddrFromBytes(addrBytes)
 	if err != nil {
-		return err
+		panic(fmt.Sprintf("Error while setting storage: %v", err))
 	}
 	logger.Debugf("SetStorage(%v, %v, %v)", vmAddress, key.Bytes(), value.Bytes())
 
@@ -196,7 +190,6 @@ func (s *SawtoothAppState) SetStorage(address crypto.Address, key, value binary.
 		// If the key has already been set, overwrite it
 		if k.Compare(key) == 0 {
 			pair.Value = value.Bytes()
-			return nil
 		}
 	}
 
@@ -205,8 +198,6 @@ func (s *SawtoothAppState) SetStorage(address crypto.Address, key, value binary.
 		Key:   key.Bytes(),
 		Value: value.Bytes(),
 	})
-
-	return nil
 }
 
 func (s *SawtoothAppState) GetBlockHash(blockNumber int64) (binary.Word256, error) {
@@ -223,33 +214,115 @@ func (s *SawtoothAppState) GetBlockHash(blockNumber int64) (binary.Word256, erro
 	return hash, nil
 }
 
-// -- Utilities --
+func (s *SawtoothAppState) AddRole(address crypto.Address, foo string) bool {
+	panic("AddRole not supported!")
+}
 
-func toStateAccount(acct acm.Account) *EvmStateAccount {
-	if acct == nil {
-		return nil
+func (s *SawtoothAppState) RemoveRole(address crypto.Address, role string) bool {
+	panic("RemoveRole not supported!")
+}
+
+func (s *SawtoothAppState) AddToBalance(address crypto.Address, foo uint64) {
+	panic("AddToBalance not supported!")
+}
+
+func (s *SawtoothAppState) SubtractFromBalance(address crypto.Address, amount uint64) {
+	panic("SubtractFromBalance not supported!")
+}
+
+func (s *SawtoothAppState) GetBalance(address crypto.Address) uint64 {
+	panic("GetBalance not supported!")
+}
+
+func (s *SawtoothAppState) GetCode(address crypto.Address) acm.Bytecode {
+	panic("GetCode not supported!")
+}
+
+func (s *SawtoothAppState) InitCode(address crypto.Address, code []byte) {
+	panic("InitCode not supported!")
+}
+
+func (s *SawtoothAppState) GetSequence(address crypto.Address) uint64 {
+	panic("GetSequence not supported!")
+}
+
+func (s *SawtoothAppState) Exists(address crypto.Address) bool {
+	panic("AddToBalance not supported!")
+}
+
+func (s *SawtoothAppState) GetPermissions(address crypto.Address) permission.AccountPermissions {
+	acct, err := s.GetAccount(address)
+	if err != nil {
+		return permission.AccountPermissions{}
 	}
-	concrete := acm.AsConcreteAccount(acct)
-	return &EvmStateAccount{
-		Address:     concrete.Address.Bytes(),
-		Balance:     int64(concrete.Balance),
-		Code:        concrete.Code,
-		Nonce:       concrete.Sequence,
-		Permissions: toStatePermissions(concrete.Permissions),
+
+	if acct == nil {
+		return permission.AccountPermissions{}
+	}
+
+	return acct.Permissions
+}
+
+func (s *SawtoothAppState) SetPermission(address crypto.Address, permFlag permission.PermFlag, value bool) {
+	panic("SetPermission not supported!")
+}
+
+func (s *SawtoothAppState) UnsetPermission(address crypto.Address, permFlag permission.PermFlag) {
+	panic("UnsetPermission not supported!")
+}
+
+func (s *SawtoothAppState) NewCache(cacheOptions ...state.CacheOption) evm.Interface {
+	panic("NewCache not supported!")
+}
+
+func (s *SawtoothAppState) Sync() errors.CodedError {
+	panic("Sync not supported!")
+}
+
+func (s *SawtoothAppState) PushError(err error) {
+	if s.error == nil {
+		// Make sure we are not wrapping a known nil value
+		ex := errors.AsException(err)
+		if ex != nil {
+			ex.Exception = fmt.Sprintf("%s", ex.Exception)
+			s.error = ex
+		}
 	}
 }
 
-func toVmAccount(sa *EvmStateAccount) acm.Account {
+func (s *SawtoothAppState) Error() errors.CodedError {
+	if s.error == nil {
+		return nil
+	}
+	return s.error
+}
+
+// -- Utilities --
+
+func toStateAccount(acct *acm.Account) *EvmStateAccount {
+	if acct == nil {
+		return nil
+	}
+	return &EvmStateAccount{
+		Address:     acct.Address.Bytes(),
+		Balance:     int64(acct.Balance),
+		Code:        acct.Code,
+		Nonce:       acct.Sequence,
+		Permissions: toStatePermissions(acct.Permissions),
+	}
+}
+
+func toVmAccount(sa *EvmStateAccount) *acm.Account {
 	if sa == nil {
 		return nil
 	}
-	return acm.ConcreteAccount{
+	return &acm.Account{
 		Address:     crypto.MustAddressFromBytes(sa.Address),
 		Balance:     uint64(sa.Balance),
 		Code:        sa.Code,
 		Sequence:    sa.Nonce,
 		Permissions: toVmPermissions(sa.Permissions),
-	}.MutableAccount()
+	}
 }
 
 func toStatePermissions(aPerm permission.AccountPermissions) *EvmPermissions {

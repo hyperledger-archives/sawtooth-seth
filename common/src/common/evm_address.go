@@ -22,7 +22,7 @@ import (
 	"fmt"
 	ellcurv "github.com/btcsuite/btcd/btcec"
 	"github.com/hyperledger/burrow/binary"
-	"github.com/hyperledger/burrow/execution/evm/sha3"
+	"github.com/hyperledger/burrow/crypto/sha3"
 )
 
 type EvmAddr [EVMADDRLEN]byte

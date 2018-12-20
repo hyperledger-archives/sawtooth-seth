@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/burrow/acm"
-	"github.com/hyperledger/burrow/acm/state"
 	"github.com/hyperledger/burrow/binary"
 	"github.com/hyperledger/burrow/crypto"
 	"github.com/hyperledger/burrow/execution/evm"
@@ -39,7 +38,7 @@ import (
 type HandlerResult struct {
 	GasUsed     uint64
 	ReturnValue []byte
-	NewAccount  acm.Account
+	NewAccount  *acm.Account
 	Error       error
 }
 
@@ -114,8 +113,9 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 
 	var contractAddress []byte
 	if result.NewAccount != nil {
-		contractAddress = acm.AsConcreteAccount(result.NewAccount).Address.Bytes()
+		contractAddress = result.NewAccount.Address.Bytes()
 	}
+
 	receipt := &SethTransactionReceipt{
 		ContractAddress: contractAddress,
 		GasUsed:         result.GasUsed,
@@ -141,7 +141,7 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 
 // -- utilities --
 
-func callVm(sas *SawtoothAppState, sender, receiver *acm.MutableAccount,
+func callVm(sas *SawtoothAppState, sender, receiver *acm.Account,
 	code, input []byte, gas uint64) ([]byte, uint64, error) {
 	// Create EVM
 	params, err := getParams(sas.mgr.state)
@@ -150,7 +150,6 @@ func callVm(sas *SawtoothAppState, sender, receiver *acm.MutableAccount,
 	}
 	vm := evm.NewVM(*params, crypto.ZeroAddress, nil, vm_logger)
 	evc := NewSawtoothEventFireable(sas.mgr.state)
-	vm.SetEventSink(evc)
 
 	// Convert the gas to a signed int to be compatible with the burrow EVM
 	startGas := gas
@@ -160,16 +159,9 @@ func callVm(sas *SawtoothAppState, sender, receiver *acm.MutableAccount,
 		receiver = sender
 	}
 
-	cache := state.NewCache(sas)
-
-	output, err := vm.Call(cache, sender, receiver, code, input, 0, &endGas)
+	output, err := vm.Call(sas, evc, sender.Address, receiver.Address, code, input, 0, &endGas)
 	if err != nil {
 		return nil, 0, fmt.Errorf("EVM Error: %v", err)
-	}
-
-	err = cache.Sync(sas)
-	if err != nil {
-		return nil, 0, fmt.Errorf("EVM Sync Error: %v", err)
 	}
 
 	return output, uint64(startGas - endGas), nil

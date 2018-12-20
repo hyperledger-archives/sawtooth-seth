@@ -35,11 +35,11 @@ func NewSawtoothEventFireable(context *processor.Context) *SawtoothEventFireable
 	}
 }
 
-func (evc *SawtoothEventFireable) Call(call *exec.CallEvent, exception *errors.Exception) {
-	// Not used
+func (evc *SawtoothEventFireable) Call(call *exec.CallEvent, exception *errors.Exception) error {
+	return nil
 }
 
-func (evc *SawtoothEventFireable) Log(log *exec.LogEvent) {
+func (evc *SawtoothEventFireable) Log(log *exec.LogEvent) error {
 	attributes := []processor.Attribute{
 		{
 			Key:   "address",
@@ -57,4 +57,6 @@ func (evc *SawtoothEventFireable) Log(log *exec.LogEvent) {
 		})
 	}
 	evc.context.AddEvent("seth_log_event", attributes, log.Data)
+
+	return nil
 }
