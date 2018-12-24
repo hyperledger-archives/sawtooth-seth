@@ -66,21 +66,29 @@ RUN \
 
 RUN git config --global url."https://".insteadOf git://
 
-RUN go get -u \
+######################################################################
+RUN ls
+RUN git clone -v --progress https://github.com/hyperledger/burrow.git -b master /burrow-master
+RUN go get -u -v github.com/hyperledger/burrow/binary
+RUN cp -r /burrow-master/execution/evm/sha3 $GOPATH/src/github.com/hyperledger/burrow/execution/evm/sha3
+RUN ls
+######################################################################
+
+RUN go get -u -v\
     github.com/btcsuite/btcd/btcec \
     github.com/golang/mock/gomock \
     github.com/golang/mock/mockgen \
     github.com/golang/protobuf/proto \
     github.com/golang/protobuf/protoc-gen-go \
+    github.com/hyperledger/burrow/binary \
+	github.com/hyperledger/burrow/execution/evm/sha3 \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
     github.com/pelletier/go-toml \
     github.com/satori/go.uuid \
     golang.org/x/crypto/ssh/terminal
 
-RUN git clone https://github.com/knkski/burrow.git $GOPATH/src/github.com/hyperledger/burrow
-
-RUN go get github.com/hyperledger/sawtooth-sdk-go \
+RUN go get -v github.com/hyperledger/sawtooth-sdk-go \
  && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
  && go generate
 
