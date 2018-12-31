@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/burrow/crypto"
 	"github.com/hyperledger/burrow/execution/evm"
 	"github.com/hyperledger/burrow/logging"
+	"github.com/hyperledger/burrow/permission"
 	slogging "github.com/hyperledger/sawtooth-sdk-go/logging"
 	"github.com/hyperledger/sawtooth-sdk-go/processor"
 	"github.com/hyperledger/sawtooth-sdk-go/protobuf/processor_pb2"
@@ -105,6 +106,27 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 
 	// Construct new state manager
 	sapps := NewSawtoothAppState(context)
+
+	// Ensure that the global permissions are set
+	receiverAcctRef, err := sapps.GetAccount(acm.GlobalPermissionsAddress)
+	if err != nil {
+		return err
+	}
+	receiverAcct := acm.AsMutableAccount(receiverAcctRef)
+	if receiverAcct == nil {
+		perms := permission.AllAccountPermissions
+		perms.Base.SetBit = permission.AllPermFlags
+		permsAcc := acm.ConcreteAccount{
+			Address:     acm.GlobalPermissionsAddress,
+			Balance:     0,
+			Permissions: perms,
+		}.MutableAccount()
+
+		err = sapps.UpdateAccount(permsAcc)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Call the handler
 	result := handler(wrapper, sender, sapps)

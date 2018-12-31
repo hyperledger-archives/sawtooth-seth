@@ -175,33 +175,19 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 			}
 		}
 
-		// If global permissions have not been set yet, everything is allowed and
-		// the account will have all permissions.
-		var newPerms permission.AccountPermissions
-		if global == nil {
-			logger.Warnf("Global Permissions not set, all actions allowed!")
-			newPerms.Base.Set(permission.AllPermFlags, true)
-
-		} else {
-			// If global permissions have been set, check the setting.
-			if !evm.HasPermission(sapps, global, permission.CreateAccount) {
-				return HandlerResult{
-					Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
-						"New account creation is disabled, couldn't create account: %v",
-						sender,
-					)},
-				}
+		if !evm.HasPermission(sapps, global, permission.CreateAccount) {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"New account creation is disabled, couldn't create account: %v",
+					sender,
+				)},
 			}
-
-			// New account inherits global permissions except for Root
-			newPerms = global.Permissions()
-			newPerms.Base.Set(permission.Root, false)
 		}
 
 		newAcct = acm.ConcreteAccount{
 			Address:     crypto.AddressFromWord256(sender.ToWord256()),
 			Sequence:    1,
-			Permissions: newPerms,
+			Permissions: global.Permissions(),
 		}.MutableAccount()
 
 		err = sapps.UpdateAccount(newAcct)

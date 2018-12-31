@@ -65,7 +65,9 @@ RUN go get -u \
     golang.org/x/crypto/ripemd160 \
     gopkg.in/fatih/set.v0
 
-RUN git clone https://github.com/knkski/burrow.git $GOPATH/src/github.com/hyperledger/burrow
+RUN git clone https://github.com/hyperledger/burrow.git $GOPATH/src/github.com/hyperledger/burrow \
+ && cd $GOPATH/src/github.com/hyperledger/burrow \
+ && git checkout v0.21.0
 
 RUN go get github.com/hyperledger/sawtooth-sdk-go \
  && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
