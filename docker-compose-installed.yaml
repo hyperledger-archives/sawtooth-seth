@@ -19,7 +19,7 @@ services:
   seth-cli:
     build:
       context: .
-      dockerfile: ./cli/Dockerfile-installed
+      dockerfile: ./cli/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-cli:${ISOLATION_ID}
@@ -38,7 +38,7 @@ services:
   seth-cli-go:
     build:
       context: .
-      dockerfile: ./cli-go/Dockerfile-installed
+      dockerfile: ./cli-go/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-cli-go:${ISOLATION_ID}
@@ -62,7 +62,7 @@ services:
   seth-tp:
     build:
       context: .
-      dockerfile: ./processor/Dockerfile-installed
+      dockerfile: ./processor/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     tty: true
@@ -81,21 +81,21 @@ services:
       "
 
   block-info-tp:
-    image: hyperledger/sawtooth-block-info-tp:1.0
+    image: hyperledger/sawtooth-block-info-tp:nightly
     container_name: block-info-tp
     depends_on:
       - validator
     command: block-info-tp -vv --connect tcp://validator:4004
 
   settings-tp:
-    image: hyperledger/sawtooth-settings-tp:1.0
+    image: hyperledger/sawtooth-settings-tp:nightly
     container_name: settings-tp
     depends_on:
       - validator
     command: settings-tp -vv --connect tcp://validator:4004
 
   rest-api:
-    image: hyperledger/sawtooth-rest-api:1.0
+    image: hyperledger/sawtooth-rest-api:nightly
     container_name: rest-api
     ports:
       - '8080:8080'
@@ -106,8 +106,15 @@ services:
         --connect tcp://validator:4004
         --bind rest-api:8080
 
+  devmode-rust:
+    image: hyperledger/sawtooth-devmode-engine-rust:nightly
+    container_name: devmode-engine-rust
+    depends_on:
+      - validator
+    command: devmode-engine-rust -v --connect tcp://validator:5050
+
   validator:
-    image: hyperledger/sawtooth-validator:1.0
+    image: hyperledger/sawtooth-validator:nightly
     container_name: sawtooth-validator
     ports:
       - 4004
@@ -121,6 +128,8 @@ services:
           -o config-genesis.batch &&
         sawset proposal create \
           -k /etc/sawtooth/keys/validator.priv \
+          sawtooth.consensus.algorithm.name=Devmode \
+          sawtooth.consensus.algorithm.version=0.1 \
           sawtooth.validator.batch_injectors=block_info \
           -o config.batch &&
         sawadm genesis config-genesis.batch config.batch
@@ -134,7 +143,7 @@ services:
   seth-rpc:
     build:
       context: .
-      dockerfile: ./rpc/Dockerfile-installed
+      dockerfile: ./rpc/Dockerfile-installed-${DISTRO}
       args:
         ISOLATION_ID: ${ISOLATION_ID}
     image: sawtooth-seth-rpc:${ISOLATION_ID}

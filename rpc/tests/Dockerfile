@@ -13,14 +13,17 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 
-RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
- && echo 'deb http://repo.sawtooth.me/ubuntu/bumper/stable xenial universe' >> /etc/apt/sources.list \
+RUN apt-get update \
+ && apt-get install gnupg -y
+
+RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19B2466EA \
+ || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 44FC67F19B2466EA) \
+ && echo 'deb http://repo.sawtooth.me/ubuntu/nightly bionic universe' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q --allow-unauthenticated \
-    python3-grpcio-tools=1.1.3-1 \
+    python3-grpcio-tools \
     python3-nose2 \
     python3-protobuf \
     python3-requests \
