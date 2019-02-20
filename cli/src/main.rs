@@ -35,7 +35,6 @@ extern crate dirs;
 extern crate failure;
 extern crate jsonrpc_core;
 extern crate reqwest;
-extern crate sawtooth_sdk;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
