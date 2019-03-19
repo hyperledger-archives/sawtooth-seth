@@ -16,24 +16,16 @@
 FROM ubuntu:bionic
 
 RUN apt-get update \
- && apt-get install gnupg -y
+ && apt-get install curl gnupg -y
 
 ENV GOPATH=/project/sawtooth-seth/processor
 ENV PATH=$PATH:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.10/bin
 WORKDIR $GOPATH/src/seth_tp
 
-RUN \
- if [ ! -z $HTTP_PROXY ] && [ -z $http_proxy ]; then \
-  http_proxy=$HTTP_PROXY; \
- fi; \
- if [ ! -z $HTTPS_PROXY ] && [ -z $https_proxy ]; then \
-  https_proxy=$HTTPS_PROXY; \
- fi
-
-RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19B2466EA \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 44FC67F19B2466EA) \
- && (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 308C15A29AD198E9 \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 308C15A29AD198E9) \
+RUN (curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x44FC67F19B2466EA' | apt-key add - \
+ || curl -sSL 'http://p80.pool.sks-keyservers.net/pks/lookup?op=get&search=0x44FC67F19B2466EA' | apt-key add - ) \
+ && (curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x308C15A29AD198E9' | apt-key add - \
+ || curl -sSL 'http://p80.pool.sks-keyservers.net/pks/lookup?op=get&search=0x308C15A29AD198E9' | apt-key add - ) \
  && echo 'deb http://repo.sawtooth.me/ubuntu/nightly bionic universe' >> /etc/apt/sources.list \
  && echo 'deb http://ppa.launchpad.net/gophers/archive/ubuntu bionic main' >> /etc/apt/sources.list \
  && apt-get update \
@@ -47,14 +39,6 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19
     python3-grpcio-tools \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-
-RUN \
- if [ ! -z $http_proxy ]; then \
-  git config --global http.proxy $http_proxy; \
- fi; \
- if [ ! -z $https_proxy ]; then \
-  git config --global https.proxy $https_proxy; \
- fi
 
 RUN git config --global url."https://".insteadOf git://
 
