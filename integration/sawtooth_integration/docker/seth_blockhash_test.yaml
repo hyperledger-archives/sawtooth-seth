@@ -69,7 +69,6 @@ services:
           -o config-genesis.batch &&
         sawset proposal create \
           -k /etc/sawtooth/keys/validator.priv \
-          sawtooth.validator.batch_injectors=block_info \
           -o config.batch &&
         sawadm genesis config-genesis.batch config.batch
         fi;
