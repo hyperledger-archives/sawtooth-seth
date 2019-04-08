@@ -15,85 +15,119 @@
 // limitations under the License.
 // ------------------------------------------------------------------------------
 
-// Discard old builds after 31 days
-properties([[$class: 'BuildDiscarderProperty', strategy:
-        [$class: 'LogRotator', artifactDaysToKeepStr: '',
-        artifactNumToKeepStr: '', daysToKeepStr: '31', numToKeepStr: '']]]);
-
-node ('master') {
-    // Create a unique workspace so Jenkins doesn't reuse an existing one
-    ws("workspace/${env.BUILD_TAG}") {
-        stage("Clone Repo") {
-            checkout scm
+pipeline {
+    agent {
+        node {
+            label 'master'
+            customWorkspace "workspace/${env.BUILD_TAG}"
         }
+    }
 
-        if (!(env.BRANCH_NAME == 'master' && env.JOB_BASE_NAME == 'master')) {
-            stage("Check Whitelist") {
+    triggers {
+        cron(env.BRANCH_NAME == 'master' ? 'H 3 * * *' : '')
+    }
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(daysToKeepStr: '31'))
+    }
+
+    environment {
+        ISOLATION_ID = sh(returnStdout: true, script: 'printf $BUILD_TAG | sha256sum | cut -c1-64').trim()
+    }
+
+    stages {
+        stage('Check Whitelist') {
+            steps {
                 readTrusted 'bin/whitelist'
                 sh './bin/whitelist "$CHANGE_AUTHOR" /etc/jenkins-authorized-builders'
             }
+            when {
+                not {
+                    branch 'master'
+                }
+            }
         }
 
-        stage("Check for Signed-Off Commits") {
-            sh '''#!/bin/bash -l
-                if [ -v CHANGE_URL ] ;
-                then
-                    temp_url="$(echo $CHANGE_URL |sed s#github.com/#api.github.com/repos/#)/commits"
-                    pull_url="$(echo $temp_url |sed s#pull#pulls#)"
-
-                    IFS=$'\n'
-                    for m in $(curl -s "$pull_url" | grep "message") ; do
-                        if echo "$m" | grep -qi signed-off-by:
-                        then
-                          continue
-                        else
-                          echo "FAIL: Missing Signed-Off Field"
-                          echo "$m"
-                          exit 1
-                        fi
-                    done
-                    unset IFS;
-                fi
-            '''
+        stage('Check for Signed-Off Commits') {
+            steps {
+                sh '''#!/bin/bash -l
+                    if [ -v CHANGE_URL ] ;
+                    then
+                        temp_url="$(echo $CHANGE_URL |sed s#github.com/#api.github.com/repos/#)/commits"
+                        pull_url="$(echo $temp_url |sed s#pull#pulls#)"
+                        IFS=$'\n'
+                        for m in $(curl -s "$pull_url" | grep "message") ; do
+                            if echo "$m" | grep -qi signed-off-by:
+                            then
+                              continue
+                            else
+                              echo "FAIL: Missing Signed-Off Field"
+                              echo "$m"
+                              exit 1
+                            fi
+                        done
+                        unset IFS;
+                    fi
+                '''
+            }
         }
 
-        // Set the ISOLATION_ID environment variable for the whole pipeline
-        env.ISOLATION_ID = sh(returnStdout: true, script: 'printf $BUILD_TAG | sha256sum | cut -c1-64').trim()
-
-        // Use a docker container to build and protogen, so that the Jenkins
-        // environment doesn't need all the dependencies.
-        stage("Build Test Dependencies") {
-            sh 'docker-compose build'
+        stage('Fetch Tags') {
+            steps {
+                sh 'git fetch --tag'
+            }
         }
 
-        stage("Run Lint") {
-            sh 'docker run --rm sawtooth-seth-cli-go:$ISOLATION_ID run_go_fmt'
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt --version'
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt -- --check'
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy --version'
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy -- -D clippy'
+        stage('Build Test Dependencies') {
+			steps {
+				sh 'docker-compose build'
+			}
         }
 
-        // Run the tests
-        stage("Run Tests") {
-            sh './bin/run_tests'
-            sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo test'
+        stage('Run Lint') {
+			steps {
+				sh 'docker run --rm sawtooth-seth-cli-go:$ISOLATION_ID run_go_fmt'
+				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt --version'
+				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt -- --check'
+				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy --version'
+				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy -- -D clippy'
+			}
         }
 
-        stage ("Build documentation") {
-            sh 'docker build . -f docs/Dockerfile -t seth-build-docs:$ISOLATION_ID'
-            sh 'docker run -v $(pwd)/docs:/project/sawtooth-seth/docs seth-build-docs:$ISOLATION_ID'
+        stage('Run Tests') {
+			steps {
+				sh './bin/run_tests'
+				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo test'
+			}
         }
 
-        stage("Archive Build artifacts") {
-            sh 'docker-compose -f docker-compose-installed.yaml build'
-            sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli-go:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
-            sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
-            sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-tp:$ISOLATION_ID cp /debs/sawtooth-seth-tp_0.2.0_amd64.deb /build'
-            sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-rpc:$ISOLATION_ID cp /debs/sawtooth-seth-rpc_0.2.0_amd64.deb /build'
-            archiveArtifacts artifacts: '*.tgz, *.zip', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'build/debs/*.deb'
-            archiveArtifacts artifacts: 'docs/build/html/**, docs/build/latex/*.pdf'
+        stage ('Build Documentation') {
+			steps {
+				sh 'docker build . -f docs/Dockerfile -t seth-build-docs:$ISOLATION_ID'
+				sh 'docker run -v $(pwd)/docs:/project/sawtooth-seth/docs seth-build-docs:$ISOLATION_ID'
+			}
+        }
+
+        stage('Build Archive Artifacts') {
+			steps {
+				sh 'docker-compose -f docker-compose-installed.yaml build'
+				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli-go:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
+				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
+				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-tp:$ISOLATION_ID cp /debs/sawtooth-seth-tp_0.2.0_amd64.deb /build'
+				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-rpc:$ISOLATION_ID cp /debs/sawtooth-seth-rpc_0.2.0_amd64.deb /build'
+			}
         }
     }
+    post {
+        success {
+            archiveArtifacts '*.tgz, *.zip, build/debs/*.deb, docs/build/html/**, docs/build/latex/*.pdf'
+        }
+        aborted {
+            error "Aborted, exiting now"
+        }
+        failure {
+            error "Failed, exiting now"
+        }
+	}
 }
