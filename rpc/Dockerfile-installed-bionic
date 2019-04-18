@@ -13,11 +13,16 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-FROM ubuntu:xenial
+# -------------=== seth rpc build ===-------------
 
-RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD \
- || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD) \
- && echo 'deb http://repo.sawtooth.me/ubuntu/1.0/stable xenial universe' >> /etc/apt/sources.list \
+FROM ubuntu:bionic
+
+RUN apt-get update \
+ && apt-get install gnupg -y
+
+RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19B2466EA \
+ || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 44FC67F19B2466EA) \
+ && echo 'deb http://repo.sawtooth.me/ubuntu/nightly bionic universe' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
     curl \
@@ -28,7 +33,7 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1
     openssl \
     pkg-config \
     python3 \
-    python3-grpcio-tools=1.1.3-1 \
+    python3-grpcio-tools \
     unzip \
  && curl -s -S -o /tmp/setup-node.sh https://deb.nodesource.com/setup_6.x \
  && chmod 755 /tmp/setup-node.sh \
@@ -82,19 +87,16 @@ RUN pkg_dir=/project/build/debs/ \
  && fakeroot dpkg-deb --build debian \
  && mv debian.deb $pkg_dir/"${PACKAGENAME}_${PACKAGEVERSION}_${PACKAGEARCH}.deb"
 
-FROM ubuntu:xenial
+# -------------=== seth rpc docker build ===-------------
+
+FROM ubuntu:bionic
 
 RUN mkdir /debs
 
 COPY --from=0 /project/build/debs/sawtooth-seth-rpc_*amd64.deb /debs
 
 RUN apt-get update \
- && apt-get install -y -q \
-    dpkg-dev \
- && cd /debs \
- && dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz \
- && echo "deb file:/debs ./" >> /etc/apt/sources.list \
- && apt-get update \
- && apt-get install sawtooth-seth-rpc -y -q --allow-unauthenticated \
+ && dpkg -i /debs/sawtooth-seth-rpc_*amd64.deb || true \
+ && apt-get -f -y install \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*

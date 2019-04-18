@@ -18,7 +18,7 @@
  package tests
 
 import (
-  "burrow/word256"
+  "github.com/hyperledger/burrow/binary"
   "encoding/base64"
   "encoding/hex"
   "fmt"
@@ -47,37 +47,37 @@ func TestBlockNumber(t *testing.T) {
   // Create the EOA
   _, err := client.CreateExternalAccount(priv, nil, nil, 0, WAIT)
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   nonce += 1
 
   // Create the Contract
   contractCreateResult, err := client.CreateContractAccount(priv, init, nil, nonce, 1000, WAIT)
   if err != nil {
-   t.Error(err.Error())
+   t.Fatal(err.Error())
   }
   nonce += 1
 
   cmd, _ := hex.DecodeString(TIMESTAMP)
   contractCallResult, err := client.MessageCall(priv, contractCreateResult.Address, cmd, nonce, 1000, WAIT, false)
-  timestamp := word256.Uint64FromWord256(word256.RightPadWord256(contractCallResult.ReturnValue))
+  timestamp := binary.Uint64FromWord256(binary.RightPadWord256(contractCallResult.ReturnValue))
 
   // Get number of current block from BlockInfo
   blockInfoAddr, err := NewBlockInfoAddr(2);
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   resp, err := http.Get(fmt.Sprintf("%s/state/%s?wait=%v", client.Url, blockInfoAddr, WAIT))
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   body, err := c.ParseRespBody(resp)
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   buf, err := base64.StdEncoding.DecodeString(body.Data.(string))
   if err != nil {
-    t.Error(err.Error())
+    t.Fatal(err.Error())
   }
   blockInfo := &BlockInfo{}
   err = proto.Unmarshal(buf, blockInfo)

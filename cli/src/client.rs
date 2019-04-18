@@ -66,6 +66,7 @@ impl Client {
     /// Creates a new Client
     ///
     /// Loads the JSON-RPC API URL from a config file or environment variable.
+    #[allow(clippy::new_ret_no_self)]
     pub fn new() -> Result<Client, Error> {
         let mut settings_file =
             dirs::home_dir().ok_or_else(|| format_err!("Couldn't find home directory!"))?;
@@ -121,7 +122,8 @@ impl Client {
                 "jsonrpc": "2.0",
                 "method": method,
                 "params": params
-            })).send()?;
+            }))
+            .send()?;
 
         let body: JsonRpcResponse<D> = response.json()?;
 

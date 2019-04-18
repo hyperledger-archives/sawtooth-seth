@@ -255,7 +255,8 @@ pub fn do_list(client: &Client, address: &str) -> Result<(), Error> {
                 Ok(_) => Some(derived),
                 Err(_) => None,
             }
-        }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
 
     println!("{}", to_string_pretty(&json!(contracts))?);
 
@@ -278,7 +279,8 @@ pub fn derive(address: String, nonce: u64) -> String {
                     ((chunk[0].to_digit(16).expect("Got a non-hex digit!") << 4)
                         | (chunk[1].to_digit(16).expect("Got a non-hex digit!")))
                         as u8
-                }).collect::<Vec<_>>();
+                })
+                .collect::<Vec<_>>();
 
             // Add in the bytes of the u64 nonce, big-endian style
             for i in (0..8).rev() {

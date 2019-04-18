@@ -13,25 +13,16 @@
 # limitations under the License.
 # ------------------------------------------------------------------------------
 
-# Description:
-#   Builds the environment needed to build the Sawtooth Seth docs
-#   Running the image will put the Sawtooth Seth docs in
-#   sawtooth-seth/docs/build on your local machine.
-#
-# Build:
-#   $ cd sawtooth-seth
-#   $ docker build . -f docs/Dockerfile -t seth-build-docs
-#
-# Run:
-#   $ cd sawtooth-seth
-#   $ docker run -v $(pwd)/docs:/project/sawtooth-seth/docs seth-build-docs
+# -------------=== seth processor build ===-------------
 
 FROM ubuntu:bionic
 
 RUN apt-get update \
  && apt-get install gnupg -y
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV GOPATH=/project/sawtooth-seth/processor
+ENV PATH=$PATH:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.10/bin
+WORKDIR $GOPATH/src/seth_tp
 
 RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19B2466EA \
  || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 44FC67F19B2466EA) \
@@ -41,34 +32,15 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19
  && echo 'deb http://ppa.launchpad.net/gophers/archive/ubuntu bionic main' >> /etc/apt/sources.list \
  && apt-get update \
  && apt-get install -y -q \
-    curl \
-    dvipng \
-    gcc \
     git \
     golang-1.10-go \
     libssl-dev \
     libzmq3-dev \
-    make \
     openssl \
     python3 \
     python3-grpcio-tools \
-    python3-pip \
-    python3-sawtooth-cli \
-    software-properties-common \
-    sudo \
-    texlive-fonts-recommended \
-    texlive-latex-base \
-    texlive-latex-extra \
-    texlive-latex-recommended \
-    unzip \
-    zip \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install sphinx==1.5.6 sphinx_rtd_theme
-
-ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.10/bin
-ENV GOPATH=/go:/project/sawtooth-seth/common:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli-go:/project/sawtooth-seth/processor
 
 RUN go get -u \
     github.com/btcsuite/btcd/btcec \
@@ -78,40 +50,57 @@ RUN go get -u \
     github.com/golang/protobuf/protoc-gen-go \
     github.com/jessevdk/go-flags \
     github.com/pebbe/zmq4 \
-    github.com/pelletier/go-toml \
     github.com/satori/go.uuid \
     golang.org/x/crypto/ripemd160 \
-    golang.org/x/crypto/ssh/terminal \
     gopkg.in/fatih/set.v0
 
-RUN git clone https://github.com/knkski/burrow.git /go/src/github.com/hyperledger/burrow
+RUN git clone https://github.com/knkski/burrow.git $GOPATH/src/github.com/hyperledger/burrow
 
 RUN go get github.com/hyperledger/sawtooth-sdk-go \
- && cd /go/src/github.com/hyperledger/sawtooth-sdk-go \
+ && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
  && go generate
-
-RUN curl -OLsS https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip \
- && unzip protoc-3.5.1-linux-x86_64.zip -d protoc3 \
- && rm protoc-3.5.1-linux-x86_64.zip
-
-ENV CARGO_INCREMENTAL=0
-
-RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
- && chmod +x /usr/bin/rustup-init \
- && rustup-init -y
 
 COPY . /project/sawtooth-seth
 
 RUN seth-protogen go
 
-WORKDIR /project/sawtooth-seth/cli-go/src/seth_cli/cli
-RUN go build -o /project/sawtooth-seth/cli-go/bin/seth
-
-WORKDIR /project/sawtooth-seth/processor/src/seth_tp
+ENV GOPATH=$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/common
 RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
 
-WORKDIR /project/sawtooth-seth
-RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/bin/seth-rpc && cargo doc --no-deps
+WORKDIR /project/sawtooth-seth/processor
 
-WORKDIR /project/sawtooth-seth/docs
-CMD make html latexpdf
+RUN pkg_dir=/project/build/debs/ \
+ && CHANGELOG_DIR="debian/usr/share/doc/sawtooth-seth" \
+ && if [ -d "debian" ]; then rm -rf debian; fi \
+ && mkdir -p $pkg_dir \
+ && mkdir -p debian/DEBIAN \
+ && mkdir -p $CHANGELOG_DIR \
+ && cp packaging/ubuntu/* debian \
+ && cp debian/changelog $CHANGELOG_DIR \
+ && mv debian/changelog $CHANGELOG_DIR/changelog.Debian \
+ && gzip --best $CHANGELOG_DIR/changelog \
+ && gzip --best $CHANGELOG_DIR/changelog.Debian \
+ && mv debian/control debian/DEBIAN \
+# && mv debian/postinst debian/DEBIAN \
+ && PACKAGENAME=$(awk '/^Package:/ { print $2 }' debian/DEBIAN/control) \
+ && PACKAGEVERSION=$(dpkg-parsechangelog -S version -l $CHANGELOG_DIR/changelog.gz) \
+ && PACKAGEARCH=$(dpkg-architecture -qDEB_BUILD_ARCH) \
+ && mkdir debian/usr/bin \
+ && cp -R bin/seth-tp debian/usr/bin \
+# && cp -R packaging/systemd/* debian/ \
+ && fakeroot dpkg-deb --build debian \
+ && mv debian.deb $pkg_dir/"${PACKAGENAME}_${PACKAGEVERSION}_${PACKAGEARCH}.deb"
+
+# -------------=== seth processor docker build ===-------------
+
+FROM ubuntu:bionic
+
+RUN mkdir /debs
+
+COPY --from=0 /project/build/debs/sawtooth-seth-tp_*amd64.deb /debs
+
+RUN apt-get update \
+ && dpkg -i /debs/sawtooth-seth-tp_*amd64.deb || true \
+ && apt-get -f -y install \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*

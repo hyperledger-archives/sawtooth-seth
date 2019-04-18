@@ -18,13 +18,17 @@
 package handler
 
 import (
-	evm "burrow/evm"
-	. "burrow/word256"
-	. "common"
+	"common"
 	"encoding/hex"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/sawtooth-sdk-go/logging"
+	"github.com/hyperledger/burrow/acm"
+	"github.com/hyperledger/burrow/acm/state"
+	"github.com/hyperledger/burrow/binary"
+	"github.com/hyperledger/burrow/crypto"
+	"github.com/hyperledger/burrow/execution/evm"
+	"github.com/hyperledger/burrow/logging"
+	slogging "github.com/hyperledger/sawtooth-sdk-go/logging"
 	"github.com/hyperledger/sawtooth-sdk-go/processor"
 	"github.com/hyperledger/sawtooth-sdk-go/protobuf/processor_pb2"
 	"github.com/hyperledger/sawtooth-sdk-go/protobuf/transaction_pb2"
@@ -38,13 +42,14 @@ type HandlerResult struct {
 	GasUsed     uint64
 	ReturnValue []byte
 	Status      uint32
-	NewAccount  *evm.Account
+	NewAccount  acm.Account
 	Error       error
 }
 
-type TransactionHandler func(*SethTransaction, *EvmAddr, *SawtoothAppState) HandlerResult
+type TransactionHandler func(*SethTransaction, *common.EvmAddr, *SawtoothAppState) HandlerResult
 
-var logger *logging.Logger = logging.Get()
+var logger *slogging.Logger = slogging.Get()
+var vm_logger = logging.NewNoopLogger()
 
 type BurrowEVMHandler struct{}
 
@@ -53,15 +58,15 @@ func NewBurrowEVMHandler() *BurrowEVMHandler {
 }
 
 func (self *BurrowEVMHandler) FamilyName() string {
-	return FAMILY_NAME
+	return common.FAMILY_NAME
 }
 
 func (self *BurrowEVMHandler) FamilyVersions() []string {
-	return []string{FAMILY_VERSION}
+	return []string{common.FAMILY_VERSION}
 }
 
 func (self *BurrowEVMHandler) Namespaces() []string {
-	return []string{PREFIX}
+	return []string{common.PREFIX}
 }
 
 func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, context *processor.Context) error {
@@ -94,7 +99,7 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 			"Couldn't decode public key",
 		)}
 	}
-	sender, err := PubToEvmAddr(public_key)
+	sender, err := common.PubToEvmAddr(public_key)
 	if err != nil {
 		return &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 			"Couldn't determine sender from public key: %v", header.GetSignerPublicKey(),
@@ -112,7 +117,7 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 
 	var contractAddress []byte
 	if result.NewAccount != nil {
-		contractAddress = result.NewAccount.Address.Bytes()
+		contractAddress = acm.AsConcreteAccount(result.NewAccount).Address.Bytes()
 	}
 	receipt := &SethTransactionReceipt{
 		ContractAddress: contractAddress,
@@ -122,12 +127,14 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 		From:            result.From,
 		To:              result.To,
 	}
+
 	bytes, err := proto.Marshal(receipt)
 	if err != nil {
 		return &processor.InternalError{Msg: fmt.Sprintf(
 			"Couldn't marshal receipt: %v", err,
 		)}
 	}
+
 	err = context.AddReceiptData(bytes)
 	if err != nil {
 		return &processor.InternalError{Msg: fmt.Sprintf(
@@ -140,29 +147,37 @@ func (self *BurrowEVMHandler) Apply(request *processor_pb2.TpProcessRequest, con
 
 // -- utilities --
 
-func callVm(sas *SawtoothAppState, sender, receiver *evm.Account,
+func callVm(sas *SawtoothAppState, sender, receiver *acm.MutableAccount,
 	code, input []byte, gas uint64) ([]byte, uint64, error) {
 	// Create EVM
 	params, err := getParams(sas.mgr.state)
 	if err != nil {
 		return nil, 0, fmt.Errorf("Block Info Error: %v", err)
 	}
-	vm := evm.NewVM(sas, *params, Zero256, nil)
+	vm := evm.NewVM(*params, crypto.ZeroAddress, nil, vm_logger)
 	evc := NewSawtoothEventFireable(sas.mgr.state)
-	vm.SetFireable(evc)
+	vm.SetEventSink(evc)
 
 	// Convert the gas to a signed int to be compatible with the burrow EVM
-	startGas := int64(gas)
-	endGas := int64(gas)
+	startGas := gas
+	endGas := gas
 
 	if receiver == nil {
 		receiver = sender
 	}
 
-	output, err := vm.Call(sender, receiver, code, input, 0, &endGas)
+	cache := state.NewCache(sas)
+
+	output, err := vm.Call(cache, sender, receiver, code, input, 0, &endGas)
 	if err != nil {
 		return nil, 0, fmt.Errorf("EVM Error: %v", err)
 	}
+
+	err = cache.Sync(sas)
+	if err != nil {
+		return nil, 0, fmt.Errorf("EVM Sync Error: %v", err)
+	}
+
 	return output, uint64(startGas - endGas), nil
 }
 
@@ -202,9 +217,9 @@ func getParams(context *processor.Context) (*evm.Params, error) {
 			"Block info not available. BLOCKHASH, TIMESTAMP, and BLOCKHEIGHT instructions will result in failure")
 		return &evm.Params{
 			BlockHeight: 0,
-			BlockHash:   Zero256,
+			BlockHash:   binary.Zero256,
 			BlockTime:   0,
-			GasLimit:    GAS_LIMIT,
+			GasLimit:    common.GAS_LIMIT,
 		}, nil
 	}
 
@@ -219,20 +234,20 @@ func getParams(context *processor.Context) (*evm.Params, error) {
 	}
 
 	return &evm.Params{
-		BlockHeight: int64(blockInfo.GetBlockNum()),
+		BlockHeight: blockInfo.GetBlockNum(),
 		BlockHash:   hash,
 		BlockTime:   int64(blockInfo.GetTimestamp()),
-		GasLimit:    GAS_LIMIT,
+		GasLimit:    common.GAS_LIMIT,
 	}, nil
 }
 
 func getBlockInfoConfig(context *processor.Context) (*BlockInfoConfig, error) {
 	// Retrieve block info config from global state
-	entries, err := context.GetState([]string{CONFIG_ADDRESS})
+	entries, err := context.GetState([]string{common.CONFIG_ADDRESS})
 	if err != nil {
 		return nil, err
 	}
-	entryData, exists := entries[CONFIG_ADDRESS]
+	entryData, exists := entries[common.CONFIG_ADDRESS]
 	if !exists {
 		return nil, fmt.Errorf("BlockInfo entry does not exist")
 	}
@@ -249,7 +264,7 @@ func getBlockInfoConfig(context *processor.Context) (*BlockInfoConfig, error) {
 
 func getBlockInfo(context *processor.Context, blockNumber int64) (*BlockInfo, error) {
 	// Create block info address
-	blockInfoAddr, err := NewBlockInfoAddr(blockNumber)
+	blockInfoAddr, err := common.NewBlockInfoAddr(blockNumber)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get block info address: %v", err.Error())
 	}
@@ -273,10 +288,10 @@ func getBlockInfo(context *processor.Context, blockNumber int64) (*BlockInfo, er
 	return entry, nil
 }
 
-func StringToWord256(s string) (Word256, error) {
+func StringToWord256(s string) (binary.Word256, error) {
 	bytes, err := hex.DecodeString(s)
 	if err != nil {
-		return Zero256, fmt.Errorf("Couldn't decode string")
+		return binary.Zero256, fmt.Errorf("Couldn't decode string")
 	}
-	return RightPadWord256(bytes), nil
+	return binary.RightPadWord256(bytes), nil
 }

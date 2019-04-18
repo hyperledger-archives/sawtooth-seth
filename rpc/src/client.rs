@@ -15,17 +15,12 @@
  * ------------------------------------------------------------------------------
  */
 
-use std::collections::HashMap;
-use std::error::Error as StdError;
-use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::str::FromStr;
-
+use accounts::{Account, Error as AccountError};
 use crypto::digest::Digest;
 use crypto::sha2::Sha512;
-
-use accounts::{Account, Error as AccountError};
 use filters::FilterManager;
 use messages::seth::{EvmEntry, EvmStateAccount, EvmStorage};
+use protobuf;
 use sawtooth_sdk::messages::batch::{Batch, BatchHeader};
 use sawtooth_sdk::messages::block::Block;
 use sawtooth_sdk::messages::block::BlockHeader;
@@ -53,10 +48,14 @@ use sawtooth_sdk::messages::client_transaction::{
 use sawtooth_sdk::messages::transaction::{Transaction as TransactionPb, TransactionHeader};
 use sawtooth_sdk::messages::validator::Message_MessageType;
 use sawtooth_sdk::messaging::stream::*;
+use std::collections::HashMap;
+use std::error::Error as StdError;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::str::FromStr;
+use std::sync::Arc;
+use std::sync::RwLock;
 use transactions::{SethReceipt, SethTransaction, Transaction, TransactionKey};
 use transform;
-
-use protobuf;
 use uuid;
 
 #[derive(Clone)]
@@ -153,6 +152,7 @@ impl From<AccountError> for Error {
         match error {
             AccountError::ParseError(msg) => Error::ParseError(msg),
             AccountError::IoError(_) => Error::AccountLoadError,
+            AccountError::DirNotFound => Error::AccountLoadError,
             AccountError::AliasNotFound => Error::AccountLoadError,
             AccountError::SigningError => Error::SigningError,
         }
@@ -161,22 +161,79 @@ impl From<AccountError> for Error {
 
 #[derive(Clone)]
 pub struct ValidatorClient<S: MessageSender> {
-    sender: S,
-    accounts: Vec<Account>,
+    /// The ZMQ message sender
+    sender: Arc<RwLock<S>>,
+
+    /// The list of accounts that this client has loaded into memory
+    loaded_accounts: Arc<RwLock<Vec<Account>>>,
+
+    /// The current loaded and unlocked account that can be used for sending transactions
+    unlocked_account: Arc<RwLock<Option<Account>>>,
+
+    /// Manages filters
     pub filters: FilterManager,
 }
 
 impl<S: MessageSender> ValidatorClient<S> {
     pub fn new(sender: S, accounts: Vec<Account>) -> Self {
         ValidatorClient {
-            sender,
-            accounts,
+            sender: Arc::new(RwLock::new(sender)),
+            loaded_accounts: Arc::new(RwLock::new(accounts)),
+            unlocked_account: Arc::new(RwLock::new(None)),
             filters: FilterManager::new(),
         }
     }
 
-    pub fn loaded_accounts(&self) -> &[Account] {
-        &self.accounts
+    pub fn loaded_accounts(&self) -> Arc<RwLock<Vec<Account>>> {
+        self.loaded_accounts.clone()
+    }
+
+    pub fn unlocked_account(&self) -> Option<Account> {
+        self.unlocked_account.read().unwrap().clone()
+    }
+
+    /// Unlocks the given account, adding it to `self.loaded_accounts` if necessary
+    pub fn unlock_account(&self, account: &Account, _duration: Option<u64>) -> Result<(), Error> {
+        let mut loaded_accounts = self.loaded_accounts.write().unwrap();
+        let mut unlocked_account = self.unlocked_account.write().unwrap();
+
+        if !loaded_accounts.contains(account) {
+            loaded_accounts.push(account.clone());
+        }
+        *unlocked_account = Some(account.clone());
+
+        Ok(())
+    }
+
+    /// Unlocks the given address, if it exists in `self.loaded_accounts`
+    pub fn unlock_address(
+        &self,
+        address: &str,
+        password: &Option<String>,
+        _duration: Option<u64>,
+    ) -> Result<(), Error> {
+        let mut loaded_accounts = self.loaded_accounts.write().unwrap();
+        let mut unlocked_account = self.unlocked_account.write().unwrap();
+
+        // Attempt to unlock a loaded account
+        for account in loaded_accounts.iter() {
+            if account.address() == address {
+                *unlocked_account = Some(account.clone());
+                return Ok(());
+            }
+        }
+
+        // If the given address wasn't found in the list of loaded accounts, try
+        // loading it and then unlocking it. The key file must be named with the
+        // specified address
+        let account = Account::load_from_file(address, &password)?;
+        loaded_accounts.push(account.clone());
+        *unlocked_account = Some(account.clone());
+
+        Err(Error::ParseError(format!(
+            "Account with address `{}` not found!",
+            address
+        )))
     }
 
     pub fn request<T, U>(&self, msg_type: Message_MessageType, msg: &T) -> Result<U, String>
@@ -198,7 +255,9 @@ impl<S: MessageSender> ValidatorClient<S> {
             }
         };
 
-        let mut future = match self.sender.send(msg_type, &correlation_id, &msg_bytes) {
+        let sender = self.sender.write().unwrap();
+
+        let mut future = match sender.send(msg_type, &correlation_id, &msg_bytes) {
             Ok(f) => f,
             Err(error) => {
                 return Err(format!("Error unwrapping future: {:?}", error));
@@ -233,7 +292,8 @@ impl<S: MessageSender> ValidatorClient<S> {
 
         let correlation_id = uuid::Uuid::new_v4().to_string();
 
-        let mut future = self.sender.send(msg_type, &correlation_id, &msg_bytes)?;
+        let sender = self.sender.write().unwrap();
+        let mut future = sender.send(msg_type, &correlation_id, &msg_bytes)?;
         let response_msg = future.get()?;
         protobuf::parse_from_bytes(&response_msg.content)
             .map_err(|error| Error::ParseError(format!("Error parsing response: {:?}", error)))
@@ -262,14 +322,44 @@ impl<S: MessageSender> ValidatorClient<S> {
             Error::ParseError(format!("Error serializing payload: {:?}", error))
         })?;
 
-        let account = self
-            .loaded_accounts()
-            .iter()
-            .find(|account| account.address() == from)
-            .ok_or_else(|| {
+        let unlocked_account = self.unlocked_account.read().unwrap().clone();
+        let account = match (unlocked_account, txn) {
+            (Some(ref acc), SethTransaction::CreateExternalAccount(ref txnpb)) => {
+                match (txnpb.to.len(), from == acc.address()) {
+                    // The transaction is setting up a new account without a moderator
+                    (0, _) => {
+                        Account::load_from_file(from, &None).map_err(|_| Error::AccountLoadError)?
+                    }
+                    (_, true) => acc.clone(),
+                    (_, false) => {
+                        error!("Account with address `{}` not found.", from);
+                        Err(Error::AccountLoadError)?
+                    }
+                }
+            }
+            (Some(ref acc), _) if acc.address() == from => acc.clone(),
+            (Some(ref acc), _) => {
+                error!(
+                    "Unlocked account's public key ({}) didn't match from address ({})!",
+                    acc.public_key(),
+                    from
+                );
+                Err(Error::AccountLoadError)?
+            }
+            (None, SethTransaction::CreateExternalAccount(ref txnpb)) => {
+                if txnpb.to.is_empty() {
+                    Account::load_from_file(from, &None).map_err(|_| Error::AccountLoadError)?
+                } else {
+                    error!("Account with address `{}` not found.", from);
+                    Err(Error::AccountLoadError)?
+                }
+            }
+            (None, _) => {
                 error!("Account with address `{}` not found.", from);
-                Error::NoResource
-            })?;
+                Err(Error::AccountLoadError)?
+            }
+        }
+        .clone();
 
         let mut txn_header = TransactionHeader::new();
         txn_header.set_batcher_public_key(String::from(account.public_key()));
@@ -304,7 +394,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         let mut batch_header = BatchHeader::new();
         batch_header.set_signer_public_key(String::from(account.public_key()));
         batch_header.set_transaction_ids(protobuf::RepeatedField::from_vec(vec![
-            txn_signature.clone(),
+            txn_signature.clone()
         ]));
         let batch_header_bytes =
             protobuf::Message::write_to_bytes(&batch_header).map_err(|error| {
@@ -667,7 +757,8 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
+                    })
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -677,7 +768,8 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
+                    })
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 
@@ -687,7 +779,8 @@ impl<S: MessageSender> ValidatorClient<S> {
                 protobuf::parse_from_bytes(&block.header)
                     .map_err(|error| {
                         Error::ParseError(format!("Error parsing block_header: {:?}", error))
-                    }).map(|block_header: BlockHeader| block_header.state_root_hash)
+                    })
+                    .map(|block_header: BlockHeader| block_header.state_root_hash)
             })
     }
 

@@ -35,7 +35,8 @@ pub fn hex_str_to_bytes(s: &str) -> Option<Vec<u8>> {
         .chunks(2)
         .map(|chunk| {
             ((chunk[0].to_digit(16).unwrap() << 4) | (chunk[1].to_digit(16).unwrap())) as u8
-        }).collect();
+        })
+        .collect();
 
     Some(decoded)
 }
@@ -84,7 +85,8 @@ where
         .and_then(|v| {
             v.get(2..)
                 .ok_or_else(|| Error::invalid_params(String::from("Must have 0x")))
-        }).and_then(then)
+        })
+        .and_then(then)
 }
 
 pub fn u64_from_hex_value(value: &Value) -> Result<u64, Error> {

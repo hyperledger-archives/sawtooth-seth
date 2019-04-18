@@ -16,3 +16,62 @@
  */
 
 pub mod seth;
+
+use messages::seth::EvmPermissions;
+use std::fmt;
+use std::str::FromStr;
+
+impl FromStr for EvmPermissions {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut permissions = EvmPermissions::new();
+
+        for perm in s.split(',') {
+            let mut chars = perm.chars();
+            let modifier = chars
+                .next()
+                .ok_or_else(|| String::from("Found an empty string instead of a permission!"))?;
+            let name = chars.collect::<String>();
+
+            let perm_bit = match name.as_str() {
+                "all" => 1 | 2 | 4 | 8 | 16,
+                "root" => 1,
+                "send" => 2,
+                "call" => 4,
+                "contract" => 8,
+                "account" => 16,
+                _ => Err(format!("Unknown permission `{}`", name))?,
+            };
+
+            match modifier {
+                '+' => permissions.perms |= perm_bit,
+                '-' => permissions.perms &= !perm_bit,
+                _ => Err(format!("Bad modifier `{}`", modifier))?,
+            }
+        }
+
+        Ok(permissions)
+    }
+}
+
+impl fmt::Display for EvmPermissions {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let perms = [
+            ("root", 1),
+            ("send", 2),
+            ("call", 4),
+            ("contract", 8),
+            ("account", 16),
+        ];
+
+        let perms_str = perms
+            .iter()
+            .map(|(name, bit)| format!("{}{}", if self.perms & bit == 0 { "-" } else { "+" }, name))
+            .collect::<Vec<_>>()
+            .join(",");
+
+        fmt.write_str(&perms_str)?;
+        Ok(())
+    }
+}

@@ -18,9 +18,10 @@
 package handler
 
 import (
-	. "burrow/evm"
 	"encoding/hex"
 	"fmt"
+	"github.com/hyperledger/burrow/execution/errors"
+	"github.com/hyperledger/burrow/execution/exec"
 	"github.com/hyperledger/sawtooth-sdk-go/processor"
 )
 
@@ -34,23 +35,26 @@ func NewSawtoothEventFireable(context *processor.Context) *SawtoothEventFireable
 	}
 }
 
-func (evc *SawtoothEventFireable) FireEvent(eventID string, eventDataLog EventDataLog) error {
+func (evc *SawtoothEventFireable) Call(call *exec.CallEvent, exception *errors.Exception) {
+	// Not used
+}
+
+func (evc *SawtoothEventFireable) Log(log *exec.LogEvent) {
 	attributes := []processor.Attribute{
 		{
 			Key:   "address",
-			Value: hex.EncodeToString(eventDataLog.Address.Postfix(20)),
+			Value: hex.EncodeToString(log.Address.Bytes()),
 		},
 		{
 			Key:   "eventID",
-			Value: eventID,
+			Value: log.Address.String(),
 		},
 	}
-	for i, topic := range eventDataLog.Topics {
+	for i, topic := range log.Topics {
 		attributes = append(attributes, processor.Attribute{
 			Key:   fmt.Sprintf("topic%v", i+1),
 			Value: hex.EncodeToString(topic.Bytes()),
 		})
 	}
-	evc.context.AddEvent("seth_log_event", attributes, eventDataLog.Data)
-	return nil
+	evc.context.AddEvent("seth_log_event", attributes, log.Data)
 }

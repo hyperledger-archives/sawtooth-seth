@@ -25,6 +25,7 @@ use serde_json::Map;
 use std::str::FromStr;
 use transactions::TransactionKey;
 use transform;
+use transform::make_txn_obj_no_block;
 
 pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
@@ -49,7 +50,6 @@ where
 ///
 /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber
 /// Returns number as a hex string
-#[allow(needless_pass_by_value)]
 pub fn block_number<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -188,7 +188,6 @@ where
 }
 
 /// Returns information about a block as a `json_rpc::Value` object
-#[allow(needless_pass_by_value)]
 fn get_block_obj<T>(
     block_key: BlockKey,
     full: bool,
@@ -256,7 +255,7 @@ where
                         return Err(Error::internal_error());
                     }
                 };
-            transactions.push(transform::make_txn_obj_no_block(&txn))
+            transactions.push(make_txn_obj_no_block(&txn))
         } else {
             transactions.push(transform::hex_prefix(&txn_id));
         }
@@ -283,7 +282,6 @@ where
 }
 
 /// Returns the number of transactions for the given block as a hex string
-#[allow(needless_pass_by_value)]
 fn get_block_transaction_count<T>(
     block_key: BlockKey,
     client: ValidatorClient<T>,

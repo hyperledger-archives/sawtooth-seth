@@ -17,11 +17,13 @@
 package handler
 
 import (
-	evm "burrow/evm"
-	ptypes "burrow/permission/types"
 	. "common"
 	"encoding/hex"
 	"fmt"
+	"github.com/hyperledger/burrow/acm"
+	"github.com/hyperledger/burrow/crypto"
+	"github.com/hyperledger/burrow/execution/evm"
+	"github.com/hyperledger/burrow/permission"
 	"github.com/hyperledger/sawtooth-sdk-go/processor"
 	. "protobuf/seth_pb2"
 	"strings"
@@ -36,14 +38,14 @@ var TxnHandlers = map[SethTransaction_TransactionType]TransactionHandler{
 
 func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppState) HandlerResult {
 	txn := wrapper.GetCreateExternalAccount()
-	var newAcct *evm.Account
+	var newAcct *acm.MutableAccount
 
 	// Sender is creating a separate external account, this is only possible
 	// when gas is free and the sender has permission to create accounts
 	if txn.GetTo() != nil {
-
 		// The creating account must exist and have permission to create accounts
-		senderAcct := sapps.GetAccount(sender.ToWord256())
+		senderAcctRef, err := sapps.GetAccount(crypto.AddressFromWord256(sender.ToWord256()))
+		senderAcct := acm.AsMutableAccount(senderAcctRef)
 		if senderAcct == nil {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
@@ -52,7 +54,7 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 				)},
 			}
 		}
-		if !evm.HasPermission(sapps, senderAcct, ptypes.CreateAccount) {
+		if !evm.HasPermission(sapps, senderAcct, permission.CreateAccount) {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 					"Sender account does not have permission to create external accounts: %v",
@@ -61,11 +63,11 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 			}
 		}
 		// Check that the nonce in the transaction matches the nonce in state
-		if txn.GetNonce() != uint64(senderAcct.Nonce) {
+		if txn.GetNonce() != senderAcct.Sequence() {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 					"Nonces do not match: Transaction (%v), State (%v)",
-					txn.GetNonce(), senderAcct.Nonce,
+					txn.GetNonce(), senderAcct.Sequence,
 				)},
 			}
 		}
@@ -83,23 +85,31 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 		logger.Debugf("Creating new EOA on behalf of %v", newAcctAddr)
 
 		// The new account must not already exist
-		if sapps.GetAccount(newAcctAddr.ToWord256()) != nil {
+		existingAcct, err := sapps.GetAccount(crypto.AddressFromWord256(newAcctAddr.ToWord256()))
+		if existingAcct != nil {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 					"Account already exists at address %v", newAcctAddr,
 				)},
 			}
 		}
+		if err != nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Error while checking for account at address %v", newAcctAddr,
+				)},
+			}
+		}
 
 		// If no permissions were passed by the transaction, inherit them from
 		// sender. Otherwise, set them from transaction.
-		var newPerms ptypes.AccountPermissions
+		var newPerms permission.AccountPermissions
 		if txn.GetPermissions() == nil {
-			newPerms = senderAcct.Permissions
-			newPerms.Base.Set(ptypes.Root, false)
+			newPerms = senderAcct.Permissions()
+			newPerms.Base.Set(permission.Root, false)
 
 		} else {
-			if !evm.HasPermission(sapps, senderAcct, ptypes.Root) {
+			if !evm.HasPermission(sapps, senderAcct, permission.Root) {
 				return HandlerResult{
 					Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 						"Creating account does not have permission to set permissions: %v",
@@ -111,23 +121,43 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 		}
 
 		// Create new account
-		newAcct = &evm.Account{
-			Address:     newAcctAddr.ToWord256(),
-			Nonce:       1,
+		newAcct = acm.ConcreteAccount{
+			Address:     crypto.AddressFromWord256(newAcctAddr.ToWord256()),
+			Sequence:    1,
 			Permissions: newPerms,
-		}
-		senderAcct.Nonce += 1
+		}.MutableAccount()
+
+		senderAcct.IncSequence()
 
 		// Update accounts in state
-		sapps.UpdateAccount(senderAcct)
-		sapps.UpdateAccount(newAcct)
+		err = sapps.UpdateAccount(senderAcct)
+		if err != nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: err.Error()},
+			}
+		}
+		err = sapps.UpdateAccount(newAcct)
+		if err != nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: err.Error()},
+			}
+		}
 
 		// Sender is new and is creating this account for the first time
 	} else {
 		logger.Debugf("Creating new EOA at sender address: %v", sender)
 
 		// The new account must not already exist
-		if sapps.GetAccount(sender.ToWord256()) != nil {
+		senderAcctRef, err := sapps.GetAccount(crypto.AddressFromWord256(sender.ToWord256()))
+		senderAcct := acm.AsMutableAccount(senderAcctRef)
+		if err != nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Failed to get sender account: %s", err,
+				)},
+			}
+		}
+		if senderAcct != nil {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 					"Account already exists at address %v", sender,
@@ -136,18 +166,25 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 		}
 
 		// Check global permissions to decide if the account can be created
-		global := sapps.GetAccount(ptypes.GlobalPermissionsAddress256)
+		global, err := sapps.GetAccount(acm.GlobalPermissionsAddress)
+		if err != nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Failed to get global permissions address: %s", err,
+				)},
+			}
+		}
 
 		// If global permissions have not been set yet, everything is allowed and
 		// the account will have all permissions.
-		var newPerms ptypes.AccountPermissions
+		var newPerms permission.AccountPermissions
 		if global == nil {
 			logger.Warnf("Global Permissions not set, all actions allowed!")
-			newPerms.Base.Set(ptypes.AllPermFlags, true)
+			newPerms.Base.Set(permission.AllPermFlags, true)
 
 		} else {
 			// If global permissions have been set, check the setting.
-			if !evm.HasPermission(sapps, global, ptypes.CreateAccount) {
+			if !evm.HasPermission(sapps, global, permission.CreateAccount) {
 				return HandlerResult{
 					Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 						"New account creation is disabled, couldn't create account: %v",
@@ -157,17 +194,24 @@ func CreateExternalAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 			}
 
 			// New account inherits global permissions except for Root
-			newPerms = global.Permissions
-			newPerms.Base.Set(ptypes.Root, false)
+			newPerms = global.Permissions()
+			newPerms.Base.Set(permission.Root, false)
 		}
 
-		newAcct = &evm.Account{
-			Address:     sender.ToWord256(),
-			Nonce:       1,
+		newAcct = acm.ConcreteAccount{
+			Address:     crypto.AddressFromWord256(sender.ToWord256()),
+			Sequence:    1,
 			Permissions: newPerms,
-		}
+		}.MutableAccount()
 
-		sapps.UpdateAccount(newAcct)
+		err = sapps.UpdateAccount(newAcct)
+		if err != nil {
+			return HandlerResult{
+				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+					"Failed to update account: %s", err,
+				)},
+			}
+		}
 	}
 
 	return HandlerResult{
@@ -179,7 +223,15 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 	txn := wrapper.GetCreateContractAccount()
 
 	// The creating account must already exist
-	senderAcct := sapps.GetAccount(sender.ToWord256())
+	senderAcctRef, err := sapps.GetAccount(crypto.AddressFromWord256(sender.ToWord256()))
+	senderAcct := acm.AsMutableAccount(senderAcctRef)
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Couldn't get sender account: %s", err,
+			)},
+		}
+	}
 	if senderAcct == nil {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
@@ -190,7 +242,7 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 	}
 
 	// Verify this account has permission to create contract accounts
-	if !evm.HasPermission(sapps, senderAcct, ptypes.CreateContract) {
+	if !evm.HasPermission(sapps, senderAcct, permission.CreateContract) {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 				"Sender account does not have permission to create contracts: %v",
@@ -200,22 +252,22 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 	}
 
 	// Check that the nonce in the transaction matches the nonce in state
-	if txn.GetNonce() != uint64(senderAcct.Nonce) {
+	if txn.GetNonce() != senderAcct.Sequence() {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 				"Nonces do not match: Transaction (%v), State (%v)",
-				txn.GetNonce(), senderAcct.Nonce,
+				txn.GetNonce(), senderAcct.Sequence(),
 			)},
 		}
 	}
 
-	var newPerms ptypes.AccountPermissions
+	var newPerms permission.AccountPermissions
 	if txn.GetPermissions() == nil {
-		newPerms = senderAcct.Permissions
-		newPerms.Base.Set(ptypes.Root, false)
+		newPerms = senderAcct.Permissions()
+		newPerms.Base.Set(permission.Root, false)
 
 	} else {
-		if !evm.HasPermission(sapps, senderAcct, ptypes.Root) {
+		if !evm.HasPermission(sapps, senderAcct, permission.Root) {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 					"Creating account does not have permission to set permissions: %v",
@@ -228,29 +280,68 @@ func CreateContractAccount(wrapper *SethTransaction, sender *EvmAddr, sapps *Saw
 
 	// Create the new account
 	// NOTE: The senderAcct's nonce will be incremented
-	newAcct := sapps.CreateAccount(senderAcct)
+	newAcct := acm.AsMutableAccount(sapps.CreateAccount(senderAcct))
 
 	// Initialize the new account
 	out, gasUsed, err := callVm(sapps, newAcct, nil, txn.GetInit(), nil, txn.GetGasLimit())
 	if err != nil {
 		logger.Debug("VM Runtime Error: ", err.Error())
 		return HandlerResult{
-			From:        senderAcct.Address.Bytes(),
+			From:        senderAcct.Address().Bytes(),
 			GasUsed:     gasUsed,
 			ReturnValue: out,
 			Status:      0,
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error while calling VM: %v",
+				sender,
+			)},
 		}
 	}
-	newAcct.Nonce = 1
-	newAcct.Code = out
-	newAcct.Permissions = newPerms
+
+	newAcct.IncSequence()
+
+	err = newAcct.SetCode(out)
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error setting code for new account: %v",
+				sender,
+			)},
+		}
+	}
+
+	err = newAcct.SetPermissions(newPerms)
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error setting permissions for new account: %v",
+				sender,
+			)},
+		}
+	}
 
 	// Update accounts in state
-	sapps.UpdateAccount(senderAcct)
-	sapps.UpdateAccount(newAcct)
+	err = sapps.UpdateAccount(senderAcct)
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error Updating sender account: %v",
+				sender,
+			)},
+		}
+	}
+	err = sapps.UpdateAccount(newAcct)
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error updating new account: %v",
+				sender,
+			)},
+		}
+	}
 
 	return HandlerResult{
-		From:        senderAcct.Address.Bytes(),
+		From:        senderAcct.Address().Bytes(),
 		GasUsed:     gasUsed,
 		ReturnValue: out,
 		NewAccount:  newAcct,
@@ -262,7 +353,8 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	txn := wrapper.GetMessageCall()
 
 	// The sender account must already exist
-	senderAcct := sapps.GetAccount(sender.ToWord256())
+	senderAcctRef, err := sapps.GetAccount(crypto.AddressFromWord256(sender.ToWord256()))
+	senderAcct := acm.AsMutableAccount(senderAcctRef)
 	if senderAcct == nil {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
@@ -272,7 +364,7 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	}
 
 	// Verify this account has permission to make message calls
-	if !evm.HasPermission(sapps, senderAcct, ptypes.Call) {
+	if !evm.HasPermission(sapps, senderAcct, permission.Call) {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 				"Sender account does not have permission to make message calls: %v",
@@ -282,11 +374,11 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	}
 
 	// Check that the nonce in the transaction matches the nonce in state
-	if txn.GetNonce() != uint64(senderAcct.Nonce) {
+	if txn.GetNonce() != senderAcct.Sequence() {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 				"Nonces do not match: Transaction (%v), State (%v)",
-				txn.GetNonce(), senderAcct.Nonce,
+				txn.GetNonce(), senderAcct.Sequence(),
 			)},
 		}
 	}
@@ -300,7 +392,14 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 		}
 	}
 
-	receiverAcct := sapps.GetAccount(receiver.ToWord256())
+	receiverAcct, err := sapps.GetAccount(crypto.AddressFromWord256(receiver.ToWord256()))
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error while retrieving receiver account: %v", err,
+			)},
+		}
+	}
 
 	// Receiving account must exist to call it
 	if receiverAcct == nil {
@@ -312,13 +411,20 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	}
 
 	// Execute the contract
-	out, gasUsed, err := callVm(sapps, senderAcct, receiverAcct, receiverAcct.Code,
-		txn.GetData(), txn.GetGasLimit())
+	out, gasUsed, err := callVm(
+		sapps,
+		acm.AsMutableAccount(senderAcct),
+		acm.AsMutableAccount(receiverAcct),
+		receiverAcct.Code().Bytes(),
+		txn.GetData(),
+		txn.GetGasLimit(),
+	)
+
 	if err != nil {
 		logger.Debug("VM Runtime Error: ", err.Error())
 		return HandlerResult{
-			From:        senderAcct.Address.Bytes(),
-			To:          receiverAcct.Address.Bytes(),
+			From:        senderAcct.Address().Bytes(),
+			To:          receiverAcct.Address().Bytes(),
 			ReturnValue: out,
 			GasUsed:     gasUsed,
 			Status:      1,
@@ -327,14 +433,14 @@ func MessageCall(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAppSt
 	logger.Debug("Gas Used: ", gasUsed)
 	logger.Debug("EVM Output: ", strings.ToLower(hex.EncodeToString(out)))
 
-	senderAcct.Nonce += 1
+	senderAcct.IncSequence()
 
 	sapps.UpdateAccount(senderAcct)
 	sapps.UpdateAccount(receiverAcct)
 
 	return HandlerResult{
-		From:        senderAcct.Address.Bytes(),
-		To:          receiverAcct.Address.Bytes(),
+		From:        senderAcct.Address().Bytes(),
+		To:          receiverAcct.Address().Bytes(),
 		ReturnValue: out,
 		GasUsed:     gasUsed,
 		Status:      1,
@@ -354,7 +460,8 @@ func SetPermissions(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAp
 	newPerms := toVmPermissions(txn.GetPermissions())
 
 	// Get the account that is trying to update permissions
-	senderAcct := sapps.GetAccount(sender.ToWord256())
+	senderAcctRef, err := sapps.GetAccount(crypto.AddressFromWord256(sender.ToWord256()))
+	senderAcct := acm.AsMutableAccount(senderAcctRef)
 	if senderAcct == nil {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
@@ -364,7 +471,7 @@ func SetPermissions(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAp
 	}
 
 	// Verify this account has permission to update permissions
-	if !evm.HasPermission(sapps, senderAcct, ptypes.Root) {
+	if !evm.HasPermission(sapps, senderAcct, permission.Root) {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 				"Sender account does not have permission to change permissions: %v",
@@ -374,11 +481,11 @@ func SetPermissions(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAp
 	}
 
 	// Check that the nonce in the transaction matches the nonce in state
-	if txn.GetNonce() != uint64(senderAcct.Nonce) {
+	if txn.GetNonce() != senderAcct.Sequence() {
 		return HandlerResult{
 			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
 				"Nonces do not match: Transaction (%v), State (%v)",
-				txn.GetNonce(), senderAcct.Nonce,
+				txn.GetNonce(), senderAcct.Sequence(),
 			)},
 		}
 	}
@@ -398,14 +505,22 @@ func SetPermissions(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAp
 		newPerms.Base.Perms, newPerms.Base.SetBit,
 	)
 
-	receiverWord256 := receiver.ToWord256()
-	receiverAcct := sapps.GetAccount(receiverWord256)
+	receiverWord256 := crypto.AddressFromWord256(receiver.ToWord256())
+	receiverAcctRef, err := sapps.GetAccount(receiverWord256)
+	if err != nil {
+		return HandlerResult{
+			Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
+				"Error while retrieving receiver account: %v", err,
+			)},
+		}
+	}
+	receiverAcct := acm.AsMutableAccount(receiverAcctRef)
 	if receiverAcct == nil {
-		if receiverWord256 == ptypes.GlobalPermissionsAddress256 {
-			receiverAcct = &evm.Account{
-				Address: receiverWord256,
-				Nonce:   1,
-			}
+		if receiverWord256 == acm.GlobalPermissionsAddress {
+			receiverAcct = acm.ConcreteAccount{
+				Address:  receiverWord256,
+				Sequence: 1,
+			}.MutableAccount()
 		} else {
 			return HandlerResult{
 				Error: &processor.InvalidTransactionError{Msg: fmt.Sprintf(
@@ -417,8 +532,8 @@ func SetPermissions(wrapper *SethTransaction, sender *EvmAddr, sapps *SawtoothAp
 	}
 
 	// Update accounts
-	senderAcct.Nonce += 1
-	receiverAcct.Permissions = newPerms
+	senderAcct.IncSequence()
+	receiverAcct.SetPermissions(newPerms)
 
 	sapps.UpdateAccount(senderAcct)
 	sapps.UpdateAccount(receiverAcct)

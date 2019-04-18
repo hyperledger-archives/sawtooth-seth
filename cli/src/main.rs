@@ -35,7 +35,6 @@ extern crate dirs;
 extern crate failure;
 extern crate jsonrpc_core;
 extern crate reqwest;
-extern crate sawtooth_sdk;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -104,7 +103,8 @@ fn run() -> Result<(), Error> {
             cli::event::get_cli(),
             cli::permissions::get_cli(),
             cli::receipt::get_cli(),
-        ]).get_matches();
+        ])
+        .get_matches();
 
     match matches.subcommand() {
         ("account", Some(am)) => cli::account::parse_cli(am.subcommand())?,

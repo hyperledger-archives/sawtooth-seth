@@ -15,7 +15,7 @@
  * ------------------------------------------------------------------------------
  */
 
-use rpassword;
+use dirs::home_dir;
 use sawtooth_sdk::signing::secp256k1::Secp256k1PrivateKey;
 use sawtooth_sdk::signing::Error as SigningError;
 use sawtooth_sdk::signing::{create_context, PrivateKey};
@@ -28,7 +28,7 @@ use std::path::PathBuf;
 use tiny_keccak;
 use transform;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Account {
     alias: String,
     private_key: String,
@@ -40,6 +40,7 @@ pub struct Account {
 pub enum Error {
     IoError(IoError),
     ParseError(String),
+    DirNotFound,
     AliasNotFound,
     SigningError,
 }
@@ -49,7 +50,8 @@ impl StdError for Error {
         match *self {
             Error::IoError(ref ie) => ie.description(),
             Error::ParseError(ref msg) => msg,
-            Error::AliasNotFound => "Alias not found in data directory",
+            Error::DirNotFound => "Couldn't find key directory",
+            Error::AliasNotFound => "Alias not found in key directory",
             Error::SigningError => "Signing failed",
         }
     }
@@ -64,6 +66,7 @@ impl Display for Error {
         match *self {
             Error::IoError(ref ie) => ie.fmt(f),
             Error::ParseError(ref msg) => write!(f, "ParseError: {}", msg),
+            Error::DirNotFound => write!(f, "DirNotFound"),
             Error::AliasNotFound => write!(f, "AliasNotFound"),
             Error::SigningError => write!(f, "SigningError"),
         }
@@ -80,41 +83,48 @@ impl From<SigningError> for Error {
     fn from(e: SigningError) -> Self {
         match e {
             SigningError::ParseError(msg) => Error::ParseError(msg),
-            _ => Error::ParseError(String::from("Loading wif returned a non-parse error")),
+            _ => Error::ParseError(String::from("Loading pem returned a non-parse error")),
         }
     }
 }
 
-fn get_key_dir() -> PathBuf {
-    [&env!("HOME"), ".sawtooth", "keys"].iter().collect()
+pub fn get_key_dir() -> Option<PathBuf> {
+    let home = home_dir()?;
+
+    Some([home.to_str()?, ".sawtooth", "keys"].iter().collect())
 }
 
 impl Account {
-    pub fn load_from_alias(alias: &str) -> Result<Account, Error> {
-        let mut key_dir = get_key_dir();
-        key_dir.push(alias);
-        let pem = key_dir.with_extension("pem");
+    pub fn load_from_file(key_name: &str, password: &Option<String>) -> Result<Account, Error> {
+        let mut key_path = get_key_dir().ok_or(Error::DirNotFound)?;
+        key_path.push(key_name);
+        let pem = key_path.with_extension("pem");
 
-        let key = {
-            if pem.as_path().is_file() {
-                let key = Self::read_file(&pem)?;
-                if key.contains("ENCRYPTED") {
-                    let prompt = format!("Enter Password to unlock {}:", alias);
-                    let pass = rpassword::prompt_password_stdout(&prompt).unwrap();
-                    Secp256k1PrivateKey::from_pem_with_password(&key.trim(), &pass)
-                } else {
-                    Secp256k1PrivateKey::from_pem(&key.trim())
-                }
-            } else {
-                return Err(Error::AliasNotFound);
+        if pem.as_path().is_file() {
+            Self::load_from_str(&Self::read_file(&pem)?, password)
+        } else {
+            Err(Error::AliasNotFound)?
+        }
+    }
+
+    pub fn load_from_str(key: &str, password: &Option<String>) -> Result<Account, Error> {
+        let key = match (key.contains("ENCRYPTED"), password) {
+            (true, Some(pw)) => Secp256k1PrivateKey::from_pem_with_password(&key.trim(), &pw),
+            (true, None) => Err(Error::ParseError(
+                "A password is required for encrypted keys!".into(),
+            ))?,
+            (false, Some(_)) => {
+                warn!("Account::load_from_str got password for non-encrypted private key.");
+                Secp256k1PrivateKey::from_pem(&key.trim())
             }
+            (false, None) => Secp256k1PrivateKey::from_pem(&key.trim()),
         }?;
 
         let algorithm = create_context("secp256k1").unwrap();
         let pub_key = algorithm.get_public_key(&key)?;
 
         Ok(Account {
-            alias: String::from(alias),
+            alias: pub_key.as_hex(),
             private_key: key.as_hex(),
             public_key: pub_key.as_hex(),
             address: public_key_to_address(pub_key.as_slice()),
@@ -147,6 +157,12 @@ impl Account {
 
     pub fn public_key(&self) -> &str {
         &self.public_key
+    }
+}
+
+impl PartialEq for Account {
+    fn eq(&self, other: &Account) -> bool {
+        self.private_key == other.private_key
     }
 }
 

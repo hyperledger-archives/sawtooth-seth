@@ -37,10 +37,9 @@ fn main() {
             .map(|a| a.as_ref())
             .collect::<Vec<&str>>(),
         includes: &["src", "../protos"],
-        customize: Customize {
-            ..Default::default()
-        },
-    }).expect("unable to run protoc");
+        customize: Customize::default(),
+    })
+    .expect("unable to run protoc");
 }
 
 fn glob_simple(pattern: &str) -> Vec<String> {
@@ -52,5 +51,6 @@ fn glob_simple(pattern: &str) -> Vec<String> {
                 .to_str()
                 .expect("utf-8")
                 .to_owned()
-        }).collect()
+        })
+        .collect()
 }

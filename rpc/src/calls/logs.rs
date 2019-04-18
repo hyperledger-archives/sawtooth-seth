@@ -15,23 +15,20 @@
  * ------------------------------------------------------------------------------
  */
 
-use std::collections::HashMap;
-
-use jsonrpc_core::{Error, Params, Value};
-use protobuf;
-use serde_json::Map;
-
 use client::{BlockKey, Error as ClientError, ValidatorClient};
-use requests::RequestHandler;
-use transform;
-
-use sawtooth_sdk::messaging::stream::MessageSender;
-
 use error;
 use filters::*;
+use jsonrpc_core::{Error, ErrorCode, Params, Value};
+use protobuf;
+use requests::RequestHandler;
 use sawtooth_sdk::messages::block::{Block, BlockHeader};
 use sawtooth_sdk::messages::transaction::TransactionHeader;
+use sawtooth_sdk::messaging::stream::MessageSender;
+use serde_json::Map;
+use std::collections::HashMap;
 use transactions::SethLog;
+use transform;
+use transform::make_log_obj;
 
 pub fn get_method_list<T>() -> Vec<(String, RequestHandler<T>)>
 where
@@ -51,7 +48,6 @@ where
     ]
 }
 
-#[allow(needless_pass_by_value)]
 pub fn new_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -74,7 +70,6 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn new_block_filter<T>(_params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -88,7 +83,6 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn new_pending_transaction_filter<T>(
     _params: Params,
     client: ValidatorClient<T>,
@@ -107,7 +101,6 @@ where
     Ok(transform::hex_prefix(&filter_id_to_hex(filter_id)))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn uninstall_filter<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -115,7 +108,9 @@ where
     info!("eth_uninstallFilter");
     let filter_id = params
         .parse()
-        .and_then(|(v,): (Value,)| transform::string_from_hex_value(&v))
+        .and_then(|(v,): (Value,)| {
+            transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
+        })
         .and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
@@ -125,15 +120,17 @@ where
     ))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_filter_changes<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
 {
     info!("eth_getFilterChanges");
+
     let filter_id = params
         .parse()
-        .and_then(|(v,): (Value,)| transform::string_from_hex_value(&v))
+        .and_then(|(v,): (Value,)| {
+            transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
+        })
         .and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
@@ -171,9 +168,11 @@ where
                             } else {
                                 false
                             }
-                        }).map(|txn| transform::hex_prefix(&txn.header_signature))
+                        })
+                        .map(|txn| transform::hex_prefix(&txn.header_signature))
                 })
-            }).collect(),
+            })
+            .collect(),
         Filter::Log(log_filter) => {
             let mut all_logs = Vec::new();
             for &(_, ref block) in &blocks {
@@ -193,7 +192,6 @@ where
     Ok(Value::Array(response))
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_filter_logs<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -201,7 +199,9 @@ where
     info!("eth_getFilterLogs");
     let filter_id = params
         .parse()
-        .and_then(|(v,): (Value,)| transform::string_from_hex_value(&v))
+        .and_then(|(v,): (Value,)| {
+            transform::string_from_hex_value(&v).map_err(|_| Error::new(ErrorCode::ParseError))
+        })
         .and_then(|s| {
             filter_id_from_hex(&s).map_err(|error| Error::invalid_params(format!("{}", error)))
         })?;
@@ -221,7 +221,6 @@ where
     }
 }
 
-#[allow(needless_pass_by_value)]
 pub fn get_logs<T>(params: Params, client: ValidatorClient<T>) -> Result<Value, Error>
 where
     T: MessageSender,
@@ -334,7 +333,8 @@ where
                 .filter(|log: &SethLog| log_filter.contains(&log, None))
                 .collect();
             (txn_id, logs)
-        }).filter(|&(_, ref logs)| !logs.is_empty())
+        })
+        .filter(|&(_, ref logs)| !logs.is_empty())
         .collect();
     warn!("Filtered Logs: {:?}", logs);
 
@@ -360,7 +360,7 @@ where
                 Error::internal_error()
             })?;
         for log in &logs {
-            let log_obj = transform::make_log_obj(log, &txn_id, index as u64, block_id, block_num);
+            let log_obj = make_log_obj(log, &txn_id, index as u64, block_id, block_num);
             log_objects.push(log_obj);
         }
     }

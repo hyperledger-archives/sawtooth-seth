@@ -16,7 +16,7 @@
  */
 
 use client::Error;
-use jsonrpc_core::{Error as RpcError, Value};
+use jsonrpc_core::{Error as RpcError, ErrorCode, Value};
 use serde_json::Map;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -41,12 +41,16 @@ impl TopicFilter {
             Value::Array(ref array) => {
                 let blobs = array
                     .iter()
-                    .map(transform::string_from_hex_value)
+                    .map(|b| {
+                        transform::string_from_hex_value(b)
+                            .map_err(|_| RpcError::new(ErrorCode::ParseError))
+                    })
                     .collect::<Result<Vec<String>, RpcError>>()?;
                 Ok(TopicFilter::OneOf(blobs))
             }
             Value::String(_) => {
-                let blob = transform::string_from_hex_value(value)?;
+                let blob = transform::string_from_hex_value(value)
+                    .map_err(|_| RpcError::new(ErrorCode::ParseError))?;
                 Ok(TopicFilter::Exactly(blob))
             }
             Value::Null => Ok(TopicFilter::All),
@@ -79,14 +83,16 @@ impl LogFilter {
     pub fn from_map(filter: &Map<String, Value>) -> Result<Self, RpcError> {
         let from_block = match filter.get("fromBlock") {
             Some(s) => {
-                let s = transform::u64_from_hex_value(s)?;
+                let s = transform::u64_from_hex_value(s)
+                    .map_err(|_| RpcError::new(ErrorCode::ParseError))?;
                 Ok(Some(s))
             }
             None => Ok(None),
         }?;
         let to_block = match filter.get("toBlock") {
             Some(s) => {
-                let s = transform::u64_from_hex_value(s)?;
+                let s = transform::u64_from_hex_value(s)
+                    .map_err(|_| RpcError::new(ErrorCode::ParseError))?;
                 Ok(Some(s))
             }
             None => Ok(None),
@@ -96,21 +102,27 @@ impl LogFilter {
         let addresses = match filter.get("address") {
             Some(&Value::Array(ref multiple)) => multiple
                 .iter()
-                .map(|addr_val| transform::string_from_hex_value(addr_val))
+                .map(|addr_val| {
+                    transform::string_from_hex_value(addr_val)
+                        .map_err(|_| RpcError::new(ErrorCode::ParseError))
+                })
                 .collect::<Result<Vec<String>, RpcError>>()?,
             Some(value) => {
-                let address = transform::string_from_hex_value(value)?;
+                let address = transform::string_from_hex_value(value)
+                    .map_err(|_| RpcError::new(ErrorCode::ParseError))?;
                 vec![address]
             }
             None => vec![],
         };
 
-        let topics = transform::get_array_from_map(&filter, "topics").and_then(|topics| {
-            topics
-                .iter()
-                .map(|t| TopicFilter::from_value(t))
-                .collect::<Result<Vec<TopicFilter>, RpcError>>()
-        })?;
+        let topics = transform::get_array_from_map(&filter, "topics")
+            .map_err(|_| RpcError::new(ErrorCode::ParseError))
+            .and_then(|topics| {
+                topics
+                    .iter()
+                    .map(|t| TopicFilter::from_value(t))
+                    .collect::<Result<Vec<TopicFilter>, RpcError>>()
+            })?;
 
         Ok(LogFilter {
             from_block,
@@ -256,7 +268,8 @@ mod tests {
             TopicFilter::from_value(&Value::Array(vec![
                 Value::String(String::from("0x123")),
                 Value::String(String::from("0x456")),
-            ])).unwrap()
+            ]))
+            .unwrap()
         );
     }
 }
