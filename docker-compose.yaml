@@ -52,6 +52,7 @@ services:
     container_name: seth-cli-go
     volumes:
       - ./contracts:/project/sawtooth-seth/contracts
+      - sawtooth:/root/.sawtooth
     depends_on:
       - rest-api
     working_dir: /project/sawtooth-seth
