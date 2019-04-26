@@ -45,7 +45,7 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19
     dvipng \
     gcc \
     git \
-    golang-1.10-go \
+    golang-1.11-go \
     libssl-dev \
     libzmq3-dev \
     make \
@@ -67,7 +67,7 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19
 
 RUN pip3 install sphinx==1.5.6 sphinx_rtd_theme
 
-ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.10/bin
+ENV PATH=$PATH:/go/bin:/project/sawtooth-seth/bin:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/common/bin:/project/sawtooth-seth/processor/bin:/project/sawtooth-seth/rpc/bin:/protoc3/bin:/root/.cargo/bin:/usr/lib/go-1.11/bin
 ENV GOPATH=/go:/project/sawtooth-seth/common:/project/sawtooth-seth/burrow:/project/sawtooth-seth/cli-go:/project/sawtooth-seth/processor
 
 RUN go get -u \
