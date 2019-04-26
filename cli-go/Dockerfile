@@ -19,7 +19,7 @@ RUN apt-get update \
  && apt-get install gnupg -y
 
 ENV GOPATH=/project/sawtooth-seth/cli-go
-ENV PATH=$PATH:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.10/bin
+ENV PATH=$PATH:/project/sawtooth-seth/cli-go/bin:/project/sawtooth-seth/bin:/usr/lib/go-1.11/bin
 
 RUN \
  if [ ! -z $HTTP_PROXY ] && [ -z $http_proxy ]; then \
@@ -39,7 +39,7 @@ RUN (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 44FC67F19
  && apt-get install -y -q \
     curl \
     git \
-    golang-1.10-go \
+    golang-1.11-go \
     libssl-dev \
     libzmq3-dev \
     openssl \
