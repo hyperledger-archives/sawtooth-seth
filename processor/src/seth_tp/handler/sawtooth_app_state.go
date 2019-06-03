@@ -150,7 +150,6 @@ func (s *SawtoothAppState) GetStorage(address crypto.Address, key binary.Word256
 	if err != nil {
 		return binary.Zero256, err
 	}
-	logger.Debugf("GetStorage(%v, %v)", vmAddress, key.Bytes())
 
 	// Load the entry from global state
 	entry := s.mgr.MustGetEntry(vmAddress)
@@ -164,7 +163,6 @@ func (s *SawtoothAppState) GetStorage(address crypto.Address, key binary.Word256
 		}
 	}
 
-	logger.Debugf("Key %v not set for account %v", key.Bytes(), vmAddress)
 	return binary.Zero256, nil
 }
 
@@ -174,19 +172,13 @@ func (s *SawtoothAppState) SetStorage(address crypto.Address, key, value binary.
 	if err != nil {
 		return err
 	}
-	logger.Debugf("SetStorage(%v, %v, %v)", vmAddress, key.Bytes(), value.Bytes())
 
 	entry := s.mgr.MustGetEntry(vmAddress)
 
-	storage := entry.GetStorage()
+	storage := &(entry.Storage)
 
 	// Make sure we update the entry after changing it
 	defer func() {
-		entry.Storage = storage
-		logger.Debugf("Storage")
-		for _, pair := range entry.GetStorage() {
-			logger.Debugf("%v -> %v", pair.GetKey(), pair.GetValue())
-		}
 		s.mgr.MustSetEntry(vmAddress, entry)
 	}()
 
@@ -201,7 +193,7 @@ func (s *SawtoothAppState) SetStorage(address crypto.Address, key, value binary.
 	}
 
 	// If the key is new, append it
-	storage = append(storage, &EvmStorage{
+	*storage = append(*storage, &EvmStorage{
 		Key:   key.Bytes(),
 		Value: value.Bytes(),
 	})
