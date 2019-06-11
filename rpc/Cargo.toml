@@ -29,9 +29,9 @@ protobuf = "2.0"
 rust-crypto = "0.2"
 sawtooth-sdk = "0.3"
 serde_json = "1.0"
-uuid = { version = "0.5", features = ["v4"] }
 simple-logging = "2.0"
 tiny-keccak = "1.4"
+uuid = { version = "0.7", features = ["v4"] }
 
 [build-dependencies]
 cc = "1.0"
