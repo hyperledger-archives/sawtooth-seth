@@ -248,12 +248,7 @@ impl<S: MessageSender> ValidatorClient<S> {
             }
         };
 
-        let correlation_id = match uuid::Uuid::new(uuid::UuidVersion::Random) {
-            Some(cid) => cid.to_string(),
-            None => {
-                return Err(String::from("Error generating UUID"));
-            }
-        };
+        let correlation_id = uuid::Uuid::new_v4().to_string();
 
         let sender = self.sender.write().unwrap();
 

@@ -63,7 +63,6 @@ use calls::*;
 use client::ValidatorClient;
 use jsonrpc_core::{IoHandler, Params};
 use jsonrpc_http_server::ServerBuilder;
-use log::LogLevelFilter;
 use requests::{RequestExecutor, RequestHandler};
 use sawtooth_sdk::messaging::stream::*;
 use sawtooth_sdk::messaging::zmq_stream::*;
@@ -102,12 +101,12 @@ fn main() {
 
     let vs = arg_matches.occurrences_of("verbose");
     let log_level = match vs {
-        0 => LogLevelFilter::Warn,
-        1 => LogLevelFilter::Info,
-        2 => LogLevelFilter::Debug,
-        _ => LogLevelFilter::Trace,
+        0 => log::LevelFilter::Warn,
+        1 => log::LevelFilter::Info,
+        2 => log::LevelFilter::Debug,
+        _ => log::LevelFilter::Trace,
     };
-    simple_logging::log_to_stderr(log_level).expect("Failed to initialize logger");
+    simple_logging::log_to_stderr(log_level);
 
     info!("Trying to connect to validator at {}", connect);
 
