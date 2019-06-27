@@ -2,8 +2,6 @@
 /.idea/
 *.sublime*
 
-/.git/
-
 
 # Everything else
 /build/
