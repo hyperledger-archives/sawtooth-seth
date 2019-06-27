@@ -14,7 +14,7 @@
 # ------------------------------------------------------------------------------
 
 [package]
-name = "seth-cli"
+name = "sawtooth-seth-cli"
 version = "0.2.3"
 authors = ["sawtooth"]
 

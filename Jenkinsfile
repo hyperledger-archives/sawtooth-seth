@@ -112,7 +112,7 @@ pipeline {
         stage('Build Archive Artifacts') {
 			steps {
 				sh 'docker-compose -f docker-compose-installed.yaml build'
-				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli:$ISOLATION_ID cp /debs/sawtooth-seth-cli_0.2.0_amd64.deb /build'
+				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-cli:$ISOLATION_ID cp /debs/sawtooth-seth-cli_*.deb /build'
 				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-tp:$ISOLATION_ID cp /debs/sawtooth-seth-tp_0.2.0_amd64.deb /build'
 				sh 'docker run -v $(pwd)/build/debs:/build sawtooth-seth-rpc:$ISOLATION_ID cp /debs/sawtooth-seth-rpc_0.2.0_amd64.deb /build'
 			}
