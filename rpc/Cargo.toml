@@ -14,9 +14,13 @@
 # ------------------------------------------------------------------------------
 
 [package]
-name = "rpc"
+name = "sawtooth-seth-rpc"
 version = "0.2.3"
 authors = ["sawtooth"]
+
+[[bin]]
+name = "seth-rpc"
+path = "src/main.rs"
 
 [dependencies]
 clap = "2"

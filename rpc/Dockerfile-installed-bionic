@@ -1,4 +1,5 @@
 # Copyright 2018 Intel Corporation
+# Copyright 2019 Cargill Incorporated
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +17,8 @@
 # -------------=== seth rpc build ===-------------
 
 FROM ubuntu:bionic
+
+ENV VERSION=AUTO_STRICT
 
 RUN apt-get update \
  && apt-get install gnupg -y
@@ -54,38 +57,14 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
 ENV PATH=$PATH:/project/sawtooth-seth/bin:/root/.cargo/bin:/protoc3/bin:/project/sawtooth-seth/rpc/bin \
     CARGO_INCREMENTAL=0
 
-WORKDIR /project/sawtooth-seth/rpc
+RUN /root/.cargo/bin/cargo install cargo-deb
 
-COPY bin/ /project/sawtooth-seth/bin
-COPY protos/ /project/sawtooth-seth/protos
-COPY rpc/ /project/sawtooth-seth/rpc
-COPY tests/ /project/sawtooth-seth/tests
+COPY . /project
 
-RUN mkdir /project/sawtooth-seth/rpc/bin \
- && cargo build \
- && cp ./target/debug/rpc /project/sawtooth-seth/rpc/bin/seth-rpc
+WORKDIR /project/rpc
 
-RUN pkg_dir=/project/build/debs/ \
- && CHANGELOG_DIR="debian/usr/share/doc/sawtooth-seth" \
- && if [ -d "debian" ]; then rm -rf debian; fi \
- && mkdir -p $pkg_dir \
- && mkdir -p debian/DEBIAN \
- && mkdir -p $CHANGELOG_DIR \
- && cp packaging/ubuntu/* debian \
- && cp debian/changelog $CHANGELOG_DIR \
- && mv debian/changelog $CHANGELOG_DIR/changelog.Debian \
- && gzip --best $CHANGELOG_DIR/changelog \
- && gzip --best $CHANGELOG_DIR/changelog.Debian \
- && mv debian/control debian/DEBIAN \
-# && mv debian/postinst debian/DEBIAN \
- && PACKAGENAME=$(awk '/^Package:/ { print $2 }' debian/DEBIAN/control) \
- && PACKAGEVERSION=$(dpkg-parsechangelog -S version -l $CHANGELOG_DIR/changelog.gz) \
- && PACKAGEARCH=$(dpkg-architecture -qDEB_BUILD_ARCH) \
- && mkdir debian/usr/bin \
- && cp -R bin/seth-rpc debian/usr/bin \
-# && cp -R packaging/systemd/* debian/ \
- && fakeroot dpkg-deb --build debian \
- && mv debian.deb $pkg_dir/"${PACKAGENAME}_${PACKAGEVERSION}_${PACKAGEARCH}.deb"
+RUN sed -i -e "0,/version.*$/ s/version.*$/version\ =\ \"$(../bin/get_version)\"/" Cargo.toml
+RUN /root/.cargo/bin/cargo deb
 
 # -------------=== seth rpc docker build ===-------------
 
@@ -93,7 +72,7 @@ FROM ubuntu:bionic
 
 RUN mkdir /debs
 
-COPY --from=0 /project/build/debs/sawtooth-seth-rpc_*amd64.deb /debs
+COPY --from=0 /project/target/debian/sawtooth-seth-rpc_*amd64.deb /debs
 
 RUN apt-get update \
  && dpkg -i /debs/sawtooth-seth-rpc_*amd64.deb || true \
