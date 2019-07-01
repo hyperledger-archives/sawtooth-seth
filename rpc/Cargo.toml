@@ -15,7 +15,7 @@
 
 [package]
 name = "sawtooth-seth-rpc"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["sawtooth"]
 
 [[bin]]
