@@ -111,7 +111,7 @@ WORKDIR /project/sawtooth-seth/processor/src/seth_tp
 RUN go build -o /project/sawtooth-seth/processor/bin/seth-tp
 
 WORKDIR /project/sawtooth-seth
-RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/bin/seth-rpc && cargo doc --no-deps
+RUN cargo build && cp ./target/debug/seth-rpc /project/sawtooth-seth/bin/seth-rpc && cargo doc --no-deps
 
 WORKDIR /project/sawtooth-seth/docs
 CMD make html latexpdf

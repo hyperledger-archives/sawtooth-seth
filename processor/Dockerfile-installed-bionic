@@ -17,6 +17,8 @@
 
 FROM ubuntu:bionic
 
+ENV VERSION=AUTO_STRICT
+
 RUN apt-get update \
  && apt-get install gnupg -y
 
@@ -71,11 +73,14 @@ WORKDIR /project/sawtooth-seth/processor
 
 RUN pkg_dir=/project/build/debs/ \
  && CHANGELOG_DIR="debian/usr/share/doc/sawtooth-seth" \
+ && export ST_VERSION=$(../bin/get_version) \
  && if [ -d "debian" ]; then rm -rf debian; fi \
  && mkdir -p $pkg_dir \
  && mkdir -p debian/DEBIAN \
  && mkdir -p $CHANGELOG_DIR \
  && cp packaging/ubuntu/* debian \
+ && sed -i -e s/^Version.*$/Version:\ $ST_VERSION/ debian/control \
+ && sed -i -e s/\(.*\)/\($ST_VERSION\)/ debian/changelog \
  && cp debian/changelog $CHANGELOG_DIR \
  && mv debian/changelog $CHANGELOG_DIR/changelog.Debian \
  && gzip --best $CHANGELOG_DIR/changelog \

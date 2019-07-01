@@ -59,4 +59,4 @@ COPY protos/ /project/sawtooth-seth/protos
 COPY rpc/ /project/sawtooth-seth/rpc
 COPY tests/ /project/sawtooth-seth/tests
 
-RUN cargo build && cp ./target/debug/rpc /project/sawtooth-seth/bin/seth-rpc
+RUN cargo build && cp ./target/debug/seth-rpc /project/sawtooth-seth/bin/seth-rpc
