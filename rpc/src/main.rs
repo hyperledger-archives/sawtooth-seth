@@ -72,7 +72,7 @@ const SERVER_THREADS: usize = 3;
 
 fn main() {
     let arg_matches = clap_app!(("seth-rpc") =>
-        (version: "1.0")
+        (version: crate_version!())
         (about: "Seth RPC Server")
         (@arg connect: --connect +takes_value
          "Component endpoint of the validator to communicate with.")
