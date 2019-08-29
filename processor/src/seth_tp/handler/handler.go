@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/burrow/acm"
 	"github.com/hyperledger/burrow/acm/state"
 	"github.com/hyperledger/burrow/binary"
-	"github.com/hyperledger/burrow/crypto"
 	"github.com/hyperledger/burrow/execution/evm"
 	"github.com/hyperledger/burrow/logging"
 	slogging "github.com/hyperledger/sawtooth-sdk-go/logging"
@@ -148,7 +147,7 @@ func callVm(sas *SawtoothAppState, sender, receiver *acm.MutableAccount,
 	if err != nil {
 		return nil, 0, fmt.Errorf("Block Info Error: %v", err)
 	}
-	vm := evm.NewVM(*params, crypto.ZeroAddress, nil, vm_logger)
+	vm := evm.NewVM(*params, sender.Address(), nil, vm_logger)
 	evc := NewSawtoothEventFireable(sas.mgr.state)
 	vm.SetEventSink(evc)
 
