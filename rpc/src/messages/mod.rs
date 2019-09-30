@@ -41,13 +41,13 @@ impl FromStr for EvmPermissions {
                 "call" => 4,
                 "contract" => 8,
                 "account" => 16,
-                _ => Err(format!("Unknown permission `{}`", name))?,
+                _ => return Err(format!("Unknown permission `{}`", name)),
             };
 
             match modifier {
                 '+' => permissions.perms |= perm_bit,
                 '-' => permissions.perms &= !perm_bit,
-                _ => Err(format!("Bad modifier `{}`", modifier))?,
+                _ => return Err(format!("Bad modifier `{}`", modifier)),
             }
         }
 

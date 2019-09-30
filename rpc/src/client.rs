@@ -328,7 +328,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                     (_, true) => acc.clone(),
                     (_, false) => {
                         error!("Account with address `{}` not found.", from);
-                        Err(Error::AccountLoadError)?
+                        return Err(Error::AccountLoadError);
                     }
                 }
             }
@@ -339,19 +339,19 @@ impl<S: MessageSender> ValidatorClient<S> {
                     acc.public_key(),
                     from
                 );
-                Err(Error::AccountLoadError)?
+                return Err(Error::AccountLoadError);
             }
             (None, SethTransaction::CreateExternalAccount(ref txnpb)) => {
                 if txnpb.to.is_empty() {
                     Account::load_from_file(from, &None).map_err(|_| Error::AccountLoadError)?
                 } else {
                     error!("Account with address `{}` not found.", from);
-                    Err(Error::AccountLoadError)?
+                    return Err(Error::AccountLoadError);
                 }
             }
             (None, _) => {
                 error!("Account with address `{}` not found.", from);
-                Err(Error::AccountLoadError)?
+                return Err(Error::AccountLoadError);
             }
         }
         .clone();

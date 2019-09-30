@@ -128,10 +128,10 @@ impl Client {
         let body: JsonRpcResponse<D> = response.json()?;
 
         match (body.result, body.error) {
-            (Some(_), Some(_)) => Err(format_err!("Got both a result and an error!"))?,
+            (Some(_), Some(_)) => Err(format_err!("Got both a result and an error!")),
             (Some(res), None) => Ok(res),
             (None, Some(err)) => Err(format_err!("{:?}", err)),
-            (None, None) => Err(format_err!("Got an empty response!"))?,
+            (None, None) => Err(format_err!("Got an empty response!")),
         }
     }
 

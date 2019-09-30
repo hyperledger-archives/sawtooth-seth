@@ -91,7 +91,7 @@ where
     {
         Some(Ok(perms)) => Some(perms),
         None => None,
-        Some(Err(_)) => Err(Error::invalid_params("Invalid permissions value."))?,
+        Some(Err(_)) => return Err(Error::invalid_params("Invalid permissions value.")),
     };
 
     let context = Secp256k1Context::new();
