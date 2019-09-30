@@ -92,6 +92,8 @@ pipeline {
 				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo fmt -- --check'
 				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy --version'
 				sh 'docker run --rm sawtooth-seth-cli:$ISOLATION_ID cargo clippy -- -D clippy::all'
+				sh 'docker run --rm sawtooth-seth-rpc:$ISOLATION_ID cargo fmt -- --check'
+				sh 'docker run --rm sawtooth-seth-rpc:$ISOLATION_ID cargo clippy -- -D clippy::all'
 			}
         }
 
