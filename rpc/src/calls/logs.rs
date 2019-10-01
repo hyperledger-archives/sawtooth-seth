@@ -156,10 +156,10 @@ where
         Filter::Transaction => blocks
             .iter()
             .flat_map(|&(_, ref block)| {
-                block.get_batches().into_iter().flat_map(|batch| {
+                block.get_batches().iter().flat_map(|batch| {
                     batch
                         .get_transactions()
-                        .into_iter()
+                        .iter()
                         .filter(|txn| {
                             let header: Result<TransactionHeader, _> =
                                 protobuf::parse_from_bytes(&txn.header);

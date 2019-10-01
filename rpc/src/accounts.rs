@@ -56,7 +56,7 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         None
     }
 }
@@ -103,16 +103,18 @@ impl Account {
         if pem.as_path().is_file() {
             Self::load_from_str(&Self::read_file(&pem)?, password)
         } else {
-            Err(Error::AliasNotFound)?
+            Err(Error::AliasNotFound)
         }
     }
 
     pub fn load_from_str(key: &str, password: &Option<String>) -> Result<Account, Error> {
         let key = match (key.contains("ENCRYPTED"), password) {
             (true, Some(pw)) => Secp256k1PrivateKey::from_pem_with_password(&key.trim(), &pw),
-            (true, None) => Err(Error::ParseError(
-                "A password is required for encrypted keys!".into(),
-            ))?,
+            (true, None) => {
+                return Err(Error::ParseError(
+                    "A password is required for encrypted keys!".into(),
+                ))
+            }
             (false, Some(_)) => {
                 warn!("Account::load_from_str got password for non-encrypted private key.");
                 Secp256k1PrivateKey::from_pem(&key.trim())

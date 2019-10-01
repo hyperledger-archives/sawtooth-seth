@@ -52,6 +52,9 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
 ENV PATH=$PATH:/project/sawtooth-seth/bin:/root/.cargo/bin:/protoc3/bin \
     CARGO_INCREMENTAL=0
 
+RUN rustup component add clippy && \
+    rustup component add rustfmt
+
 WORKDIR /project/sawtooth-seth/rpc
 
 COPY bin/ /project/sawtooth-seth/bin

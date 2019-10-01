@@ -82,7 +82,7 @@ fn parse_wait_flag(matches: &ArgMatches) -> Result<Option<u64>, Error> {
             None => Err(format_err!(
                 "Bad value for wait: `{}`",
                 val.expect("Wait must exist!")
-            ))?,
+            )),
         }
     } else {
         Ok(None)
