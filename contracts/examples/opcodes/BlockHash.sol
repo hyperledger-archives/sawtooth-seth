@@ -1,7 +1,7 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.5.0;
 
 contract BlockHash {
-	function blockHash(uint64 blockNum) returns (bytes32) {
-		return block.blockhash(blockNum);
+	function blockHash(uint64 blockNum) public view returns (bytes32) {
+		return blockhash(blockNum);
 	}
 }
