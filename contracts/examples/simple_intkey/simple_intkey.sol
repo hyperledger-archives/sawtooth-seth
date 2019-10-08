@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.5.0;
 
 contract intkey {
   mapping (uint => uint) intmap;
@@ -18,7 +18,7 @@ contract intkey {
     intmap[key] = intmap[key] - 1;
   }
 
-  function get(uint key) public constant returns (uint retVal) {
+  function get(uint key) public view returns (uint retVal) {
     return intmap[key];
   }
 }
