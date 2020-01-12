@@ -228,7 +228,7 @@ impl<S: MessageSender> ValidatorClient<S> {
         // specified address
         let account = Account::load_from_file(address, &password)?;
         loaded_accounts.push(account.clone());
-        *unlocked_account = Some(account.clone());
+        *unlocked_account = Some(account);
 
         Err(Error::ParseError(format!(
             "Account with address `{}` not found!",
@@ -353,8 +353,7 @@ impl<S: MessageSender> ValidatorClient<S> {
                 error!("Account with address `{}` not found.", from);
                 return Err(Error::AccountLoadError);
             }
-        }
-        .clone();
+        };
 
         let mut txn_header = TransactionHeader::new();
         txn_header.set_batcher_public_key(String::from(account.public_key()));
