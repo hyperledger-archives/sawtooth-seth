@@ -85,9 +85,7 @@ RUN go get -u \
 
 RUN git clone https://github.com/knkski/burrow.git $GOPATH/src/github.com/hyperledger/burrow
 
-RUN go get github.com/hyperledger/sawtooth-sdk-go \
- && cd $GOPATH/src/github.com/hyperledger/sawtooth-sdk-go \
- && go generate
+RUN go get github.com/hyperledger/sawtooth-sdk-go
 
 RUN npm install \
     ethereumjs-abi \
@@ -98,5 +96,5 @@ COPY . /project/sawtooth-seth
 RUN seth-protogen go
 
 WORKDIR $GOPATH/src/seth_cli/cli
-ENV GOPATH=$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/common
+ENV GOPATH=$GOPATH/src/github.com/hyperledger/sawtooth-sdk-go:$GOPATH:/project/sawtooth-seth/burrow:/project/sawtooth-seth/common
 RUN go build -o /project/sawtooth-seth/cli-go/bin/seth
