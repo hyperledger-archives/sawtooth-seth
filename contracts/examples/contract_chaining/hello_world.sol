@@ -1,5 +1,5 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.5.0;
 
 contract HelloWorld {
-	function helloWorld() returns(bytes32) { return "helloworld"; }
+	function helloWorld() public pure returns(bytes32) { return "helloworld"; }
 }
