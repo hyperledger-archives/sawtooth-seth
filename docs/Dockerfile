@@ -86,9 +86,9 @@ RUN go get -u \
 
 RUN git clone https://github.com/knkski/burrow.git /go/src/github.com/hyperledger/burrow
 
-RUN go get github.com/hyperledger/sawtooth-sdk-go \
- && cd /go/src/github.com/hyperledger/sawtooth-sdk-go \
- && go generate
+RUN go get github.com/hyperledger/sawtooth-sdk-go
+
+ENV GOPATH=/go/src/github.com/hyperledger/sawtooth-sdk-go:$GOPATH
 
 RUN curl -OLsS https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip \
  && unzip protoc-3.5.1-linux-x86_64.zip -d protoc3 \

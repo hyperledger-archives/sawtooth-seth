@@ -22,9 +22,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/sawtooth-sdk-go/protobuf/batch_pb2"
-	"github.com/hyperledger/sawtooth-sdk-go/protobuf/transaction_pb2"
 	"github.com/hyperledger/sawtooth-sdk-go/signing"
+	"protobuf/batch_pb2"
+	"protobuf/transaction_pb2"
 	"time"
 )
 
