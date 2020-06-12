@@ -15,11 +15,12 @@
  * ------------------------------------------------------------------------------
  */
 
-pub mod seth;
+include!(concat!(env!("OUT_DIR"), "/protos/mod.rs"));
 
-use messages::seth::EvmPermissions;
 use std::fmt;
 use std::str::FromStr;
+
+use self::seth::EvmPermissions;
 
 impl FromStr for EvmPermissions {
     type Err = String;
