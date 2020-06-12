@@ -18,8 +18,6 @@
 
 # Auto-generated protobuf
 /common/src/protobuf
-/*/src/messages/*.rs
-!/*/src/messages/mod.rs
 /rpc/tests/protobuf/
 
 # Don't lock dependencies
