@@ -104,13 +104,6 @@ pipeline {
 			}
         }
 
-        stage ('Build Documentation') {
-			steps {
-				sh 'docker build . -f docs/Dockerfile -t seth-build-docs:$ISOLATION_ID'
-				sh 'docker run -v $(pwd)/docs:/project/sawtooth-seth/docs seth-build-docs:$ISOLATION_ID'
-			}
-        }
-
         stage('Build Archive Artifacts') {
 			steps {
 				sh 'docker-compose -f docker-compose-installed.yaml build'
@@ -123,7 +116,7 @@ pipeline {
             sh 'docker-compose -f docker/compose/copy-debs.yaml down'
         }
         success {
-            archiveArtifacts '*.tgz, *.zip, build/debs/*.deb, docs/build/html/**, docs/build/latex/*.pdf'
+            archiveArtifacts '*.tgz, *.zip, build/debs/*.deb'
         }
         aborted {
             error "Aborted, exiting now"
